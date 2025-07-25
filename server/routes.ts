@@ -15,21 +15,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First check our database
       let product = await storage.getProductBySku(sku);
       
-      // If not found, fetch from Shopify
+      // If not found, try to fetch from Shopify
       if (!product) {
-        const shopifyProduct = await shopifyService.getProductBySku(sku);
-        if (shopifyProduct) {
-          product = await storage.createProduct({
-            shopifyId: shopifyProduct.id.toString(),
-            sku: shopifyProduct.variants[0]?.sku || sku,
-            title: shopifyProduct.title,
-            description: shopifyProduct.body_html || ""
-          });
+        try {
+          const shopifyProduct = await shopifyService.getProductBySku(sku);
+          if (shopifyProduct) {
+            product = await storage.createProduct({
+              shopifyId: shopifyProduct.id.toString(),
+              sku: shopifyProduct.variants[0]?.sku || sku,
+              title: shopifyProduct.title,
+              description: shopifyProduct.body_html || ""
+            });
+          }
+        } catch (shopifyError) {
+          console.warn("Shopify API error:", shopifyError);
+          // Continue without Shopify data - user can manually add product info
         }
       }
 
       if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+        return res.status(404).json({ 
+          message: "Product not found",
+          sku: sku,
+          suggestion: "You can create this product manually using the form below."
+        });
       }
 
       // Get existing content
@@ -39,6 +48,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Product lookup error:", error);
       res.status(500).json({ message: "Failed to lookup product" });
+    }
+  });
+
+  // Manual product creation
+  app.post("/api/products", async (req, res) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(productData);
+      res.json(product);
+    } catch (error) {
+      console.error("Product creation error:", error);
+      res.status(500).json({ message: "Failed to create product" });
     }
   });
 

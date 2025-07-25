@@ -15,8 +15,15 @@ class ShopifyService {
   private readonly accessToken: string;
 
   constructor() {
-    this.baseUrl = `https://${process.env.SHOPIFY_STORE || 'foxxbioprocess.myshopify.com'}/admin/api/2023-10`;
-    this.accessToken = process.env.SHOPIFY_ACCESS_TOKEN || 'shpat_bf9cb13fb0847e311c4';
+    const shopifyStore = process.env.SHOPIFY_STORE_URL;
+    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
+    
+    if (!shopifyStore || !shopifyToken) {
+      throw new Error('Missing Shopify credentials. Please set SHOPIFY_STORE_URL and SHOPIFY_ACCESS_TOKEN environment variables.');
+    }
+    
+    this.baseUrl = `https://${shopifyStore}/admin/api/2023-10`;
+    this.accessToken = shopifyToken;
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
@@ -30,8 +37,23 @@ class ShopifyService {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Shopify API error: ${response.status} - ${error}`);
+      const errorText = await response.text();
+      let errorMessage = `Shopify API error: ${response.status}`;
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.errors) {
+          errorMessage += ` - ${errorJson.errors}`;
+          // Check for specific permission errors
+          if (errorText.includes('merchant approval') || errorText.includes('read_products')) {
+            errorMessage += '\n\nPlease ensure your Shopify private app has the "read_products" and "write_products" permissions enabled and approved by the store owner.';
+          }
+        }
+      } catch {
+        errorMessage += ` - ${errorText}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();

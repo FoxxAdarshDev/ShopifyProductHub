@@ -4,11 +4,13 @@
 
 This is a fully functional, production-ready web application for managing Shopify product content. The system automates the tedious process of manually adding HTML content to each product SKU by providing a user-friendly interface to create structured product tabs. Users can lookup products by SKU, select content tabs, fill out forms, and automatically generate and update HTML content in Shopify products.
 
-**Current Status:** Live and operational - successfully tested with real Shopify integration and PostgreSQL database.
+**Current Status:** Live and operational - successfully configured with PostgreSQL database and Shopify API integration. Manual product creation workflow implemented to handle API permission restrictions.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Database: PostgreSQL (not NeonDB) with SSL connection
+Shopify Store: foxxbioprocess.myshopify.com with custom credentials
 
 ## System Architecture
 
