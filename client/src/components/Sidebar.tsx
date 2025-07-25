@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Box, LayoutTemplate, Image, Grid3X3 } from "lucide-react";
+import { Box, Grid3X3 } from "lucide-react";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -7,8 +7,6 @@ export default function Sidebar() {
   const menuItems = [
     { icon: Box, label: "Product Manager", href: "/product-manager" },
     { icon: Grid3X3, label: "All Products", href: "/all-products" },
-    { icon: LayoutTemplate, label: "Content Templates", href: "/content-templates" },
-    { icon: Image, label: "Logo Library", href: "/logo-library" },
   ];
 
   return (
