@@ -27,10 +27,14 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
 
   const lookupMutation = useMutation({
     mutationFn: async (sku: string) => {
+      console.log("Looking up SKU:", sku); // Add debug logging
       const response = await apiRequest("GET", `/api/products/lookup/${sku}`);
-      return response.json();
+      const data = await response.json();
+      console.log("API Response:", data); // Add debug logging
+      return data;
     },
     onSuccess: (data) => {
+      console.log("Success - data received:", data); // Add debug logging
       setFoundProduct(data.product);
       onProductFound(data.product, data.content || []);
       toast({
@@ -39,6 +43,7 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
       });
     },
     onError: (error: any) => {
+      console.error("Lookup error:", error); // Add debug logging
       setFoundProduct(null);
       const errorMessage = error?.message || "No product found with this SKU";
       toast({
