@@ -43,8 +43,14 @@ class HtmlGenerator {
         case 'documentation':
           html += this.generateDocumentationTab(item.content);
           break;
-        case 'safety-usage-guidelines':
+        case 'safety-guidelines':
           html += this.generateSafetyTab(item.content);
+          break;
+        case 'sku-nomenclature':
+          html += this.generateSKUNomenclatureTab(item.content);
+          break;
+        case 'compatible-container':
+          html += this.generateCompatibleContainerTab(item.content);
           break;
       }
     });
@@ -166,7 +172,7 @@ class HtmlGenerator {
   }
 
   private generateSafetyTab(content: any): string {
-    let html = '    <div class="tab-content" id="safety-usage-guidelines">\n';
+    let html = '    <div class="tab-content" id="safety-guidelines">\n';
     html += '        <ul>\n';
     
     if (content.guidelines && Array.isArray(content.guidelines)) {
@@ -177,6 +183,49 @@ class HtmlGenerator {
 
     html += '        </ul>\n';
     html += '        </div>\n';
+    return html;
+  }
+
+  private generateSKUNomenclatureTab(content: any): string {
+    let html = '    <div class="tab-content" id="sku-nomenclature">\n';
+    
+    if (content.title) {
+      html += `        <h3>${content.title}</h3>\n`;
+    }
+    
+    if (content.components && Array.isArray(content.components)) {
+      html += '        <div class="sku-breakdown">\n';
+      content.components.forEach((component: { code: string; description: string }) => {
+        if (component.code && component.description) {
+          html += `            <p><strong>${component.code}</strong> = ${component.description}</p>\n`;
+        }
+      });
+      html += '        </div>\n';
+    }
+
+    html += '    </div>\n';
+    return html;
+  }
+
+  private generateCompatibleContainerTab(content: any): string {
+    let html = '    <div class="tab-content" id="compatible-container">\n';
+    
+    if (content.title) {
+      html += `        <h3>${content.title}</h3>\n`;
+    }
+    
+    if (content.description) {
+      html += `        <p>${content.description}</p>\n`;
+    }
+    
+    if (content.collectionHandle) {
+      html += `        <div class="collection-showcase" data-collection="${content.collectionHandle}">\n`;
+      html += `            <!-- This will be populated by Shopify's collection liquid tags -->\n`;
+      html += `            <p>Browse compatible products in the <a href="/collections/${content.collectionHandle}">product collection</a>.</p>\n`;
+      html += '        </div>\n';
+    }
+
+    html += '    </div>\n';
     return html;
   }
 }

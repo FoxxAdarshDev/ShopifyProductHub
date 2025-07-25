@@ -1,0 +1,677 @@
+{%- liquid
+    assign tab_border_color = section.settings.tab_border_color
+    assign tab_border_color_rgb = section.settings.tab_border_color_rgb
+    if tab_border_color_rgb != blank
+        assign border_color = tab_border_color_rgb
+    else
+        assign border_color = tab_border_color
+    endif
+
+    assign isVerticalSidebar = false
+    if tab_layout == 'vertical_sidebar'
+        assign isVerticalSidebar = 'sidebar'
+    endif
+
+    assign isVerticalSidebarMobile = false
+    if tab_layout_mobile == 'vertical_sidebar'
+        assign isVerticalSidebarMobile = 'sidebar-mobile'
+    endif
+
+    # New variables for video and document content
+    
+    assign has_document = false
+	assign document_content = ''
+	assign document_titledatasheet = ''
+    # Find PDF links
+    if product.description contains '<a' 
+        assign pdf_links = product.description | split: '<a '
+		assign has_document = false
+
+        for link in pdf_links 
+            if link contains '.pdf' 
+                assign has_document = true
+				assign href_part = link | split: 'href="'
+			      if href_part.size > 1 
+				 assign document_href = href_part[1] | split: '"' | first 
+				endif 
+
+				 assign title_part = link | split: 'title="' 
+            if title_part.size > 1 
+                assign document_titledatasheet = title_part[1] | split: '"' | first 
+            endif 
+
+            # If no title is found, use a default text
+          if document_titledatasheet == '' 
+              assign document_titledatasheet = 'Download Datasheet PDF' 
+           endif 
+
+                break
+            endif 
+        endfor 
+
+    endif
+
+	assign video_content = ''
+	assign has_video = false
+    # Find iframe for video
+    if product.description contains '<iframe'
+        assign video_content = product.description | split: '<iframe'
+        if video_content.size > 1
+            assign has_video = true
+            assign video_content = video_content[1] | split: '</iframe>' | first
+            assign video_content = '<iframe' | append: video_content | append: '</iframe>'
+        endif
+    endif
+
+       assign has_specifications = false
+        assign specifications_content = ''
+
+        # Check for <div id="specification"> in product.description
+        if product.description contains 'id="specification"'
+            assign has_specifications = true
+        endif
+
+        # Split the product description into headings
+        assign headings = product.description | split: '<h'
+
+        # Check for 'Specifications' heading in the split headings
+        for heading in headings
+            if heading contains 'Specifications'
+                assign has_specifications = true
+                assign specifications_content = heading
+                break
+            endif
+        endfor
+
+        if has_specifications
+            # If specifications_content contains a <table>
+            if specifications_content contains '<table>'
+                assign specifications_content = specifications_content | split: '<table>' | last
+                assign specifications_content = specifications_content | split: '</table>' | first
+            else
+                # Fallback in case no table found in specifications_content
+                if specifications_content contains '</h'
+                    assign specifications_content = specifications_content | split: '</h' | last
+                endif
+
+                # Check the specifications_div for <ul> items if needed
+                if product.description contains 'id="specification"'
+                    assign specifications_div = product.description | split: 'id="specification"' | last
+                    assign specifications_content = specifications_div | split: '<ul>' | last
+                    assign specifications_content = specifications_content | split: '</ul>' | first
+                else
+                    assign specifications_content = specifications_content | split: '<ul>' | last
+                    assign specifications_content = specifications_content | split: '</ul>' | first
+                endif
+            endif
+        endif
+
+	
+
+        assign has_features = false
+        assign features_content = ''
+        
+        # Check for <div id="features"> in product.description
+        if product.description contains 'id="features"'
+            assign has_features = true
+        endif
+        
+        # Split the product description into headings
+        assign headings = product.description | split: '<h'
+        
+        # Check all headings for 'Features' or 'Feature'
+        for heading in headings
+            if heading contains 'Features' or heading contains 'Feature'
+                assign has_features = true
+                assign features_content = heading
+                break
+            endif
+        endfor
+        
+        # If we found 'Features', extract the content
+        if has_features
+            # If features_content contains a <ul>
+            if features_content contains '<ul>'
+                assign features_content = features_content | split: '<ul>' | last
+                assign features_content = features_content | split: '</ul>' | first
+            else
+                assign features_content = features_content | split: '</h' | last
+                assign features_content = features_content | split: '<ul>' | last
+                assign features_content = features_content | split: '</ul>' | first
+            endif
+        
+            # Check for features inside <div id="features">
+            if product.description contains 'id="features"'
+                assign features_div = product.description | split: 'id="features"' | last
+                assign features_content = features_div | split: '<ul>' | last
+                assign features_content = features_content | split: '</ul>' | first
+            endif
+        
+            # Remove unwanted 'data-mce-fragment' attributes
+            assign features_content = features_content | regex_replace: 'data-mce-fragment="[^"]+"', ''
+        
+            # Remove any numeric characters followed by ">"
+            assign features_content = features_content | regex_replace: '[0-9]+&gt;', ''
+        
+            # Remove any stray numeric characters
+            assign features_content = features_content | regex_replace: '^[0-9]+\s*', ''
+        endif
+        
+        
+
+        assign has_applications = false
+assign applications_content = ''
+
+# Check for <div id="tab-applications"> in product.description
+if product.description contains 'id="tab-applications"'
+    assign has_applications = true
+endif
+
+# Split the product description into headings
+assign headings = product.description | split: '<h'
+
+# Check all headings for 'Applications' or 'Application'
+for heading in headings
+    if heading contains 'Applications' or heading contains 'Application'
+        assign has_applications = true
+        assign applications_content = heading
+        break
+    endif
+endfor
+
+# If we found 'Applications', extract the content
+if has_applications
+    # If applications_content contains a <ul>
+    if applications_content contains '<ul>'
+        assign applications_content = applications_content | split: '<ul>' | last
+        assign applications_content = applications_content | split: '</ul>' | first
+    else
+        assign applications_content = applications_content | split: '</h' | last
+        assign applications_content = applications_content | split: '<ul>' | last
+        assign applications_content = applications_content | split: '</ul>' | first
+    endif
+
+    # Check for applications inside <div id="tab-applications">
+    if product.description contains 'id="applications"'
+        assign applications_div = product.description | split: 'id="applications"' | last
+        assign applications_content = applications_div | split: '<ul>' | last
+        assign applications_content = applications_content | split: '</ul>' | first
+    endif
+
+    # Remove unwanted 'data-mce-fragment' attributes
+    assign applications_content = applications_content | regex_replace: 'data-mce-fragment="[^"]+"', ''
+
+    # Remove any numeric characters followed by ">"
+    assign applications_content = applications_content | regex_replace: '[0-9]+&gt;', ''
+
+    # Remove any stray numeric characters
+    assign applications_content = applications_content | regex_replace: '^[0-9]+\s*', ''
+endif
+
+
+-%}
+
+<style>
+    .tabs-contents-horizontal .tab-content {
+        display:block!important
+    }
+
+    /** PORODUCT PAGE TAB NAVIGATION CSS */
+.tab-popup-content h1 {
+    font-size:20px
+}
+/**/
+
+/* .tab-popup-content #tabs ul:nth-child(1) {
+  display: none !important;
+} */
+.tab-popup-content *:not(h1, h2, h3) {
+  font-size: 16px !important;
+}
+
+
+.tab-popup-content h1, .tab-popup-content h2, .tab-popup-content h3 {
+    font-size: 18px !important;
+}
+</style>
+
+<product-tab class="productView-tab layout-{{ tab_layout }}" data-vertical="{{ isVerticalSidebar }}" data-vertical-mobile="{{ isVerticalSidebarMobile }}">
+    {%- if tab_layout == 'horizontal' or tab_layout == 'popup' -%}
+        <ul class="tabs tabs-horizontal list-unstyled disable-srollbar">
+            {%- for block in section.blocks -%}
+                {%- liquid
+                    assign title = block.settings.title
+                    assign key = block.settings.product_tab_key_metafield
+                    assign source = block.settings.product_custom_source
+                    assign has_tab = false
+
+                    if source == 'dynamic'
+                        assign meta_ref = key
+                    else 
+                        assign meta_ref = product.metafields.c_f[key]
+                    endif 
+
+                    if block.type == 'custom'
+                        if block.settings.type == 'metafield'
+                            if meta_ref
+                                assign has_tab = true
+                            else
+                                assign has_tab = false
+                            endif
+                        else
+                            assign has_tab = true
+                        endif
+                    else
+                        assign has_tab = true
+                    endif
+                -%}
+                {%- if has_tab and title != blank -%}
+                    <li class="tab">
+                        <a class="tab-title{% if block.type == 'description' and tab_layout == 'horizontal' %} is-open{% endif %}" href="#tab-{{ block.settings.title | escape | handleize }}" style="--border-color: {{ border_color }}">
+                            {{ block.settings.title | escape }}
+                        </a>
+                    </li>
+                {%- endif -%}
+            {%- endfor -%}
+
+            {% comment %} {%- if has_document -%}
+                <li class="tab">
+                    <a class="tab-title" href="#tab-document" style="--border-color: {{ border_color }}">
+                        Document
+                    </a>
+                </li>
+            {%- endif -%}
+
+            {%- if has_video -%}
+                <li class="tab">
+                    <a class="tab-title" href="#tab-videos" style="--border-color: {{ border_color }}">
+                        Videos
+                    </a>
+                </li>
+            {%- endif -%}
+
+            {%- if has_applications -%}
+                <li class="tab">
+                    <a class="tab-title" href="#application" style="--border-color: {{ border_color }}">
+                        Applications
+                    </a>
+                </li>
+            {%- endif -%}
+
+			{%- if has_specifications -%}
+                <li class="tab">
+                    <a class="tab-title" href="#specification" style="--border-color: {{ border_color }}">
+                        Specifications
+                    </a>
+                </li>
+            {%- endif -%}
+			{%- if has_features -%}
+				<li class="tab">
+					<a class="tab-title" href="#features" style="--border-color: {{ border_color }}">
+						Features
+					</a>
+				</li>
+			{%- endif -%} {% endcomment %}
+        </ul>
+    {%- endif -%}
+
+    <div class="tabs-contents tabs-contents-{{ tab_layout }} clearfix halo-text-format">
+        {%- for block in section.blocks -%}
+            {%- liquid
+                assign title = block.settings.title
+                assign has_tab = false
+                assign source = block.settings.product_custom_source
+                assign key = block.settings.product_tab_key_metafield
+
+                if source == 'dynamic'
+                    assign meta_ref = key
+                else 
+                    assign meta_ref = product.metafields.c_f[key]
+                endif 
+
+                if block.type == 'custom'
+                    if block.settings.type == 'metafield'
+                        if meta_ref
+                            assign has_tab = true
+                            assign content = meta_ref
+                        else
+                            assign has_tab = false
+                        endif
+                    else
+                        assign has_tab = true
+                        assign content = block.settings.content
+                    endif
+                else
+                    assign has_tab = true
+                    if block.type == 'description'
+                        assign current_variant = product.selected_or_first_available_variant
+                        if current_variant.metafields.c_f.variant_description != blank
+                            assign content = current_variant.metafields.c_f.variant_description
+                        else
+                            assign content = product.description
+                        endif
+                    else if block.type == 'review'
+                        assign content = product.metafields.spr.reviews
+                    endif
+                endif
+
+                if block.type == 'description' or block.type == 'review' or block.type == 'custom'
+                    assign style_mobile = false
+                    if block.settings.open_tab_mobile
+                        assign style_mobile = 'show-mobile'
+                    endif
+                    if tab_layout_mobile == 'popup'
+                        assign style_mobile = 'popup-mobile'
+                    elsif tab_layout_mobile == 'vertical_sidebar'
+                        assign style_mobile = 'sidebar-mobile'
+                    endif
+                endif			
+            -%}
+            {%- if has_tab and title != blank -%}
+                <div class="tab-content{% if block.type == 'description' and tab_layout == 'horizontal' %} is-active{% endif %}" id="tab-{{ title | escape | handleize }}">
+                    <div class="toggle-title{% if settings.product_page_layout == 'full_width_2' or template.suffix == 'template-full-width-2' %} title-content-full{% endif %}">
+                        <a class="toggleLink{% if style_mobile %} {{ style_mobile }}{% endif %}" data-collapsible href="#tab-{{ title | escape | handleize }}-mobile">
+                            <span class="text">
+                                {{ title | escape }}
+                            </span>
+                            {% if icon_style_layout == 'style_1' %}	
+                                <span class="icon-dropdown">
+                                    {% if settings.product_page_layout == 'full_width_2' or template.suffix == 'template-full-width-2' %}
+                                        {% render 'icon-down-2' %}
+                                    {% else %}
+                                        {% render 'icon-down' %}
+                                    {% endif %}
+                                </span>	
+                            {% else %}	
+                                <span class="icon-plus">&nbsp;</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="toggle-content{% if style_mobile %} {{ style_mobile }}{% endif %}{% if block.settings.enable_btn_show_more %} toggle-content--height{% endif %}" id="tab-{{ title | escape | handleize }}-mobile"{% if block.settings.enable_btn_show_more %} style="--maximum-des-to-show: {{ block.settings.maximum_des_to_show | append: 'px'}}"{% endif %}{% if block.type == 'description' %} product-description-tab data-product-description-{{ product.id }}{% endif %}>
+                        {%- if tab_layout == 'vertical_sidebar' or style_mobile == 'sidebar-mobile' or style_mobile == 'popup-mobile' -%}
+                            <div class="tab-popup-header">
+                                <h5>
+                                    <span class="text">{{ title | escape }}</span>
+                                </h5>
+                                <a class="pdViewTab-close pdViewTab-close-mobile" role="link" aria-disabled="true">x</a>
+                            </div>
+                            <div class="tab-popup-content">
+                        {%- endif -%}
+                        {%- if block.type == 'review' -%}
+                            <div class="productView-review" id="shopify-product-reviews" data-id="{{ product.id }}">
+                        {%- endif -%}
+                        {{ content }}
+                        {%- if block.settings.enable_btn_show_more -%}
+                            {% assign letter = content | size %}
+                            <div class="tab-showMore is-show" data-letter="{{ letter }}" data-des-max="{{ block.settings.maximum_des_to_show }}">
+                                <a class="button button--secondary" href="#tab-{{ title | escape | handleize }}" data-show-more-text="{{ 'products.product.read_more' | t }}" data-show-less-text="{{ 'products.product.read_less' | t }}" data-show-more-toggle> 
+                                    {{ 'products.product.read_more' | t }}
+                                </a>
+                            </div>
+                        {%- endif -%}
+                        {%- if block.type == 'review' -%}
+                            </div>
+                        {%- endif -%}
+                        {%- if tab_layout == 'vertical_sidebar' or style_mobile == 'sidebar-mobile' or style_mobile == 'popup-mobile' -%}
+                            </div>
+                        {%- endif -%}
+                    </div>
+                    {%- if tab_layout == 'popup' -%}
+                        <a class="pdViewTab-close" href="javascript:void(0)">x</a>
+                    {%- endif -%}
+                </div>
+            {%- endif -%}
+        {%- endfor -%}
+
+
+        <style>
+            .logo-grid-custom { justify-content: left!important; gap:5px; } .logo-grid-custom img{ width:80px; height:40px; margin:0px!important }
+           .logo-grid-custom { justify-content: center!important; } .logo-grid-custom img { height:40px; }
+            .logo-grid { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+            .logo-grid img { width: auto; border: 1px solid #cccccc; padding:10px; border-radius:5px; height:50px; margin: 10px; object-fit: contain; } 
+          </style>
+       
+		{%- if has_document -%}
+			<style>
+.tab-document-inner {
+	display:flex;justify-content: center;
+    margin-bottom:10px;
+    margin-top:10px;
+}
+				a.fl-button {
+					border-style: solid;
+    border-width: 0;
+    background-clip: border-box;
+    border-color: #5b88da;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+	font-size: 14px;
+    text-align: left;
+    background-color: #ffffff;
+	padding-top: 0px;
+    padding-right: 13px;
+    padding-bottom: 0px;
+    padding-left: 20px;
+	color: #4c4c4c;
+	display: inline-flex !important;
+    align-items: center;
+    max-width: 100%;
+				}
+
+				.fl-button-text {
+					color: #4c4c4c;
+    max-width: 100%;
+	display: flex;
+    position: relative;
+    line-height: 23px;
+    padding: 10px 0px;
+    align-items: center;
+				}
+
+				span.fl-button-text:before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle !important;
+    margin-right: 5px;
+    width: 24px;
+    height: 24px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill-rule="evenodd" clip-rule="evenodd"><path fill="%235b88da" d="M22 24h-20v-24h14l6 6v18zm-7-23h-12v22h18v-16h-6v-6zm3 15v1h-12v-1h12zm0-3v1h-12v-1h12zm0-3v1h-12v-1h12zm-2-4h4.586l-4.586-4.586v4.586z"/></svg>') no-repeat center;
+}
+
+
+.fl-button-text:before {
+    position: relative;
+}
+
+.fl-button svg {
+	width:18px!important;
+	height:18px!important;
+	stroke: #5b88da!important;
+	fill: #5b88da!important
+}
+
+.fl-button  {
+	display:inline-flex;
+	align-items: center; 
+}
+
+.fl-button-text {
+    margin-bottom: 4px; /* Space between text and SVG */
+}
+
+			</style>
+			<div class="tab-content" id="tab-document">
+				<div class="tab-document-inner">
+				    <a class="fl-button" href="{{ document_href }}" target="_blank">
+						<span class="fl-button-text">Download Datasheet PDF
+							<svg clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m12.012 1.995c-5.518 0-9.998 4.48-9.998 9.998s4.48 9.998 9.998 9.998 9.997-4.48 9.997-9.998-4.479-9.998-9.997-9.998zm0 1.5c4.69 0 8.497 3.808 8.497 8.498s-3.807 8.498-8.497 8.498-8.498-3.808-8.498-8.498 3.808-8.498 8.498-8.498zm1.528 4.715s1.502 1.505 3.255 3.259c.146.147.219.339.219.531s-.073.383-.219.53c-1.753 1.754-3.254 3.258-3.254 3.258-.145.145-.336.217-.527.217-.191-.001-.383-.074-.53-.221-.293-.293-.295-.766-.004-1.057l1.978-1.977h-6.694c-.414 0-.75-.336-.75-.75s.336-.75.75-.75h6.694l-1.979-1.979c-.289-.289-.286-.762.006-1.054.147-.147.339-.221.531-.222.19 0 .38.071.524.215z" fill-rule="nonzero"/></svg>
+						</span>
+					</a>
+				</div>				
+			</div>
+		{%- endif -%}
+
+        {%- if has_video -%}
+			<style>
+
+.tab-video-inner {
+	display:flex;justify-content: center;
+}
+
+.iframe-inner {
+	border: 2px solid #5b88da;
+	overflow:visible;
+	border-radius: 10px;	
+}
+
+.iframe-inner iframe {
+	overflow:visible;
+	border-radius: 8px;	
+}
+			</style>
+            <div class="tab-content" id="tab-video">
+				<div class="tab-video-inner">
+                 <div class="iframe-inner">
+					{{ video_content | safe }}
+				 </div>
+				</div>
+            </div>
+        {%- endif -%}
+		
+
+
+    </div>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const tabContents = document.querySelectorAll('.tab-popup-content');
+		
+			tabContents.forEach(content => {
+
+			const uniqueImages = new Set();
+
+				// Create a container for images
+				const imageContainer = document.createElement('div');
+				imageContainer.style.display = 'flex';
+				imageContainer.style.flexWrap = 'wrap';
+				imageContainer.style.justifyContent = 'center';
+				imageContainer.style.gap = '10px'; // Space between images
+				content.appendChild(imageContainer); // Add the container to the content
+
+				const images = content.querySelectorAll('img');
+				images.forEach(img => {
+					const imgSrc = img.src;
+
+					// Check for duplicates
+					if (!uniqueImages.has(imgSrc)) {
+						uniqueImages.add(imgSrc); // Add to set to track uniqueness
+
+						// Create a parent div for the image
+						const imgWrapper = document.createElement('div');
+						imgWrapper.style.border = '1px solid lightgrey';
+						imgWrapper.style.borderRadius = '5px';
+						imgWrapper.style.padding = '5px';
+						imgWrapper.style.overflow = 'hidden'; // Ensure rounded corners are visible
+						imgWrapper.style.margin = '10px'; // Margin around images
+						imgWrapper.style.flex = '0 1 auto'; // Allow flex items to adjust size
+						imgWrapper.style.height = '50px'; // Set common height
+
+						// Create a new image element
+						const newImg = document.createElement('img');
+						newImg.src = imgSrc;
+						newImg.style.width = '100%'; // Responsive width
+						newImg.style.height = '100%'; // Set height to fill the wrapper
+						newImg.style.objectFit = 'cover'; // Maintain aspect ratio without distortion
+
+						// Append the image to the wrapper
+						imgWrapper.appendChild(newImg);
+						// Append the wrapper to the image container
+						imageContainer.appendChild(imgWrapper);
+					}
+					// Hide the original image element
+					img.style.display = 'none';
+				});
+				// Hide iframes and their preceding headings
+				const iframes = content.querySelectorAll('iframe');
+				iframes.forEach(iframe => {
+					// Hide the iframe
+					iframe.style.display = 'none'; 
+		
+					// Hide the heading preceding this iframe
+					let previousElement = iframe.previousElementSibling;
+					while (previousElement) {
+						if (previousElement.matches('h1, h2, h3, h4, h5, h6')) {
+							previousElement.style.display = 'none'; // Hide the heading
+							break; // Exit the loop once the heading is found and hidden
+						}
+						previousElement = previousElement.previousElementSibling; // Move to the previous sibling
+					}
+		
+					// If the previous element is a <p>, check if it has any headings above it
+					if (iframe.parentElement.tagName === 'P') {
+						previousElement = iframe.parentElement.previousElementSibling;
+						while (previousElement) {
+							if (previousElement.matches('h1, h2, h3, h4, h5, h6')) {
+								previousElement.style.display = 'none'; // Hide the heading
+								break;
+							}
+							previousElement = previousElement.previousElementSibling; // Move to the previous sibling
+						}
+					}
+				});
+		
+				// Find and hide PDF links along with their headings
+				const pdfLinks = Array.from(content.querySelectorAll('a')).filter(link => link.href.includes('.pdf'));
+				if (pdfLinks.length > 0) {
+					pdfLinks.forEach(link => {
+						const parentParagraph = link.closest('p');
+						if (parentParagraph) {
+							parentParagraph.style.display = 'none'; // Hide the paragraph containing the PDF link
+						} else {
+							link.style.display = 'none'; // Hide the PDF link if not in a paragraph
+						}
+		
+						let heading = parentParagraph ? parentParagraph.previousElementSibling : null;
+						while (heading && !heading.matches('h1, h2, h3, h4, h5, h6')) {
+							heading = heading.previousElementSibling; // Move to the previous sibling
+						}
+						if (heading) {
+							heading.style.display = 'none'; // Hide the heading
+						}
+					});
+				}
+		
+				// Hide specifications section if any heading from h1 to h6 contains "Specifications"
+				const specificationsHeading = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6')).find(heading =>
+            heading.textContent.includes('Specifications')
+        );
+
+        if (specificationsHeading) {
+            specificationsHeading.style.display = 'block'; // Hide the heading itself
+
+            let nextElement = specificationsHeading.nextElementSibling; // Move to the next sibling
+            while (nextElement) {
+                if (nextElement.matches('table') || nextElement.matches('ul')) {
+                    nextElement.style.display = 'block'; // Hide the table or ul
+                } else if (nextElement.matches('h1, h2, h3, h4, h5, h6')) {
+                    break; // Stop if we reach another heading
+                }
+                nextElement = nextElement.nextElementSibling; // Move to the next sibling
+            }
+        }
+			});
+		});
+		</script>			
+
+		
+
+</product-tab>
+
+<script src="{{ 'tabs.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'halo-faqs.js' | asset_url }}" defer="defer"></script>
+		

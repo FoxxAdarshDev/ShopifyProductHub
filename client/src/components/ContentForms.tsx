@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Plus, Trash2 } from "lucide-react";
+import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Plus, Trash2, Hash, Package2 } from "lucide-react";
 import LogoManager from "./LogoManager";
 
 interface ContentFormsProps {
@@ -304,29 +304,30 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   );
 
   const renderSafetyForm = () => (
-    <Card key="safety-usage-guidelines" className="content-form">
+    <Card key="safety-guidelines" className="content-form">
       <CardHeader className="form-section-header">
         <CardTitle className="flex items-center">
           <Shield className="w-5 h-5 text-primary mr-3" />
-          Safety & Usage Guidelines
+          Safety Usage Guidelines
         </CardTitle>
       </CardHeader>
       <CardContent className="form-section-content">
         <div className="space-y-3">
-          {(contentData['safety-usage-guidelines']?.guidelines || []).map((guideline: string, index: number) => (
+          {(contentData['safety-guidelines']?.guidelines || []).map((guideline: string, index: number) => (
             <div key={index} className="flex items-start space-x-3">
               <span className="text-slate-400 mt-2">•</span>
-              <Input
+              <Textarea
+                rows={2}
                 placeholder="Enter safety guideline..."
                 value={guideline}
-                onChange={(e) => updateArrayItem("safety-usage-guidelines", "guidelines", index, e.target.value)}
+                onChange={(e) => updateArrayItem("safety-guidelines", "guidelines", index, e.target.value)}
                 className="flex-1"
-                data-testid={`input-guideline-${index}`}
+                data-testid={`textarea-guideline-${index}`}
               />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => removeArrayItem("safety-usage-guidelines", "guidelines", index)}
+                onClick={() => removeArrayItem("safety-guidelines", "guidelines", index)}
                 className="text-red-500 hover:text-red-700 mt-2"
                 data-testid={`button-remove-guideline-${index}`}
               >
@@ -337,13 +338,122 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         </div>
         <Button
           variant="ghost"
-          onClick={() => addArrayItem("safety-usage-guidelines", "guidelines", "")}
+          onClick={() => addArrayItem("safety-guidelines", "guidelines", "")}
           className="mt-4 text-primary hover:text-primary/80"
           data-testid="button-add-guideline"
         >
           <Plus className="w-4 h-4 mr-1" />
           Add Another Guideline
         </Button>
+      </CardContent>
+    </Card>
+  );
+
+  const renderSKUNomenclatureForm = () => (
+    <Card key="sku-nomenclature" className="content-form">
+      <CardHeader className="form-section-header">
+        <CardTitle className="flex items-center">
+          <Hash className="w-5 h-5 text-primary mr-3" />
+          SKU Nomenclature
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="form-section-content">
+        <div className="space-y-4">
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">SKU Breakdown Title</Label>
+            <Input
+              placeholder="SKU Breakdown"
+              value={contentData['sku-nomenclature']?.title || ""}
+              onChange={(e) => updateContent("sku-nomenclature", "title", e.target.value)}
+              data-testid="input-sku-title"
+            />
+          </div>
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">SKU Components</Label>
+            <div className="space-y-3">
+              {(contentData['sku-nomenclature']?.components || []).map((component: { code: string; description: string }, index: number) => (
+                <div key={index} className="flex items-center space-x-3 p-3 border rounded">
+                  <Input
+                    placeholder="Code (e.g., TS)"
+                    value={component.code}
+                    onChange={(e) => updateArrayItem("sku-nomenclature", "components", index, { ...component, code: e.target.value })}
+                    className="w-24"
+                    data-testid={`input-sku-code-${index}`}
+                  />
+                  <span className="text-slate-400">=</span>
+                  <Input
+                    placeholder="Description (e.g., Titanium Series)"
+                    value={component.description}
+                    onChange={(e) => updateArrayItem("sku-nomenclature", "components", index, { ...component, description: e.target.value })}
+                    className="flex-1"
+                    data-testid={`input-sku-description-${index}`}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeArrayItem("sku-nomenclature", "components", index)}
+                    className="text-red-500 hover:text-red-700"
+                    data-testid={`button-remove-sku-${index}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => addArrayItem("sku-nomenclature", "components", { code: "", description: "" })}
+              className="mt-4 text-primary hover:text-primary/80"
+              data-testid="button-add-sku-component"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add SKU Component
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderCompatibleContainerForm = () => (
+    <Card key="compatible-container" className="content-form">
+      <CardHeader className="form-section-header">
+        <CardTitle className="flex items-center">
+          <Package2 className="w-5 h-5 text-primary mr-3" />
+          Compatible Container
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="form-section-content">
+        <div className="space-y-4">
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">Collection Handle</Label>
+            <Input
+              placeholder="compatible-bottles"
+              value={contentData['compatible-container']?.collectionHandle || ""}
+              onChange={(e) => updateContent("compatible-container", "collectionHandle", e.target.value)}
+              data-testid="input-collection-handle"
+            />
+          </div>
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">Section Title</Label>
+            <Input
+              placeholder="Compatible Container Products"
+              value={contentData['compatible-container']?.title || ""}
+              onChange={(e) => updateContent("compatible-container", "title", e.target.value)}
+              data-testid="input-compatible-title"
+            />
+          </div>
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">Description Text</Label>
+            <Textarea
+              rows={3}
+              placeholder="Browse our collection of compatible containers..."
+              value={contentData['compatible-container']?.description || ""}
+              onChange={(e) => updateContent("compatible-container", "description", e.target.value)}
+              data-testid="textarea-compatible-description"
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -355,7 +465,9 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     specifications: renderSpecificationsForm,
     videos: renderVideosForm,
     documentation: renderDocumentationForm,
-    "safety-usage-guidelines": renderSafetyForm,
+    "safety-guidelines": renderSafetyForm,
+    "sku-nomenclature": renderSKUNomenclatureForm,
+    "compatible-container": renderCompatibleContainerForm,
   };
 
   return (

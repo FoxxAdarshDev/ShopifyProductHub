@@ -1,0 +1,83 @@
+so in shopify I have a
+
+halo-product-tab.liquid
+
+where I added this code
+
+see the attached code
+
+``
+
+so under shopufy product description
+
+I added this html
+
+``
+see 2nd attached code
+`
+
+so the issue is I have to add this html manually one by one to each sku and and it consume lot of time and sometimes we have additional tab also like see attached code 3
+
+also in some see additional tab content
+
+see attached code 4
+
+~
+
+so right now the issue is I have to manally going to each sku and add this html based on the requirement
+
+but see many description tab are common and in some there is additional
+
+so what you do
+
+create a system using nodejs and react and utlize the shopify api
+
+I have a shopify access token
+
+seee of the shopify store
+
+see
+
+password: shpat_bf9cb13fb0847e311c4
+theme_id: "13860328"
+store: foxxbioprocess.myshopify.com
+
+`
+
+what I want is
+
+smpley I have to ener sku
+
+and one I enter there is the select box option in top where I hae to select the tab I want ot add in this sku
+
+once I check this tab box form open where I simpley copy andpaste the descriptio, speciciatiom, videos datasheet and all
+
+so basically
+
+also if I want to create a new checkbox I do ti
+
+so basoically I have a postgresql database instance also
+
+so see
+
+I added below
+
+PGDATABASE="foxxbioprou_description"
+PGHOST="dpg-d21p8eemcj7s73equ.render.com/foxxbioprocess_product_sku_description"
+PGPASSWORD="swJXOW6toG4dubC3zR"
+PGPORT="5432"
+PGUSER="foxxbioprocesssku_description_user"
+DATABASE_URL="postgresql://foxxbioprocess_product_sku_description_user:swJXOW0nmqylMyfHIZsT6t8eemcj7s73equsqg-a.singapore-postgres.render.com/foxsku_description"
+
+so once I add the data here what you do I need a standard layout for all so once I addd here you simply add the full html with data to that sku
+
+using shopofy api I added I have all access product read write
+
+also I have to add the logo url also so simple you can give two options one direcly enter the url
+
+so once I enter this logo have added give multople logo url added under the tab content of logo_grid see
+
+<div class="logo-grid"> <img alt="" src="https://cdn.shopify.com/s/files/1/0964/0048/files/class_vi_web_large.png?12500854575707624221"> <img alt="gamma_compatible-logo-v2" src="https://cdn.shopify.com/s/files/1/1064/0118/files/gamma_compatible-logo-v2.png?v=1732116689"> <img alt="" src="https://cdn.shopify.com/s/files/1/0964/0048/files/bpafree_web_large.png?12500854575707624221"> <img alt="Made in Usa" src="https://cdn.shopify.com/s/files/1/0964/0048/files/MadeInUSA_web_large.png?7582118775658440876"> </div>
+here multiple logo url I added
+
+it is possible to vbuild this system with shopify so I dont wantto manually goign and past html and manyally enter the text and descriptio in html
