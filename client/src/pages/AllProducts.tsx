@@ -75,12 +75,23 @@ export default function AllProducts() {
     }
   };
 
-  const filteredProducts = allProducts.filter(product =>
-    product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.variants.some(variant => 
-      variant.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const filteredProducts = allProducts.filter(product => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      // Search by product title
+      product.title.toLowerCase().includes(searchLower) ||
+      // Search by product ID
+      product.id.toString().includes(searchLower) ||
+      // Search by any variant SKU
+      product.variants.some(variant => 
+        variant.sku.toLowerCase().includes(searchLower)
+      ) ||
+      // Search by variant title
+      product.variants.some(variant => 
+        variant.title.toLowerCase().includes(searchLower)
+      )
+    );
+  });
 
   const handleProductSelect = (product: ShopifyProduct, variant?: ShopifyVariant) => {
     // Store the selected product data for the ProductManager
@@ -118,7 +129,7 @@ export default function AllProducts() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           <Input
             type="text"
-            placeholder="Search products by title or SKU..."
+            placeholder="Search by product title, SKU, or product ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -179,10 +190,18 @@ export default function AllProducts() {
                       </div>
                     </div>
 
+                    {/* Content Status Badge */}
+                    <div className="mb-3">
+                      <Badge variant="outline" className="text-xs">
+                        <Package className="w-3 h-3 mr-1" />
+                        Content: Not Added
+                      </Badge>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="flex gap-2 mt-4">
                       <Link
-                        href="/product-manager"
+                        href={`/product-manager/${product.id}`}
                         className="flex-1"
                         onClick={() => handleProductSelect(product)}
                       >
@@ -204,7 +223,7 @@ export default function AllProducts() {
                           {product.variants.slice(0, 3).map((variant) => (
                             <Link
                               key={variant.id}
-                              href="/product-manager"
+                              href={`/product-manager/${product.id}`}
                               onClick={() => handleProductSelect(product, variant)}
                             >
                               <Button

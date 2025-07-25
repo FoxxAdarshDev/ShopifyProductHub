@@ -16,6 +16,7 @@ function Router() {
         <Switch>
           <Route path="/" component={ProductManager} />
           <Route path="/product-manager" component={ProductManager} />
+          <Route path="/product-manager/:productId" component={ProductManager} />
           <Route path="/all-products" component={AllProducts} />
           <Route component={NotFound} />
         </Switch>

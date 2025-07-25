@@ -2,20 +2,48 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useParams } from "wouter";
 import ProductLookup from "@/components/ProductLookup";
 import TabSelector from "@/components/TabSelector";
 import ContentForms from "@/components/ContentForms";
 import PreviewPanel from "@/components/PreviewPanel";
-import { Store, User } from "lucide-react";
+import { Store, User, FileText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProductManager() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
   const [contentData, setContentData] = useState<any>({});
   const { toast } = useToast();
+  const params = useParams();
+  const productId = params.productId;
 
-  // Check if a product was selected from AllProducts page
+  // Load product if productId is in URL
+  const { data: productFromUrl } = useQuery({
+    queryKey: ["/api/products/shopify", productId],
+    queryFn: async () => {
+      if (!productId) return null;
+      const response = await apiRequest("GET", `/api/products/shopify/${productId}`);
+      return response.json();
+    },
+    enabled: !!productId
+  });
+
+  // Load product from URL or session storage
   useEffect(() => {
+    if (productFromUrl) {
+      setSelectedProduct({
+        id: productFromUrl.id,
+        shopifyId: productFromUrl.id.toString(),
+        sku: productFromUrl.variants[0]?.sku || '',
+        title: productFromUrl.title,
+        description: productFromUrl.body_html || ''
+      });
+      return;
+    }
+
+    // Check if a product was selected from AllProducts page
     const savedProduct = sessionStorage.getItem('selectedProduct');
     if (savedProduct) {
       try {
@@ -32,7 +60,7 @@ export default function ProductManager() {
         console.error('Error parsing selected product:', error);
       }
     }
-  }, []);
+  }, [productFromUrl]);
 
   // Update product content mutation
   const updateContentMutation = useMutation({
@@ -141,6 +169,28 @@ export default function ProductManager() {
           
           {selectedProduct && (
             <>
+              {/* Current Product Description */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Current Product Description
+                    <Badge variant="outline" className="ml-auto">
+                      Shopify Content
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <h3 className="font-semibold text-lg mb-2">{selectedProduct.title}</h3>
+                    <div 
+                      className="prose prose-sm max-w-none border rounded-lg p-4 bg-slate-50"
+                      dangerouslySetInnerHTML={{ __html: selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>' }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
               <TabSelector
                 selectedTabs={selectedTabs}
                 onTabsChange={setSelectedTabs}

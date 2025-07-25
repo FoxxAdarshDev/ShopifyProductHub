@@ -90,6 +90,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single product from Shopify by ID
+  app.get("/api/products/shopify/:productId", async (req, res) => {
+    try {
+      const { productId } = req.params;
+      console.log(`Fetching Shopify product: ${productId}`);
+      
+      const product = await shopifyService.getProductById(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching Shopify product:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
+  });
+
   // Manual product creation
   app.post("/api/products", async (req, res) => {
     try {

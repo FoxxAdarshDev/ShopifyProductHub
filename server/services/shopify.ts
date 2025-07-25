@@ -134,15 +134,7 @@ class ShopifyService {
     }
   }
 
-  async getProductById(productId: string): Promise<ShopifyProduct | null> {
-    try {
-      const response = await this.makeRequest(`/products/${productId}.json`);
-      return response.product as ShopifyProduct;
-    } catch (error) {
-      console.error('Error fetching product by ID:', error);
-      return null;
-    }
-  }
+
 
   async updateProductDescription(productId: string, description: string): Promise<void> {
     try {
@@ -183,6 +175,16 @@ class ShopifyService {
     } catch (error) {
       console.error('Error fetching all products:', error);
       return [];
+    }
+  }
+
+  async getProductById(productId: string): Promise<ShopifyProduct | null> {
+    try {
+      const response = await this.makeRequest(`/products/${productId}.json`);
+      return response.product as ShopifyProduct;
+    } catch (error) {
+      console.error(`Error fetching product ${productId}:`, error);
+      return null;
     }
   }
 
