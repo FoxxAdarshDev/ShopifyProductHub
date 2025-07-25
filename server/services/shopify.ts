@@ -61,13 +61,71 @@ class ShopifyService {
 
   async getProductBySku(sku: string): Promise<ShopifyProduct | null> {
     try {
-      // Search for products with this SKU in variants
-      const response = await this.makeRequest(`/products.json?fields=id,title,body_html,handle,variants&limit=250`);
+      console.log(`Searching Shopify for SKU: ${sku}`);
       
-      const products = response.products as ShopifyProduct[];
-      const product = products.find(p => 
-        p.variants.some(v => v.sku === sku)
+      // Search through all products, using pagination if necessary
+      let allProducts: ShopifyProduct[] = [];
+      let hasNextPage = true;
+      let since_id = '';
+      let pageCount = 0;
+      const maxPages = 10; // Safety limit to prevent infinite loops
+      
+      while (hasNextPage && pageCount < maxPages) {
+        const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+        const response = await this.makeRequest(url);
+        const products = response.products as ShopifyProduct[];
+        
+        if (products.length === 0) {
+          hasNextPage = false;
+        } else {
+          allProducts = allProducts.concat(products);
+          since_id = products[products.length - 1].id.toString();
+          hasNextPage = products.length === 250; // If we got 250, there might be more
+          pageCount++;
+        }
+      }
+      
+      console.log(`Found ${allProducts.length} total products in Shopify store across ${pageCount} pages`);
+      
+      // First try exact match
+      let product = allProducts.find(p => 
+        p.variants.some(v => {
+          if (v.sku && v.sku.includes(sku.substring(0, 8))) { // Log potential matches
+            console.log(`Checking variant SKU: "${v.sku}" against search SKU: "${sku}"`);
+          }
+          return v.sku === sku;
+        })
       );
+
+      // If no exact match, try fuzzy matching (remove trailing numbers, hyphens, etc.)
+      if (!product) {
+        const baseSku = sku.replace(/-\d*$/, ''); // Remove trailing -1, -2, etc.
+        console.log(`No exact match found, trying fuzzy search with base SKU: "${baseSku}"`);
+        
+        product = allProducts.find(p => 
+          p.variants.some(v => {
+            if (v.sku && v.sku.startsWith(baseSku)) {
+              console.log(`Fuzzy match found: "${v.sku}" matches base "${baseSku}"`);
+              return true;
+            }
+            return false;
+          })
+        );
+      }
+
+      if (product) {
+        console.log(`Found matching product: ${product.title} with ID: ${product.id}`);
+      } else {
+        console.log(`No product found with SKU: ${sku}`);
+        
+        // Log similar SKUs for debugging
+        const allSkus = allProducts.flatMap(p => p.variants.map(v => v.sku)).filter(Boolean);
+        const similarSkus = allSkus.filter(s => s && (s.includes('66P') || s.includes('700437') || s.includes('FLS')));
+        console.log(`Similar SKUs found:`, similarSkus.slice(0, 10));
+        if (similarSkus.length === 0) {
+          console.log(`Random sample of available SKUs:`, allSkus.slice(0, 10));
+        }
+      }
 
       return product || null;
     } catch (error) {

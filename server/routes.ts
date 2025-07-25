@@ -15,20 +15,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First check our database
       let product = await storage.getProductBySku(sku);
       
+      // If not found, try fuzzy matching in database (for cases like "66P-700437-FLS" vs "66P-700437-FLS-1")
+      if (!product) {
+        console.log(`Trying fuzzy database search with partial SKU: "${sku}"`);
+        const fuzzyResults = await storage.searchProductsBySku(sku);
+        if (fuzzyResults.length > 0) {
+          product = fuzzyResults[0]; // Take the first match
+          console.log(`Found fuzzy match in database: ${product.sku}`);
+        }
+      }
+      
       // If not found, try to fetch from Shopify
       if (!product) {
         try {
+          console.log(`Product not found in local database, searching Shopify for SKU: ${sku}`);
           const shopifyProduct = await shopifyService.getProductBySku(sku);
           if (shopifyProduct) {
+            console.log(`Found product in Shopify, creating local copy: ${shopifyProduct.title}`);
+            // Find the specific variant with this SKU
+            const matchingVariant = shopifyProduct.variants.find(v => v.sku === sku);
             product = await storage.createProduct({
               shopifyId: shopifyProduct.id.toString(),
-              sku: shopifyProduct.variants[0]?.sku || sku,
+              sku: matchingVariant?.sku || sku,
               title: shopifyProduct.title,
               description: shopifyProduct.body_html || ""
             });
+          } else {
+            console.log(`Product not found in Shopify either for SKU: ${sku}`);
           }
         } catch (shopifyError) {
-          console.warn("Shopify API error:", shopifyError);
+          console.error("Shopify API error:", shopifyError);
           // Continue without Shopify data - user can manually add product info
         }
       }

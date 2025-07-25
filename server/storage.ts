@@ -13,13 +13,14 @@ import {
   type InsertLogo
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, like } from "drizzle-orm";
 
 export interface IStorage {
   // Products
   getProduct(id: string): Promise<Product | undefined>;
   getProductBySku(sku: string): Promise<Product | undefined>;
   getProductByShopifyId(shopifyId: string): Promise<Product | undefined>;
+  searchProductsBySku(partialSku: string): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product>;
 
@@ -58,6 +59,10 @@ export class DatabaseStorage implements IStorage {
   async getProductByShopifyId(shopifyId: string): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.shopifyId, shopifyId));
     return product || undefined;
+  }
+
+  async searchProductsBySku(partialSku: string): Promise<Product[]> {
+    return await db.select().from(products).where(like(products.sku, `${partialSku}%`));
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
