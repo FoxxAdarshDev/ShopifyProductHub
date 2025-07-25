@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import Sidebar from "@/components/Sidebar";
 import ProductLookup from "@/components/ProductLookup";
 import TabSelector from "@/components/TabSelector";
 import ContentForms from "@/components/ContentForms";
@@ -14,6 +13,26 @@ export default function ProductManager() {
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
   const [contentData, setContentData] = useState<any>({});
   const { toast } = useToast();
+
+  // Check if a product was selected from AllProducts page
+  useEffect(() => {
+    const savedProduct = sessionStorage.getItem('selectedProduct');
+    if (savedProduct) {
+      try {
+        const { product, selectedVariant } = JSON.parse(savedProduct);
+        setSelectedProduct({
+          id: product.id,
+          shopifyId: product.id.toString(),
+          sku: selectedVariant?.sku || product.variants[0]?.sku || '',
+          title: product.title,
+          description: product.body_html || ''
+        });
+        sessionStorage.removeItem('selectedProduct'); // Clear after use
+      } catch (error) {
+        console.error('Error parsing selected product:', error);
+      }
+    }
+  }, []);
 
   // Update product content mutation
   const updateContentMutation = useMutation({
@@ -92,34 +111,32 @@ export default function ProductManager() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header Navigation */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <img 
-              src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=40" 
-              alt="Foxx Life Sciences Logo" 
-              className="h-10"
-            />
-            <h1 className="text-xl font-semibold text-slate-900">Product Content Management</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-slate-600">
-              <Store className="w-4 h-4 text-primary" />
-              <span>foxxbioprocess.myshopify.com</span>
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900" data-testid="text-page-title">
+                Product Content Manager
+              </h1>
+              <p className="text-slate-600 mt-1">
+                Create and manage product content for your Shopify store
+              </p>
             </div>
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center text-sm text-slate-500">
+                <Store className="w-4 h-4 mr-1" />
+                foxxbioprocess.myshopify.com
+              </div>
+              <div className="flex items-center text-sm text-slate-500">
+                <User className="w-4 h-4 mr-1" />
+                Admin
+              </div>
             </div>
           </div>
         </div>
-      </nav>
 
-      <div className="flex min-h-screen">
-        <Sidebar />
-        
-        <main className="flex-1 p-8">
+        <main className="space-y-8">
           <ProductLookup onProductFound={handleProductFound} />
           
           {selectedProduct && (

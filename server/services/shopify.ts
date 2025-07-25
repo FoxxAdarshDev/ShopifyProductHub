@@ -161,6 +161,31 @@ class ShopifyService {
     }
   }
 
+  async getAllProducts(page: number = 1, limit: number = 20): Promise<ShopifyProduct[]> {
+    try {
+      // Calculate the since_id for pagination
+      let since_id = '';
+      if (page > 1) {
+        // For pagination, we need to get products after a certain ID
+        // This is a simplified approach - in production you might want to cache the last ID
+        const offset = (page - 1) * limit;
+        since_id = `&since_id=${offset * 1000000}`; // Rough estimation
+      }
+      
+      const response = await this.makeRequest(
+        `/products.json?fields=id,title,body_html,handle,variants&limit=${limit}${since_id}`
+      );
+      
+      const products = response.products as ShopifyProduct[];
+      console.log(`Fetched ${products.length} products for page ${page}`);
+      
+      return products;
+    } catch (error) {
+      console.error('Error fetching all products:', error);
+      return [];
+    }
+  }
+
   async searchProducts(query: string): Promise<ShopifyProduct[]> {
     try {
       const response = await this.makeRequest(`/products.json?title=${encodeURIComponent(query)}&limit=50`);

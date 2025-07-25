@@ -67,6 +67,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all products with pagination
+  app.get("/api/products/all", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      console.log(`Fetching products page ${page} with limit ${limit}`);
+      
+      const products = await shopifyService.getAllProducts(page, limit);
+      const hasMore = products.length === limit;
+      
+      res.json({
+        products,
+        hasMore,
+        page,
+        totalFetched: products.length
+      });
+    } catch (error) {
+      console.error("Error fetching all products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
   // Manual product creation
   app.post("/api/products", async (req, res) => {
     try {
