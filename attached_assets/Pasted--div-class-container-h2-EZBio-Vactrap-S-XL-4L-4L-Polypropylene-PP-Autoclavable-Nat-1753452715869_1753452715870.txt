@@ -1,0 +1,101 @@
+<div class="container">
+    <h2>EZBio® Vactrap™ S XL – 4L + 4L Polypropylene (PP), Autoclavable, Natural Bin, 1/4" ID Tubing, Sterile</h2>
+    <div class="tab-content active" id="description">
+    <p>The EZBio® Vactrap™ S from Foxx Life Sciences is an advanced vacuum trap system designed for bioprocessing applications to protect vacuum lines, pumps, and personnel when working with hazardous liquids and biohazardous materials. It safely contains waste from processes such as supernatant removal, chemical separation, and cell or tissue culture media aspiration
+   </p>
+    <p>The Vactrap™ S also shields vacuum systems and personnel from hazardous liquids and microorganisms, preventing contamination within the vacuum system. In bioprocessing applications, the Vactrap™ S is especially useful during the aspiration of infectious fluids.</p>
+    <p>One bottle collects the contaminated fluid, allowing decontaminant solutions to inactivate microorganisms, while the second bottle serves as an overflow vessel for added security. The hydrophobic inline filter protects both the vacuum system and personnel by preventing the spread of aerosols into the vacuum system and the environment.</p>
+    <div class="logo-grid">
+    <img alt="usp class vi" src="https://cdn.shopify.com/s/files/1/0964/0048/files/class_vi_web_large.png?17314777534973465937">
+    <img alt="HDPE" src="https://cdn.shopify.com/s/files/1/1064/0118/files/hdpe_color_small.png?v=1497885629">
+     <img alt="PP" src="https://cdn.shopify.com/s/files/1/1064/0118/files/pp_muted_small.png?v=1497885622">
+     <img alt="fda" src="https://cdn.shopify.com/s/files/1/0964/0048/files/fda_web_large.png?17314777534973465937">
+     <img alt="BPA Free" src="https://cdn.shopify.com/s/files/1/0964/0048/files/bpafree_web_large.png?17314777534973465937">
+     <img alt="Made in Usa" src="https://cdn.shopify.com/s/files/1/0964/0048/files/MadeInUSA_web_large.png?7582118775658440876">
+    </div>
+    </div>
+    <div class="tab-content" id="features">
+     <ul>
+            <li><span style="line-height: 1.4;">Fully pre-assembled, sterile, and double bagged for instant use in cleanroom environments.</span></li>
+            <li><span style="line-height: 1.4;">Integrated secondary containment ensures additional protection against spills and overflows.</span></li>
+            <li><span style="line-height: 1.4;">Shatterproof design enhances safety, minimizing risk in sensitive bioprocess environments.</span></li>
+            <li><span style="line-height: 1.4;">Wide-mouth design allows for easy andthorough cleaning.</span></li>
+            <li><span style="line-height: 1.4;">Includes a tube holder to prevent spills when the system is not in use.</span></li>
+            <li><span style="line-height: 1.4;">Equipped with an EZBio® HP vent filter  featuring a 0.2 µm PTFE membrane to retain bacterial aerosols.</span></li>
+            <li><span style="line-height: 1.4;">40 CFR 264.175 compliant</span></li>
+     </ul>
+    </div>
+    <div class="tab-content" id="applications">
+    <ul>
+            <li><span style="line-height: 1.4;">Aspiration of cell culture media</span></li>
+            <li><span style="line-height: 1.4;">Removal of supernatant during bioprocessing</span></li>
+            <li><span style="line-height: 1.4;">Chemical separation in biopharma production</span></li>
+            <li><span style="line-height: 1.4;">Waste collection from high-purity processes</span></li>
+            <li><span style="line-height: 1.4;">Safe handling of biohazardous waste in cleanroom environments</span></li>
+    </ul>
+    </div>
+    <div class="tab-content" id="safety-usage-guidelines">
+        <ul>
+                <li><span style="line-height: 1.4;">Do not operate bottles at temperatures exceeding the rated maximum</span></li>
+                <li><span style="line-height: 1.4;">Avoid exposing bottles to an open flame</span></li>
+                <li><span style="line-height: 1.4;">Not intended for long-term storage of strong organic compounds</span></li>
+                <li><span style="line-height: 1.4;">Not suitable for continuous full vacuum use exceeding 12 hours</span></li>
+        </ul>
+        </div>
+     
+    <div class="tab-content" id="specification">
+    <table style="width: 100%; height: 78.3752px;">
+    <tbody>
+    <tr>
+    <td>ITEM</td>
+    <td>VALUE</td>
+    </tr>
+    <tr>
+    <td>Manufacturer</td>
+    <td>Foxx Life Sciences</td>
+    </tr>
+    <tr>
+    <td>SKU</td>
+    <td>645-4401-FLS</td>
+    </tr>
+    <tr>
+    <td>Volume</td>
+    <td>4+4 Liter</td>
+    </tr>
+    <tr>
+    <td>Bottle Material</td>
+    <td>Polypropylene (PP)</td>
+    </tr>
+    <tr>
+    <td>Sterile</td>
+    <td>YES</td>
+    </tr>
+    <tr>
+    <td>Tubing Material</td>
+    <td>TPE</td>
+    </tr>
+    <tr>
+        <td>Tubing Size</td>
+        <td>1/4" ID x 7/16" OD</td>
+        </tr>
+        <tr>
+            <td>Brand</td>
+            <td>EZBio® Vactrap S ™ XL</td>
+            </tr>
+    <tr>
+    <td>Made in</td>
+    <td>USA</td>
+    </tr>
+    </tbody>
+    </table>
+    </div>
+    <div id="documentation" class="tab-content">
+    <p><a href="https://cdn.shopify.com/s/files/1/1064/0118/files/Vactrap_S_Data_Sheet_Foxx_Life_Sciences-march-25.pdf?v=1742563120" target="_blank">Vactrap™ S Datasheet</a></p>
+    <p>Click <span style="text-decoration: underline; color: #0000ff;"><a href="http://www.foxxlifesciences.com/pages/product-data-sheets" title="FLS Product Datasheet Index" style="color: #0000ff; text-decoration: underline;">here</a></span> for a full list of our product datasheets!</p>
+    </div>
+    <div id="videos" class="tab-content">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/PSPTrsdNCEY?si=Y-QPO49TUm1Gy3rQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    <!-- <iframe width="560" height="315" src="https://www.youtube.com/embed/ZDlVJlGb2nQ?si=dIhGgla9n2uL5Tk8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> -->
+    <p>Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" title="Foxx Life Sciences YouTube" target="_blank"><span color="blue" style="color: blue;">YouTube Channel!</span></a></p>
+    </div>
+    </div>

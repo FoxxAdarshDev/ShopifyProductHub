@@ -1,0 +1,98 @@
+<div class="container">
+<h2>EZBio® TS PETG 1000mL Bottle Assembly with Tamper Evident VersaCap® – High-Capacity Bioprocess Solution by Foxx Life Sciences</h2>
+<div id="description" class="tab-content active">
+<p>The EZBio® Titanium Bottle with Cap and Adapter “MTO” Single-Use Assemblies allow the customer to select individual components suited to their project needs. Selectable components include the Volume and Material of the Bottle, and the number and size of Ports for the Adapter insert.</p>
+<p>The EZBio® TS Bottle system is designed to meet the demanding needs of modern bioprocessing by offering, single-use solution for fluid handling. These bottles are manufactured from high-purity PETG resins that are USP Class VI certified and free from colorants or additives, making them suitable for sensitive biological applications. EZBio® TS Bottles are available with Foxx’s patented Tamper Evident VersaCap®, featuring a molded adapter for a clean bioprocess fit, a rotating design to prevent tube tangling, and interchangeable inserts for flexible port configurations.</p>
+<p>Bottles are supplied with a standard closed cap installed, while the tamper-evident VersaCap® is packed separately. This allows the end user to fill the container before final closure. 
+The non-sterile EZBio® Bottle with Cap and Adapter is ideal for seamless integration across a wide range of applications—from small-scale setups to larger bioprocess operations. Assembled in an ISO Class 7 cleanroom, each unit is double-bagged and lot-labeled for full GMP and regulatory compliance.</p>
+<div class="logo-grid">
+<img src="https://cdn.shopify.com/s/files/1/0964/0048/files/class_vi_web_large.png?12500854575707624221" alt="class_vi_web_large"> 
+ <img src="https://cdn.shopify.com/s/files/1/1064/0118/files/fls-product-description-inner-image-img_2-autoclavable-v2-transparent.png?v=1747688205" alt="fls-product-description-inner-image-img_2-autoclavable-v2"> 
+ <img src="https://cdn.shopify.com/s/files/1/0964/0048/files/bpafree_web_large.png?17314777534973465937" alt="BPA Free"> 
+<img src="https://cdn.shopify.com/s/files/1/0964/0048/files/MadeInUSA_web_large.png?7582118775658440876" alt="fls-product-description-inner-image-img_8-made-in-usa"> 
+</div>
+
+</div>
+<div id="features" class="tab-content">
+<ul>
+<li><span style="line-height: 1.4;">Customizable assembly with selectable bottle volume, material, and cap port configurations.</span></li>
+<li><span style="line-height: 1.4;">Bottle made from high-purity PETG, USP Class VI certified.</span></li>
+<li><span style="line-height: 1.4;">Tamper-evident VersaCap® provides visual indication of first opening for enhanced product integrity and security.</span></li>
+<li><span style="line-height: 1.4;">Molded, non-machined adapter ensures a clean, bioprocess-ready connection.</span></li>
+<li><span style="line-height: 1.4;">Rotating adapter design prevents tubing tangling during operation.</span></li>
+<li><span style="line-height: 1.4;">Interchangeable inserts offer flexible, customizable port configurations.</span></li>
+</ul>
+</div>
+
+<div id="applications" class="tab-content">
+<ul>
+<li><span style="line-height: 1.4;">Media and buffer storage.</span></li>
+<li><span style="line-height: 1.4;">Bioprocess product sampling.</span></li>
+<li><span style="line-height: 1.4;">Cell Culture.</span></li>
+<li><span style="line-height: 1.4;">Cell harvest collection.</span></li>
+</ul>
+</div>
+
+<div id="specification" class="tab-content">
+<table style="width: 100%; height: 78.3752px;">
+<tbody>
+<tr>
+<td>ITEM</td>
+<td>VALUE</td>
+</tr>
+<tr>
+<td>Manufacturer</td>
+<td>Foxx Life Sciences</td>
+</tr>
+<tr>
+<td>Brand</td>
+<td>EZBio® TS</td>
+</tr>
+<tr>
+<td>Color</td>
+<td>Clear</td>
+</tr>
+<tr>
+<td>Sterility</td>
+<td>Non-Sterile</td>
+</tr>
+<tr>
+<td>Sterility</td>
+<td>Non-Sterile</td>
+</tr>
+<tr>
+<td>Cap Size</td>
+<td>38-430</td>
+</tr>
+<tr>
+<td>Cap Material</td>
+<td>Polypropylene</td>
+</tr>
+<tr>
+<td>Capacity</td>
+<td>1000mL (33.81oz)</td>
+</tr>
+<tr>
+<td>Bottle Width</td>
+<td>3.62in (92mm)</td>
+</tr>
+<tr>
+<td>Bottle Height</td>
+<td>8.54in (213mm)</td>
+</tr>
+<tr>
+<td>Quantity</td>
+<td>10/CS</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="documentation" class="tab-content">
+<p><a href="https://cdn.shopify.com/s/files/1/1064/0118/files/EZBio_TS_Bottle_with_Cap_Adapter_Data_sheet-FoxxLifeSciences-June-28-2025.pdf?v=1751050198" target="_blank">EZBio TS Bottle Cap Adapter_Data_sheet</a></p>
+<p>Click <span style="text-decoration: underline; color: #0000ff;"><a href="http://www.foxxlifesciences.com/pages/product-data-sheets" title="FLS Product Datasheet Index" style="color: #0000ff; text-decoration: underline;">here</a></span> for a full list of our product datasheets!</p>
+</div>
+<div id="videos" class="tab-content">
+ <p>Video Coming Soon</p>
+<p>Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" title="Foxx Life Sciences YouTube" target="_blank"><span color="blue" style="color: blue;">YouTube Channel!</span></a></p>
+</div>
+</div>

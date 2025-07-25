@@ -1,0 +1,107 @@
+<div class="container">
+<h2>EZBio® Ultra Bags, High-Performance, Customizable Solutions for Bioprocessing Applications</h2>
+<div class="tab-content active" id="description">
+<p>Foxx Life Sciences presents its high-performance Single-Use Bag Assembly, designed for efficient fluid storage and transfer in critical bioprocessing applications. These bags feature ports engineered for enhanced integrity optimized flow, that minimizes fluid hold up and provides reliable, repeatable and high-throughput performance. Constructed from medical-grade Renolit 9101 multilayer polyethylene film, they meet ISO and USP biocompatibility standards while offering low oxygen and CO² permeability and excellent low-temperature performance. <strong>Standard bags are offered in sizes from 50mL to 50L, with customization options for face and edge ports available for volumes up to 200L.</strong></p>
+<p>All EZBio® Ultra Bags are available as made-to-order (MTO) assemblies, allowing you to select tubing brands and fittings with our standard bag sets. Each assembly is double-bagged and gamma-sterilized in the U.S. You can easily obtain a quote and place an order online or through a sales representative, with delivery typically within 4 to 6 weeks</p>
+<div class="logo-grid">
+<img alt="" src="https://cdn.shopify.com/s/files/1/0964/0048/files/class_vi_web_large.png?12500854575707624221"> <img alt="gamma_compatible-logo-v2" src="https://cdn.shopify.com/s/files/1/1064/0118/files/gamma_compatible-logo-v2.png?v=1732116689"> <img alt="" src="https://cdn.shopify.com/s/files/1/0964/0048/files/bpafree_web_large.png?12500854575707624221"> <img alt="Made in Usa" src="https://cdn.shopify.com/s/files/1/0964/0048/files/MadeInUSA_web_large.png?7582118775658440876">
+</div>
+</div>
+<div class="tab-content" id="features">
+<ul>
+<li><span style="line-height: 1.4;">Made from Renolit 9101 PE film ensures clarity, strength and minimal transmission.</span></li>
+<li><span style="line-height: 1.4;">Ports designed for optimized edge-seal integrity, enhancing flow rates.</span></li>
+<li><span style="line-height: 1.4;">Available in Standard sizes 50 mL to 50 L, customizable up to 200 L.</span></li>
+<li><span style="line-height: 1.4;">Multiple port configurations to suit various applications.</span></li>
+<li><span style="line-height: 1.4;">Low-profile design minimizes holdup, maximizing product recovery.</span></li>
+<li><span style="line-height: 1.4;">All EZBio® Ultra Bags are offered as a made-to-order (MTO) assembly with customizable tubing and fittings.</span></li>
+</ul>
+</div>
+<div class="tab-content" id="applications">
+<ul>
+<li><span style="line-height: 1.4;">Buffer and cell culture media storage</span></li>
+<li><span style="line-height: 1.4;">Bulk product collection and transport</span></li>
+<li><span style="line-height: 1.4;">Chromatography and filtration buffer management</span></li>
+<li><span style="line-height: 1.4;">Fraction collection</span></li>
+<li><span style="line-height: 1.4;">Product sampling</span></li>
+</ul>
+</div>
+<div id="sku-nomenclature-and-process" class="tab-content">
+<div class="image-inner"><img src="https://cdn.shopify.com/s/files/1/1064/0118/files/ezbio-ultra-bag-sku-nomenclature-picture-v3.png?v=1733333447" alt="sku-nomenclature-image-ezbio-ultra-bag-foxxlife-sciences"></div>
+</div>
+<div class="tab-content" id="specification">
+<table style="width: 100%; height: 78.3752px;">
+<tbody>
+<tr>
+<td>ITEM</td>
+<td>VALUE</td>
+</tr>
+<tr>
+<td>Manufacturer</td>
+<td>Foxx Life Sciences</td>
+</tr>
+<tr>
+<td>Volume</td>
+<td>10L</td>
+</tr>
+<tr>
+<td>Film Material</td>
+<td>Film Renolit 9101: Polyethylene (PE)</td>
+</tr>
+<tr>
+<td>Bag Dimensions (Lx W)</td>
+<td>18.9" x 16.8"</td>
+</tr>
+<tr>
+<td>Bag Type</td>
+<td>2D storage &amp; shipping bag</td>
+</tr>
+<tr>
+<td>Brand</td>
+<td>EZBio® Ultra</td>
+</tr>
+<tr>
+<td>Pack Size</td>
+<td>5/CS</td>
+</tr>
+<tr>
+<td>Delivery Condition</td>
+<td>Sterile</td>
+</tr>
+<tr>
+<td>Tubing</td>
+<td>TPE</td>
+</tr>
+<tr>
+<td>Inlet Line</td>
+<td>3/8" (ID) x 5/8"(OD) 20"</td>
+</tr>
+<tr>
+<td>Outlet Line</td>
+<td>3/8" (ID) x 5/8"(OD) 20"</td>
+</tr>
+<tr>
+<td>Sampling Line</td>
+<td>1/4" (ID) x 7/16"(OD) 4"</td>
+</tr>
+<tr></tr>
+<tr>
+<td>Sampling Connector</td>
+<td>Needlefree swabable valve</td>
+</tr>
+<tr>
+<td>Made in</td>
+<td>USA</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="documentation" class="tab-content">
+<p><a href="https://cdn.shopify.com/s/files/1/1064/0118/files/EZBio_Ultra_Bags_datasheet_copy_v2_-_Revision2_final.pdf?v=1733320619" target="_blank">EZBio Ultra Bags Datasheet</a></p>
+<p>Click <span style="text-decoration: underline; color: #0000ff;"><a href="http://www.foxxlifesciences.com/pages/product-data-sheets" title="FLS Product Datasheet Index" style="color: #0000ff; text-decoration: underline;">here</a></span> for a full list of our product datasheets!</p>
+</div>
+<div id="videos" class="tab-content">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ZDlVJlGb2nQ?si=dIhGgla9n2uL5Tk8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>
+<p>Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" title="Foxx Life Sciences YouTube" target="_blank"><span color="blue" style="color: blue;">YouTube Channel!</span></a></p>
+</div>
+</div>
