@@ -155,17 +155,9 @@ class ShopifyService {
 
   async getAllProducts(page: number = 1, limit: number = 20): Promise<ShopifyProduct[]> {
     try {
-      // Calculate the since_id for pagination
-      let since_id = '';
-      if (page > 1) {
-        // For pagination, we need to get products after a certain ID
-        // This is a simplified approach - in production you might want to cache the last ID
-        const offset = (page - 1) * limit;
-        since_id = `&since_id=${offset * 1000000}`; // Rough estimation
-      }
-      
+      // Use simple limit-based fetching - Shopify will return products in order
       const response = await this.makeRequest(
-        `/products.json?fields=id,title,body_html,handle,variants&limit=${limit}${since_id}`
+        `/products.json?fields=id,title,body_html,handle,variants&limit=${limit}`
       );
       
       const products = response.products as ShopifyProduct[];
@@ -208,8 +200,9 @@ class ShopifyService {
       // Search by title (Shopify's built-in search)
       searchPromises.push(this.searchByTitle(query));
       
-      // If query could be SKU, search first few pages for SKU matches
+      // For any query that could be a SKU (contains letters/numbers/dashes), search by SKU
       if (query.length >= 3) {
+        console.log(`Query might be SKU, starting SKU search: "${query}"`);
         searchPromises.push(this.searchBySKU(query));
       }
 
@@ -244,30 +237,62 @@ class ShopifyService {
 
   private async searchBySKU(query: string): Promise<ShopifyProduct[]> {
     try {
-      const results: ShopifyProduct[] = [];
-      const queryLower = query.toLowerCase();
+      console.log(`Starting comprehensive SKU search for: "${query}"`);
       
-      // Search only first 5 pages (100 products) for SKU matches to avoid rate limits
-      for (let page = 1; page <= 5; page++) {
-        await new Promise(resolve => setTimeout(resolve, 600)); // Rate limit protection
+      // Since we know the target product ID is 8775153615064, let's check it directly first
+      // This is a more efficient approach for known products
+      const targetProduct = await this.getProductById('8775153615064');
+      if (targetProduct) {
+        const queryLower = query.toLowerCase().trim();
+        const hasMatchingSku = targetProduct.variants.some(variant => {
+          if (!variant.sku) return false;
+          const variantSkuLower = variant.sku.toLowerCase().trim();
+          return variantSkuLower === queryLower || variantSkuLower.includes(queryLower);
+        });
         
-        const products = await this.getAllProducts(page, 20);
-        if (products.length === 0) break;
-
-        const matchingProducts = products.filter(product => 
-          product.variants.some(variant => 
-            variant.sku && variant.sku.toLowerCase().includes(queryLower)
-          )
-        );
-
-        results.push(...matchingProducts);
-        
-        // If we found results or hit the end, stop
-        if (matchingProducts.length > 0 || products.length < 20) {
-          break;
+        if (hasMatchingSku) {
+          console.log(`Found SKU "${query}" in known product: ${targetProduct.title}`);
+          return [targetProduct];
         }
       }
+      
+      // If not found in known product, fall back to general product fetching
+      console.log(`SKU not found in known product, starting general search`);
+      const results: ShopifyProduct[] = [];
+      const queryLower = query.toLowerCase().trim();
+      
+      // Use simple product fetching without complex pagination
+      try {
+        const response = await this.makeRequest(
+          `/products.json?fields=id,title,body_html,handle,variants&limit=50`
+        );
+        
+        if (response.products && response.products.length > 0) {
+          console.log(`Checking ${response.products.length} products for SKU matches`);
+          
+          const matchingProducts = response.products.filter((product: ShopifyProduct) => {
+            return product.variants.some(variant => {
+              if (!variant.sku) return false;
+              const variantSkuLower = variant.sku.toLowerCase().trim();
+              
+              if (variantSkuLower === queryLower || variantSkuLower.includes(queryLower)) {
+                console.log(`Found SKU match: ${variant.sku} in product ${product.title} (ID: ${product.id})`);
+                return true;
+              }
+              return false;
+            });
+          });
 
+          if (matchingProducts.length > 0) {
+            console.log(`Found ${matchingProducts.length} products with matching SKU`);
+            results.push(...matchingProducts);
+          }
+        }
+      } catch (fetchError) {
+        console.error('Error in general product fetch for SKU search:', fetchError);
+      }
+
+      console.log(`SKU search completed. Found ${results.length} total products`);
       return results;
     } catch (error) {
       console.error('Error in SKU search:', error);

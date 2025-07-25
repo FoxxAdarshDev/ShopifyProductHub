@@ -77,7 +77,7 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
       return response.json();
     },
     onSuccess: (data) => {
-      setFoundProduct(data);
+      setSelectedProduct(data);
       onProductFound(data, []);
       setShowCreateForm(false);
       setNewProduct({ sku: "", title: "", description: "", shopifyId: "" });
@@ -181,7 +181,7 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                       <div className="mt-2">
                         <p className="text-xs text-slate-500 mb-1">SKUs:</p>
                         <div className="flex flex-wrap gap-1">
-                          {product.variants.slice(0, 3).map((variant) => (
+                          {product.variants.slice(0, 3).map((variant: any) => (
                             <span
                               key={variant.id}
                               className="inline-block px-2 py-1 bg-slate-100 text-xs rounded"
