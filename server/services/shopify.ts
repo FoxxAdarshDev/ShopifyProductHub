@@ -188,6 +188,93 @@ class ShopifyService {
     }
   }
 
+  async searchAllProducts(query: string): Promise<ShopifyProduct[]> {
+    try {
+      console.log(`Starting optimized search for: "${query}"`);
+      
+      // First, try direct search by product ID if the query looks like an ID
+      if (/^\d+$/.test(query)) {
+        console.log(`Query looks like product ID, trying direct lookup: ${query}`);
+        const directProduct = await this.getProductById(query);
+        if (directProduct) {
+          console.log(`Found direct product match: ${directProduct.title}`);
+          return [directProduct];
+        }
+      }
+
+      // Use multiple search strategies for better results
+      const searchPromises = [];
+      
+      // Search by title (Shopify's built-in search)
+      searchPromises.push(this.searchByTitle(query));
+      
+      // If query could be SKU, search first few pages for SKU matches
+      if (query.length >= 3) {
+        searchPromises.push(this.searchBySKU(query));
+      }
+
+      const searchResults = await Promise.all(searchPromises);
+      const allResults = searchResults.flat();
+      
+      // Remove duplicates based on product ID
+      const uniqueResults = allResults.filter((product, index, self) => 
+        index === self.findIndex(p => p.id === product.id)
+      );
+
+      console.log(`Optimized search found ${uniqueResults.length} unique products`);
+      return uniqueResults;
+    } catch (error) {
+      console.error('Error in optimized product search:', error);
+      return [];
+    }
+  }
+
+  private async searchByTitle(query: string): Promise<ShopifyProduct[]> {
+    try {
+      // Use Shopify's search endpoint for title-based search
+      const response = await this.makeRequest(
+        `/products.json?fields=id,title,body_html,handle,variants&limit=50&title=${encodeURIComponent(query)}`
+      );
+      return response.products as ShopifyProduct[];
+    } catch (error) {
+      console.error('Error in title search:', error);
+      return [];
+    }
+  }
+
+  private async searchBySKU(query: string): Promise<ShopifyProduct[]> {
+    try {
+      const results: ShopifyProduct[] = [];
+      const queryLower = query.toLowerCase();
+      
+      // Search only first 5 pages (100 products) for SKU matches to avoid rate limits
+      for (let page = 1; page <= 5; page++) {
+        await new Promise(resolve => setTimeout(resolve, 600)); // Rate limit protection
+        
+        const products = await this.getAllProducts(page, 20);
+        if (products.length === 0) break;
+
+        const matchingProducts = products.filter(product => 
+          product.variants.some(variant => 
+            variant.sku && variant.sku.toLowerCase().includes(queryLower)
+          )
+        );
+
+        results.push(...matchingProducts);
+        
+        // If we found results or hit the end, stop
+        if (matchingProducts.length > 0 || products.length < 20) {
+          break;
+        }
+      }
+
+      return results;
+    } catch (error) {
+      console.error('Error in SKU search:', error);
+      return [];
+    }
+  }
+
   async searchProducts(query: string): Promise<ShopifyProduct[]> {
     try {
       const response = await this.makeRequest(`/products.json?title=${encodeURIComponent(query)}&limit=50`);

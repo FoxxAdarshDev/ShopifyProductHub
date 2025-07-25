@@ -9,6 +9,23 @@ import { Input } from "@/components/ui/input";
 import { Search, Package, ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
+// Debounce hook for search
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 interface ShopifyVariant {
   id: number;
   sku: string;
@@ -28,12 +45,15 @@ export default function AllProducts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [allProducts, setAllProducts] = useState<ShopifyProduct[]>([]);
+  const [searchResults, setSearchResults] = useState<ShopifyProduct[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalFetched, setTotalFetched] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   const productsPerPage = 20;
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/products/all", currentPage],
@@ -68,6 +88,36 @@ export default function AllProducts() {
     }
   }, [error, toast]);
 
+  // Global search query
+  const { data: searchData, isLoading: searchLoading } = useQuery({
+    queryKey: ["/api/products/search", debouncedSearchTerm],
+    queryFn: async () => {
+      if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
+        return { products: [] };
+      }
+      const response = await apiRequest("GET", `/api/products/search?q=${encodeURIComponent(debouncedSearchTerm)}`);
+      return response.json();
+    },
+    enabled: debouncedSearchTerm.length >= 2
+  });
+
+  // Update search results when search data changes
+  useEffect(() => {
+    if (searchData) {
+      setSearchResults(searchData.products || []);
+      setIsSearching(false);
+    }
+  }, [searchData]);
+
+  // Handle search loading state
+  useEffect(() => {
+    if (debouncedSearchTerm.length >= 2 && searchLoading) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  }, [debouncedSearchTerm, searchLoading]);
+
   const loadMore = () => {
     if (!isLoadingMore && hasMore) {
       setIsLoadingMore(true);
@@ -75,23 +125,9 @@ export default function AllProducts() {
     }
   };
 
-  const filteredProducts = allProducts.filter(product => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      // Search by product title
-      product.title.toLowerCase().includes(searchLower) ||
-      // Search by product ID
-      product.id.toString().includes(searchLower) ||
-      // Search by any variant SKU
-      product.variants.some(variant => 
-        variant.sku.toLowerCase().includes(searchLower)
-      ) ||
-      // Search by variant title
-      product.variants.some(variant => 
-        variant.title.toLowerCase().includes(searchLower)
-      )
-    );
-  });
+  // Determine which products to display
+  const displayProducts = searchTerm.length >= 2 ? searchResults : allProducts;
+  const isShowingSearchResults = searchTerm.length >= 2;
 
   const handleProductSelect = (product: ShopifyProduct, variant?: ShopifyVariant) => {
     // Store the selected product data for the ProductManager
@@ -110,11 +146,19 @@ export default function AllProducts() {
               All Products
             </h1>
             <p className="text-slate-600 mt-1">
-              Total products loaded: <span className="font-semibold" data-testid="text-product-count">{totalFetched}</span>
-              {filteredProducts.length !== totalFetched && (
-                <span className="ml-2">
-                  (Filtered: <span className="font-semibold">{filteredProducts.length}</span>)
-                </span>
+              {isShowingSearchResults ? (
+                <>
+                  Search results: <span className="font-semibold" data-testid="text-search-count">{displayProducts.length}</span>
+                  {searchTerm && (
+                    <span className="ml-2 text-slate-500">
+                      for "{searchTerm}"
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  Total products loaded: <span className="font-semibold" data-testid="text-product-count">{totalFetched}</span>
+                </>
               )}
             </p>
           </div>
@@ -127,14 +171,22 @@ export default function AllProducts() {
         {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 animate-spin" />
+          )}
           <Input
             type="text"
             placeholder="Search by product title, SKU, or product ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 pr-10"
             data-testid="input-product-search"
           />
+          {searchTerm.length >= 2 && (
+            <div className="text-xs text-slate-500 mt-1">
+              Searching across all products in your store...
+            </div>
+          )}
         </div>
       </div>
 
@@ -147,7 +199,7 @@ export default function AllProducts() {
         <>
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredProducts.map((product) => (
+            {displayProducts.map((product) => (
               <Card key={product.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg line-clamp-2" data-testid={`text-product-title-${product.id}`}>
@@ -245,8 +297,8 @@ export default function AllProducts() {
             ))}
           </div>
 
-          {/* Load More Button */}
-          {hasMore && !searchTerm && (
+          {/* Load More Button - only show when not searching */}
+          {hasMore && !isShowingSearchResults && (
             <div className="text-center">
               <Button
                 onClick={loadMore}
@@ -269,7 +321,7 @@ export default function AllProducts() {
             </div>
           )}
 
-          {!hasMore && totalFetched > 0 && !searchTerm && (
+          {!hasMore && totalFetched > 0 && !isShowingSearchResults && (
             <div className="text-center py-6">
               <p className="text-slate-500">
                 All products loaded ({totalFetched} total)
@@ -277,13 +329,20 @@ export default function AllProducts() {
             </div>
           )}
 
-          {filteredProducts.length === 0 && searchTerm && (
+          {displayProducts.length === 0 && isShowingSearchResults && !isSearching && (
             <div className="text-center py-12">
               <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No products found</h3>
               <p className="text-slate-500">
-                Try adjusting your search terms or browse all products.
+                No products match "{searchTerm}". Try different search terms or clear the search to browse all products.
               </p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => setSearchTerm("")}
+              >
+                Clear Search
+              </Button>
             </div>
           )}
         </>

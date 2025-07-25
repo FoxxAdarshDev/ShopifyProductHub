@@ -90,6 +90,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Global search across all products
+  app.get("/api/products/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.trim().length < 2) {
+        return res.json({ products: [] });
+      }
+
+      console.log(`Searching all products for: "${query}"`);
+      
+      const products = await shopifyService.searchAllProducts(query.trim());
+      
+      res.json({
+        products,
+        totalFound: products.length,
+        query: query.trim()
+      });
+    } catch (error) {
+      console.error("Error searching products:", error);
+      res.status(500).json({ message: "Failed to search products" });
+    }
+  });
+
   // Get single product from Shopify by ID
   app.get("/api/products/shopify/:productId", async (req, res) => {
     try {
