@@ -354,52 +354,51 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     const shopifyData = await fetchShopifyData(urlData);
     console.log('📦 Received shopifyData:', shopifyData);
     
-    if (shopifyData) {
-      // Create a new compatible item
-      const newItem = {
-        handle: urlData.handle,
-        title: shopifyData.title,
-        image: shopifyData.image,
-        sourceUrl: url,
-        type: urlData.type
-      };
-      
-      // Ensure state is initialized before adding items
+    // Ensure state is initialized before adding items
+    const initializeContainer = () => {
       if (!contentData['compatible-container']) {
+        console.log('🔧 Initializing compatible-container state');
         updateContent("compatible-container", "title", "Compatible Container");
         updateContent("compatible-container", "compatibleItems", []);
       }
-      
-      // Add to the compatible items array
-      const currentItems = contentData['compatible-container']?.compatibleItems || [];
-      const updatedItems = [...currentItems, newItem];
-      console.log('About to update compatible items:', updatedItems);
-      updateContent("compatible-container", "compatibleItems", updatedItems);
-      console.log('Updated compatible items in state');
-      
-      // Also update the primary fields for backward compatibility
-      if (currentItems.length === 0) {
-        updateContent("compatible-container", "collectionHandle", urlData.handle);
-        // Ensure the section title is always "Compatible Container"
-        updateContent("compatible-container", "title", "Compatible Container");
-      }
-    } else {
-      // If Shopify API fails, create a manual entry with the URL info
-      console.log('Shopify API failed, creating manual entry');
-      const newItem = {
-        handle: urlData.handle,
-        title: urlData.handle.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        image: null,
-        sourceUrl: url,
-        type: urlData.type
-      };
+    };
+    
+    initializeContainer();
+    
+    // Create the new item
+    const newItem = shopifyData ? {
+      handle: urlData.handle,
+      title: shopifyData.title,
+      image: shopifyData.image,
+      sourceUrl: url,
+      type: urlData.type
+    } : {
+      handle: urlData.handle,
+      title: urlData.handle.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      image: null,
+      sourceUrl: url,
+      type: urlData.type
+    };
 
-      const currentItems = contentData['compatible-container']?.compatibleItems || [];
-      updateContent("compatible-container", "compatibleItems", [...currentItems, newItem]);
-      
-      // Ensure the section title is always "Compatible Container"
-      updateContent("compatible-container", "title", "Compatible Container");
+    // Add to the compatible items array
+    const currentItems = contentData['compatible-container']?.compatibleItems || [];
+    const updatedItems = [...currentItems, newItem];
+    console.log('🔄 Current items:', currentItems);
+    console.log('🆕 New item:', newItem);
+    console.log('📋 Updated items array:', updatedItems);
+    
+    // Force a fresh update to trigger re-render
+    updateContent("compatible-container", "compatibleItems", updatedItems);
+    
+    // Also update the primary fields for backward compatibility
+    if (currentItems.length === 0) {
+      updateContent("compatible-container", "collectionHandle", urlData.handle);
     }
+    
+    // Always ensure the section title
+    updateContent("compatible-container", "title", "Compatible Container");
+    
+    console.log('✅ Compatible container item added successfully');
   };
 
   const renderDescriptionForm = () => (
@@ -1152,10 +1151,18 @@ Pressure Range,Up to 60 psi 4.1 bar`}
 
 
           
+          {/* Debug current state */}
+          <div className="text-xs text-gray-500 mb-2">
+            Container exists: {contentData['compatible-container'] ? 'Yes' : 'No'} | 
+            Items: {contentData['compatible-container']?.compatibleItems?.length || 0}
+          </div>
+
           {/* Display compatible items as cards */}
           {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
             <div className="space-y-3">
-              <Label className="block text-sm font-medium text-slate-700">Compatible Items</Label>
+              <Label className="block text-sm font-medium text-slate-700">
+                Compatible Items ({contentData['compatible-container'].compatibleItems.length})
+              </Label>
               {contentData['compatible-container'].compatibleItems.map((item: any, index: number) => (
                 <div key={index} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
                   <div className="flex items-center justify-between">
