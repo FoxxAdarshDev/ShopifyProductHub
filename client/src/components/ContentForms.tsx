@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Plus, Trash2, Hash, Package2 } from "lucide-react";
 import LogoManager from "./LogoManager";
+import FileUpload from "./FileUpload";
 
 interface ContentFormsProps {
   selectedTabs: string[];
@@ -371,38 +372,48 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">SKU Components</Label>
             <div className="space-y-3">
-              {(contentData['sku-nomenclature']?.components || []).map((component: { code: string; description: string }, index: number) => (
-                <div key={index} className="flex items-center space-x-3 p-3 border rounded">
-                  <Input
-                    placeholder="Code (e.g., TS)"
-                    value={component.code}
-                    onChange={(e) => updateArrayItem("sku-nomenclature", "components", index, { ...component, code: e.target.value })}
-                    className="w-24"
-                    data-testid={`input-sku-code-${index}`}
+              {(contentData['sku-nomenclature']?.components || []).map((component: { code: string; description: string; image?: string }, index: number) => (
+                <div key={index} className="space-y-3 p-3 border rounded">
+                  <div className="flex items-center space-x-3">
+                    <Input
+                      placeholder="Code (e.g., TS)"
+                      value={component.code}
+                      onChange={(e) => updateArrayItem("sku-nomenclature", "components", index, { ...component, code: e.target.value })}
+                      className="w-24"
+                      data-testid={`input-sku-code-${index}`}
+                    />
+                    <span className="text-slate-400">=</span>
+                    <Input
+                      placeholder="Description (e.g., Titanium Series)"
+                      value={component.description}
+                      onChange={(e) => updateArrayItem("sku-nomenclature", "components", index, { ...component, description: e.target.value })}
+                      className="flex-1"
+                      data-testid={`input-sku-description-${index}`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeArrayItem("sku-nomenclature", "components", index)}
+                      className="text-red-500 hover:text-red-700"
+                      data-testid={`button-remove-sku-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Image/Banner Upload for SKU Component */}
+                  <FileUpload
+                    label="Component Image/Banner (Optional)"
+                    value={component.image || ""}
+                    onChange={(url) => updateArrayItem("sku-nomenclature", "components", index, { ...component, image: url })}
+                    placeholder="Enter image URL or upload banner for this SKU component"
                   />
-                  <span className="text-slate-400">=</span>
-                  <Input
-                    placeholder="Description (e.g., Titanium Series)"
-                    value={component.description}
-                    onChange={(e) => updateArrayItem("sku-nomenclature", "components", index, { ...component, description: e.target.value })}
-                    className="flex-1"
-                    data-testid={`input-sku-description-${index}`}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeArrayItem("sku-nomenclature", "components", index)}
-                    className="text-red-500 hover:text-red-700"
-                    data-testid={`button-remove-sku-${index}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
             </div>
             <Button
               variant="ghost"
-              onClick={() => addArrayItem("sku-nomenclature", "components", { code: "", description: "" })}
+              onClick={() => addArrayItem("sku-nomenclature", "components", { code: "", description: "", image: "" })}
               className="mt-4 text-primary hover:text-primary/80"
               data-testid="button-add-sku-component"
             >

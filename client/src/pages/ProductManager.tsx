@@ -7,14 +7,16 @@ import ProductLookup from "@/components/ProductLookup";
 import TabSelector from "@/components/TabSelector";
 import ContentForms from "@/components/ContentForms";
 import PreviewPanel from "@/components/PreviewPanel";
-import { Store, User, FileText } from "lucide-react";
+import { Store, User, FileText, Eye, Code } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function ProductManager() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
   const [contentData, setContentData] = useState<any>({});
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const { toast } = useToast();
   const params = useParams();
   const productId = params.productId;
@@ -179,14 +181,42 @@ export default function ProductManager() {
                       Shopify Content
                     </Badge>
                   </CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant={!showHtmlPreview ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowHtmlPreview(false)}
+                      data-testid="button-preview-toggle"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button
+                      variant={showHtmlPreview ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowHtmlPreview(true)}
+                      data-testid="button-html-toggle"
+                    >
+                      <Code className="w-4 h-4 mr-1" />
+                      HTML
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
                     <h3 className="font-semibold text-lg mb-2">{selectedProduct.title}</h3>
-                    <div 
-                      className="prose prose-sm max-w-none border rounded-lg p-4 bg-slate-50"
-                      dangerouslySetInnerHTML={{ __html: selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>' }}
-                    />
+                    {showHtmlPreview ? (
+                      <div className="border rounded-lg p-4 bg-slate-50">
+                        <pre className="whitespace-pre-wrap text-sm font-mono overflow-x-auto">
+                          {selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>'}
+                        </pre>
+                      </div>
+                    ) : (
+                      <div 
+                        className="prose prose-sm max-w-none border rounded-lg p-4 bg-slate-50"
+                        dangerouslySetInnerHTML={{ __html: selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>' }}
+                      />
+                    )}
                   </div>
                 </CardContent>
               </Card>

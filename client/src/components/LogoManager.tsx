@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
+import FileUpload from "./FileUpload";
 
 interface Logo {
   url: string;
@@ -34,32 +35,34 @@ export default function LogoManager({ logos, onLogosChange }: LogoManagerProps) 
       <h4 className="text-base font-medium text-slate-900 mb-3">Logo Grid</h4>
       <div className="space-y-3">
         {logos.map((logo, index) => (
-          <div key={index} className="flex items-center space-x-3">
-            <Input
-              type="url"
-              placeholder="Logo URL"
+          <div key={index} className="space-y-3 p-3 border rounded">
+            <div className="flex items-center space-x-3">
+              <Input
+                type="text"
+                placeholder="Alt text"
+                value={logo.altText}
+                onChange={(e) => updateLogo(index, "altText", e.target.value)}
+                className="flex-1"
+                data-testid={`input-logo-alt-${index}`}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeLogo(index)}
+                className="text-red-500 hover:text-red-700"
+                data-testid={`button-remove-logo-${index}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Logo Image Upload */}
+            <FileUpload
+              label="Logo Image"
               value={logo.url}
-              onChange={(e) => updateLogo(index, "url", e.target.value)}
-              className="flex-1"
-              data-testid={`input-logo-url-${index}`}
+              onChange={(url) => updateLogo(index, "url", url)}
+              placeholder="Enter logo URL or upload image file"
             />
-            <Input
-              type="text"
-              placeholder="Alt text"
-              value={logo.altText}
-              onChange={(e) => updateLogo(index, "altText", e.target.value)}
-              className="w-32"
-              data-testid={`input-logo-alt-${index}`}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => removeLogo(index)}
-              className="text-red-500 hover:text-red-700"
-              data-testid={`button-remove-logo-${index}`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
           </div>
         ))}
       </div>

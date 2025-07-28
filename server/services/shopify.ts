@@ -309,6 +309,38 @@ class ShopifyService {
       return [];
     }
   }
+
+  async uploadFile(fileBase64: string, filename: string, contentType?: string): Promise<string> {
+    try {
+      // Convert base64 to buffer if needed
+      const fileData = fileBase64.replace(/^data:[^;]+;base64,/, '');
+      
+      // Create the file upload payload
+      const uploadPayload = {
+        asset: {
+          key: `content/${filename}`,
+          value: fileData,
+          content_type: contentType || 'image/png'
+        }
+      };
+
+      // Upload to Shopify Assets API
+      const response = await this.makeRequest('/assets.json', {
+        method: 'PUT',
+        body: JSON.stringify(uploadPayload)
+      });
+
+      // Return the public URL
+      const storeUrl = process.env.SHOPIFY_STORE_URL;
+      const fileUrl = `https://${storeUrl}/files/${response.asset.key}`;
+      
+      console.log(`File uploaded successfully: ${fileUrl}`);
+      return fileUrl;
+    } catch (error) {
+      console.error('Error uploading file to Shopify:', error);
+      throw error;
+    }
+  }
 }
 
 export const shopifyService = new ShopifyService();

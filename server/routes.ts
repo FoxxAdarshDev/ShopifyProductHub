@@ -259,6 +259,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check product content status for multiple products
+  app.post("/api/products/content-status", async (req, res) => {
+    try {
+      const { productIds } = req.body;
+      if (!Array.isArray(productIds)) {
+        return res.status(400).json({ message: "productIds must be an array" });
+      }
+
+      const contentStatus: Record<string, boolean> = {};
+      
+      for (const productId of productIds) {
+        const localProduct = await storage.getProductByShopifyId(productId.toString());
+        if (localProduct) {
+          const content = await storage.getProductContent(localProduct.id);
+          contentStatus[productId] = content.length > 0;
+        } else {
+          contentStatus[productId] = false;
+        }
+      }
+
+      res.json(contentStatus);
+    } catch (error) {
+      console.error("Content status check error:", error);
+      res.status(500).json({ message: "Failed to check content status" });
+    }
+  });
+
+  // File upload to Shopify
+  app.post("/api/shopify/upload-file", async (req, res) => {
+    try {
+      const { file, filename, contentType } = req.body;
+      
+      if (!file || !filename) {
+        return res.status(400).json({ message: "File data and filename are required" });
+      }
+
+      const fileUrl = await shopifyService.uploadFile(file, filename, contentType);
+      res.json({ url: fileUrl });
+    } catch (error) {
+      console.error("File upload error:", error);
+      res.status(500).json({ message: "Failed to upload file to Shopify" });
+    }
+  });
+
   // Preview HTML generation
   app.post("/api/preview", async (req, res) => {
     try {

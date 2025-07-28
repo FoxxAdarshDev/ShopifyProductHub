@@ -50,6 +50,7 @@ export default function AllProducts() {
   const [hasMore, setHasMore] = useState(true);
   const [totalFetched, setTotalFetched] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
+  const [contentStatus, setContentStatus] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const productsPerPage = 20;
@@ -74,6 +75,11 @@ export default function AllProducts() {
       }
       setHasMore(data.hasMore || false);
       setIsLoadingMore(false);
+
+      // Check content status for new products
+      if (data.products && data.products.length > 0) {
+        checkContentStatus(data.products.map((p: ShopifyProduct) => p.id));
+      }
     }
   }, [data, currentPage]);
 
@@ -128,6 +134,17 @@ export default function AllProducts() {
   // Determine which products to display
   const displayProducts = searchTerm.length >= 2 ? searchResults : allProducts;
   const isShowingSearchResults = searchTerm.length >= 2;
+
+  // Check content status for products
+  const checkContentStatus = async (productIds: number[]) => {
+    try {
+      const response = await apiRequest("POST", "/api/products/content-status", { productIds });
+      const statusData = await response.json();
+      setContentStatus(prev => ({ ...prev, ...statusData }));
+    } catch (error) {
+      console.error("Error checking content status:", error);
+    }
+  };
 
   const handleProductSelect = (product: ShopifyProduct, variant?: ShopifyVariant) => {
     // Store the selected product data for the ProductManager
@@ -244,10 +261,17 @@ export default function AllProducts() {
 
                     {/* Content Status Badge */}
                     <div className="mb-3">
-                      <Badge variant="outline" className="text-xs">
-                        <Package className="w-3 h-3 mr-1" />
-                        Content: Not Added
-                      </Badge>
+                      {contentStatus[product.id] ? (
+                        <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                          <Package className="w-3 h-3 mr-1" />
+                          Shopify Content
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">
+                          <Package className="w-3 h-3 mr-1" />
+                          Content: Not Added
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Action Buttons */}
