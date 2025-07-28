@@ -1301,7 +1301,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                             );
                             updateContent("compatible-container", "compatibleItems", updatedItems);
                           }}
-                          className="font-medium text-blue-600 border-none shadow-none p-0 h-auto bg-transparent"
+                          className="font-medium text-blue-600 border-none shadow-none p-0 h-auto bg-transparent w-full"
                           placeholder="Edit title..."
                         />
                         <Input
@@ -1317,16 +1317,20 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                           placeholder="Image URL (optional)..."
                         />
                         <p className="text-sm text-gray-500">
-                          {item.type === 'collection' ? 'Collection' : 'Product'}: {item.handle}
+                          Product: {item.description || item.handle || 'No description'}
                         </p>
-                        <a 
-                          href={item.sourceUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-400 hover:text-blue-600 hover:underline truncate max-w-xs block"
-                        >
-                          {item.sourceUrl}
-                        </a>
+                        <Input
+                          value={item.url || item.sourceUrl || ''}
+                          onChange={(e) => {
+                            const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                            const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                              i === index ? { ...existingItem, url: e.target.value } : existingItem
+                            );
+                            updateContent("compatible-container", "compatibleItems", updatedItems);
+                          }}
+                          className="text-xs text-blue-400 border border-gray-200 rounded px-2 py-1 w-full"
+                          placeholder="Product URL..."
+                        />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

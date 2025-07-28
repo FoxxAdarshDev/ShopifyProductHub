@@ -338,7 +338,10 @@ export function extractContentFromHtml(html: string): ExtractedContent {
             title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
             url: linkMatch[1],
             image: imgMatch ? imgMatch[1] : '',
-            description: typeMatch ? typeMatch[1].trim() : ''
+            description: typeMatch ? typeMatch[1].trim() : '',
+            sourceUrl: linkMatch[1],
+            handle: typeMatch ? typeMatch[1].trim() : '',
+            type: 'product'
           };
           
           console.log('🔗 Successfully extracted item:', item.title);
