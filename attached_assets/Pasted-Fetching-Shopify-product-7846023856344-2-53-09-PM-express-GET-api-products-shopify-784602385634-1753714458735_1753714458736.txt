@@ -1,0 +1,62 @@
+Fetching Shopify product: 7846023856344
+2:53:09 PM [express] GET /api/products/shopify/7846023856344 304 in 486ms :: {"id":7846023856344,"ti…
+Fetching product by handle: ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs
+Trying endpoint: /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json
+Shopify API error details: {
+  "errors": {
+    "id": "expected String to be a id"
+  }
+}
+Endpoint /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json failed: Shopify API error: 400 - {"id":"expected String to be a id"}
+Trying endpoint: /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json?fields=id,title,handle,body_html,images,variants
+Shopify API error details: {
+  "errors": {
+    "id": "expected String to be a id"
+  }
+}
+Endpoint /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json?fields=id,title,handle,body_html,images,variants failed: Shopify API error: 400 - {"id":"expected String to be a id"}
+Trying endpoint: /products.json?handle=ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs&fields=id,title,handle,body_html,images,variants&limit=1
+Product found via products array: EZBio® Over Molded Silicone Cap System with VersaCap® 38-430 for 500mL Bottle 4/CS
+Product ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs has 2 images
+First image URL: https://cdn.shopify.com/s/files/1/0621/4805/1160/files/38-430_Port_2_port-808-1024_img-1_287129fe-8541-4e7d-b468-e5f4bcab8f0e.png?v=1748351647
+2:53:24 PM [express] GET /api/shopify/products/handle/ezbio-over-molded-silicone-cap-system-versacap…
+Fetching product by handle: ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs
+Trying endpoint: /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json
+Shopify API error details: {
+  "errors": {
+    "id": "expected String to be a id"
+  }
+}
+Endpoint /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json failed: Shopify API error: 400 - {"id":"expected String to be a id"}
+Trying endpoint: /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json?fields=id,title,handle,body_html,images,variants
+Shopify API error details: {
+  "errors": {
+    "id": "expected String to be a id"
+  }
+}
+Endpoint /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json?fields=id,title,handle,body_html,images,variants failed: Shopify API error: 400 - {"id":"expected String to be a id"}
+Trying endpoint: /products.json?handle=ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs&fields=id,title,handle,body_html,images,variants&limit=1
+Product found via products array: EZBio® Over Molded Silicone Cap System with VersaCap® 38-430 for 500mL Bottle 4/CS
+Product ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs has 2 images
+First image URL: https://cdn.shopify.com/s/files/1/0621/4805/1160/files/38-430_Port_2_port-808-1024_img-1_287129fe-8541-4e7d-b468-e5f4bcab8f0e.png?v=1748351647
+2:53:30 PM [express] GET /api/shopify/products/handle/ezbio-over-molded-silicone-cap-system-versacap…
+Fetching product by handle: ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs
+Trying endpoint: /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json
+Shopify API error details: {
+  "errors": {
+    "id": "expected String to be a id"
+  }
+}
+Endpoint /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json failed: Shopify API error: 400 - {"id":"expected String to be a id"}
+Trying endpoint: /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json?fields=id,title,handle,body_html,images,variants
+Shopify API error details: {
+  "errors": {
+    "id": "expected String to be a id"
+  }
+}
+Endpoint /products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs.json?fields=id,title,handle,body_html,images,variants failed: Shopify API error: 400 - {"id":"expected String to be a id"}
+Trying endpoint: /products.json?handle=ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs&fields=id,title,handle,body_html,images,variants&limit=1
+Product found via products array: EZBio® Over Molded Silicone Cap System with VersaCap® 38-430 for 500mL Bottle 4/CS
+Product ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs has 2 images
+First image URL: https://cdn.shopify.com/s/files/1/0621/4805/1160/files/38-430_Port_2_port-808-1024_img-1_287129fe-8541-4e7d-b468-e5f4bcab8f0e.png?v=1748351647
+2:53:37 PM [express] GET /api/shopify/products/handle/ezbio-over-molded-silicone-cap-system-versacap…

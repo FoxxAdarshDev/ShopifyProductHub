@@ -694,7 +694,7 @@ class ShopifyService {
           
           console.log(`No product found via ${endpoint}`);
         } catch (endpointError) {
-          console.log(`Endpoint ${endpoint} failed:`, endpointError.message);
+          console.log(`Endpoint ${endpoint} failed:`, (endpointError as Error).message);
           continue;
         }
       }

@@ -383,10 +383,6 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         // Ensure the section title is always "Compatible Container"
         updateContent("compatible-container", "title", "Compatible Container");
       }
-      
-      // Clear the input
-      const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
-      if (urlInput) urlInput.value = '';
     } else {
       // If Shopify API fails, create a manual entry with the URL info
       console.log('Shopify API failed, creating manual entry');
@@ -403,10 +399,6 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       
       // Ensure the section title is always "Compatible Container"
       updateContent("compatible-container", "title", "Compatible Container");
-      
-      // Clear the input
-      const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
-      if (urlInput) urlInput.value = '';
     }
   };
 
@@ -1122,59 +1114,44 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                 id="url-input"
                 placeholder="https://foxxbioprocess.myshopify.com/collections/compatible-bottles or /products/product-name"
                 onPaste={(e) => {
-                  console.log('🎯 Paste event detected', e);
                   // Use setTimeout to let the paste value settle
                   setTimeout(async () => {
                     const input = e.target as HTMLInputElement;
-                    console.log('📋 Input value after paste:', input.value);
                     if (input.value.trim()) {
-                      console.log('✅ Calling handleUrlInput with:', input.value);
                       try {
                         await handleUrlInput(input.value);
                         input.value = "";
                       } catch (error) {
-                        console.error('💥 Error in handleUrlInput:', error);
+                        console.error('Error in handleUrlInput:', error);
                       }
-                    } else {
-                      console.log('❌ No input value to process');
                     }
                   }, 100);
                 }}
                 onKeyDown={(e) => {
-                  console.log('⌨️ Key pressed:', e.key);
                   if (e.key === 'Enter') {
                     const input = e.target as HTMLInputElement;
-                    console.log('🔑 Enter pressed with value:', input.value);
                     if (input.value.trim()) {
                       handleUrlInput(input.value).then(() => {
                         input.value = "";
                       }).catch(error => {
-                        console.error('💥 Error on Enter:', error);
+                        console.error('Error on Enter:', error);
                       });
                     }
                   }
-                }}
-                onChange={(e) => {
-                  console.log('📝 Input changed:', e.target.value);
                 }}
                 className="flex-1"
                 data-testid="input-url-import"
               />
               <Button
                 onClick={async () => {
-                  console.log('🔴 Add button clicked');
                   const input = document.getElementById('url-input') as HTMLInputElement;
                   if (input && input.value.trim()) {
-                    console.log('🔴 Adding URL:', input.value);
                     try {
                       await handleUrlInput(input.value);
                       input.value = "";
-                      console.log('🔴 URL added successfully');
                     } catch (error) {
-                      console.error('💥 Error adding URL:', error);
+                      console.error('Error adding URL:', error);
                     }
-                  } else {
-                    console.log('❌ No URL to add');
                   }
                 }}
                 className="px-4"
@@ -1187,36 +1164,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             </p>
           </div>
 
-          {/* Debug state */}
-          <div className="bg-yellow-100 p-2 text-xs">
-            <div><strong>State Debug:</strong></div>
-            <div>Compatible Container exists: {contentData['compatible-container'] ? 'Yes' : 'No'}</div>
-            <div>Items array exists: {contentData['compatible-container']?.compatibleItems ? 'Yes' : 'No'}</div>
-            <div>Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}</div>
-            <button 
-              onClick={() => {
-                console.log('🟦 Force initialize clicked');
-                updateContent("compatible-container", "title", "Compatible Container");
-                updateContent("compatible-container", "compatibleItems", []);
-                console.log('🟦 Force initialization done');
-              }}
-              className="bg-blue-500 text-white px-2 py-1 rounded ml-2"
-            >
-              Force Initialize
-            </button>
-            <button 
-              onClick={async () => {
-                console.log('🟢 Manual test clicked');
-                const testUrl = "/products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs";
-                console.log('🟢 Testing with URL:', testUrl);
-                await handleUrlInput(testUrl);
-                console.log('🟢 Manual test completed');
-              }}
-              className="bg-green-500 text-white px-2 py-1 rounded ml-2"
-            >
-              Manual Test
-            </button>
-          </div>
+
           
           {/* Display compatible items as cards */}
           {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
