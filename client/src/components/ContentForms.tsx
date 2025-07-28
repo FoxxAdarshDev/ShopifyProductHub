@@ -1107,26 +1107,12 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               <h3 className="font-medium text-blue-900">Smart URL Import</h3>
             </div>
             <p className="text-sm text-blue-700 mb-3">
-              Paste a Shopify collection or product URL to automatically fetch title and image data.
+              Paste a Shopify collection or product URL and click Add to fetch title and image data.
             </p>
             <div className="flex gap-2">
               <Input
                 id="url-input"
                 placeholder="https://foxxbioprocess.myshopify.com/collections/compatible-bottles or /products/product-name"
-                onPaste={(e) => {
-                  // Use setTimeout to let the paste value settle
-                  setTimeout(async () => {
-                    const input = e.target as HTMLInputElement;
-                    if (input.value.trim()) {
-                      try {
-                        await handleUrlInput(input.value);
-                        input.value = "";
-                      } catch (error) {
-                        console.error('Error in handleUrlInput:', error);
-                      }
-                    }
-                  }, 100);
-                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const input = e.target as HTMLInputElement;
