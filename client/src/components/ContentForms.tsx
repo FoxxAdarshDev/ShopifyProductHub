@@ -278,16 +278,27 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     try {
       if (urlData.type === 'collection') {
         // Fetch collection data
-        const response = await fetch(`/api/shopify/collections/handle/${urlData.handle}`);
+        const response = await fetch(`/api/shopify/collections/${urlData.handle}`);
         if (response.ok) {
           const data = await response.json();
-          const collection = data.collection;
+          console.log('Collection API response:', data);
+          
+          // Handle both direct collection and nested collection format
+          const collection = data.collection || data;
           if (collection) {
-            // Get collection image or first product image
-            let imageUrl = collection.image?.src || null;
-            if (!imageUrl && collection.products?.length > 0 && collection.products[0].images?.length > 0) {
-              imageUrl = collection.products[0].images[0].src;
+            // Get collection image or featured image
+            let imageUrl = collection.image?.src || collection.image || null;
+            
+            // If no collection image, try to get first product image
+            if (!imageUrl && collection.products?.length > 0) {
+              const firstProduct = collection.products[0];
+              if (firstProduct.images?.length > 0) {
+                imageUrl = firstProduct.images[0].src || firstProduct.images[0];
+              } else if (firstProduct.image) {
+                imageUrl = firstProduct.image.src || firstProduct.image;
+              }
             }
+            
             return {
               title: collection.title,
               image: imageUrl,
@@ -300,11 +311,24 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         const response = await fetch(`/api/shopify/products/handle/${urlData.handle}`);
         if (response.ok) {
           const data = await response.json();
-          const product = data.product;
+          console.log('Product API response:', data);
+          
+          const product = data.product || data;
           if (product) {
+            // Get product image - try multiple possible formats
+            let imageUrl = null;
+            
+            if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+              imageUrl = product.images[0].src || product.images[0];
+            } else if (product.image) {
+              imageUrl = product.image.src || product.image;
+            } else if (product.featured_image) {
+              imageUrl = product.featured_image;
+            }
+            
             return {
               title: product.title,
-              image: product.images?.[0]?.src || null,
+              image: imageUrl,
               handle: urlData.handle
             };
           }
@@ -1199,22 +1223,13 @@ Pressure Range,Up to 60 psi 4.1 bar`}
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">Section Title</Label>
             <Input
-              placeholder="Compatible Container Products"
-              value={contentData['compatible-container']?.title || ""}
+              placeholder="Compatible Container"
+              value={contentData['compatible-container']?.title || "Compatible Container"}
               onChange={(e) => updateContent("compatible-container", "title", e.target.value)}
               data-testid="input-compatible-title"
             />
           </div>
-          <div>
-            <Label className="block text-sm font-medium text-slate-700 mb-2">Description Text</Label>
-            <Textarea
-              rows={3}
-              placeholder="Browse our collection of compatible containers..."
-              value={contentData['compatible-container']?.description || ""}
-              onChange={(e) => updateContent("compatible-container", "description", e.target.value)}
-              data-testid="textarea-compatible-description"
-            />
-          </div>
+          {/* Description field is hidden for Compatible Container as it defaults to no description */}
         </div>
       </CardContent>
     </Card>

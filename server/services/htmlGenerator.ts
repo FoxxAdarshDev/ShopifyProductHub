@@ -246,11 +246,12 @@ class HtmlGenerator {
   private generateCompatibleContainerTab(content: any, sku: string): string {
     let html = `    <div class="tab-content compatible-container" id="compatible-container" data-sku="${sku}">\n`;
     
-    if (content.title) {
-      html += `        <h3>${content.title}</h3>\n`;
-    }
+    // Use default title if not provided
+    const title = content.title || "Compatible Container";
+    html += `        <h3>${title}</h3>\n`;
     
-    if (content.description) {
+    // Only add description if explicitly provided (not default for Compatible Container)
+    if (content.description && content.description.trim()) {
       html += `        <p>${content.description}</p>\n`;
     }
     
