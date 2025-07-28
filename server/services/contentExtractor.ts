@@ -326,25 +326,24 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         // Extract title from h4 tag
         const titleMatch = itemHtml.match(/<h4[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/h4>/);
         
-        // Extract description from p tag
-        const descMatch = itemHtml.match(/<p[^>]*class="[^"]*compatible-item-description[^"]*"[^>]*>Product:\s*(.*?)<\/p>/);
-        
         // Extract URL from the link
         const linkMatch = itemHtml.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-link[^"]*"[^>]*>/);
         
         console.log('🔗 Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
         console.log('🔗 Title match:', titleMatch ? 'FOUND' : 'NOT FOUND');
-        console.log('🔗 Description match:', descMatch ? 'FOUND' : 'NOT FOUND');
         console.log('🔗 Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
         
         if (titleMatch) {
+          // Extract product handle/description from title (since there's no separate description field)
+          const title = titleMatch[1].replace(/<[^>]*>/g, '').trim();
+          
           const item = {
-            title: titleMatch[1].replace(/<[^>]*>/g, '').trim(),
+            title: title,
             url: linkMatch ? linkMatch[1] : '',
             image: imgMatch ? imgMatch[1] : '',
-            description: descMatch ? descMatch[1].trim() : '',
+            description: title, // Use title as description since no separate description exists
             sourceUrl: linkMatch ? linkMatch[1] : '',
-            handle: descMatch ? descMatch[1].trim() : '',
+            handle: title, // Use title as handle
             type: 'product'
           };
           
