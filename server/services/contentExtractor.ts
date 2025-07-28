@@ -268,108 +268,89 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       // Extract container items using a more robust pattern
       const containerItems: Array<{title: string, url: string, image: string, description: string}> = [];
       
-      // Completely new approach: directly extract all compatible-item-title links first
-      console.log('🔗 Looking for title links in content length:', compatContent.length);
-      // Count compatible items found
-      const itemCount = (compatContent.match(/compatible-item/g) || []).length;
-      console.log('🔗 Compatible items found in content:', itemCount);
+      console.log('🔗 Looking for compatible items in content length:', compatContent.length);
       
-      // Try the simplest pattern first - just find any links with compatible-item-title class
-      const simpleTitleLinks = compatContent.match(/<a[^>]*compatible-item-title[^>]*>.*?<\/a>/g);
-      console.log('🔗 Simple title links found:', simpleTitleLinks ? simpleTitleLinks.length : 0);
+      // NEW APPROACH: Extract complete compatible-item divs first, then parse each one
+      // This pattern captures the entire div from opening to closing, accounting for nested divs
+      const itemMatches = [];
+      let searchPos = 0;
       
-      if (simpleTitleLinks && simpleTitleLinks.length > 0) {
-        console.log('🔗 Example link found:', simpleTitleLinks[0].substring(0, 100) + '...');
-      }
-      
-      const titleLinks = compatContent.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/g);
-      console.log('🔗 Compatible item title links found (method 1):', titleLinks ? titleLinks.length : 0);
-      
-      // Also try alternative pattern with class first
-      const titleLinksAlt = compatContent.match(/<a[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g);
-      console.log('🔗 Compatible item title links found (method 2):', titleLinksAlt ? titleLinksAlt.length : 0);
-      
-      // Use whichever method found links
-      const finalTitleLinks = titleLinks || titleLinksAlt || simpleTitleLinks;
-      console.log('🔗 Using title links from:', titleLinks ? 'method 1' : titleLinksAlt ? 'method 2' : simpleTitleLinks ? 'simple method' : 'none');
-      
-      if (finalTitleLinks && finalTitleLinks.length > 0) {
-        finalTitleLinks.forEach((link, index) => {
-          console.log(`🔗 Processing title link ${index + 1}:`, link);
-          
-          const hrefMatch = link.match(/href="([^"]*)"/);
-          const titleMatch = link.match(/>([^<]*)</);
-          
-          if (hrefMatch && titleMatch) {
-            const url = hrefMatch[1];
-            const title = titleMatch[1].trim();
-            
-            // Find the image that appears before this link in the HTML
-            const linkPosition = compatContent.indexOf(link);
-            const beforeLink = compatContent.substring(Math.max(0, linkPosition - 400), linkPosition);
-            const imgMatch = beforeLink.match(/<img[^>]*src="([^"]*)"[^>]*alt="[^"]*"[^>]*>/);
-            
-            // Find description that appears after this link
-            const afterLink = compatContent.substring(linkPosition, linkPosition + 300);
-            const typeMatch = afterLink.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*([^<]*)<\/div>/);
-            
-            const item = {
-              title: title,
-              url: url,
-              image: imgMatch ? imgMatch[1] : '',
-              description: typeMatch ? typeMatch[1].trim() : ''
-            };
-            
-            console.log('🔗 Extracted container item:', item.title);
-            console.log('🔗 Item URL:', item.url);
-            console.log('🔗 Item image:', item.image ? 'FOUND' : 'NOT FOUND');
-            console.log('🔗 Item description:', item.description ? 'FOUND' : 'NOT FOUND');
-            
-            containerItems.push(item);
-          } else {
-            console.log('🔗 Failed to extract URL or title from link:', link);
-          }
-        });
-      }
-      
-      // Fallback: if no title links found, try the old method
-      if (containerItems.length === 0) {
-        console.log('🔗 No title links found, trying fallback extraction...');
-        let itemMatches = compatContent.match(/<div[^>]*class="compatible-item"[^>]*>[\s\S]*?<span[^>]*class="compatible-item-arrow"[^>]*>.*?<\/span>\s*<\/div>/g);
-        console.log('🔗 Compatible items found with span-ending pattern:', itemMatches ? itemMatches.length : 0);
+      while (true) {
+        const startPattern = '<div class="compatible-item">';
+        const startPos = compatContent.indexOf(startPattern, searchPos);
+        if (startPos === -1) break;
         
-        if (itemMatches && itemMatches.length > 0) {
-          itemMatches.forEach((itemDiv, index) => {
-            console.log(`🔗 Fallback processing container item ${index + 1}:`, itemDiv.substring(0, 200) + '...');
-            
-            // Extract image
-            const imgMatch = itemDiv.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
-            
-            // Extract title and URL from the link
-            const linkMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/);
-            
-            // Extract description from the type div
-            const typeMatch = itemDiv.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
-            
-            console.log('🔗 Fallback - Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
-            console.log('🔗 Fallback - Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
-            console.log('🔗 Fallback - Type match:', typeMatch ? 'FOUND' : 'NOT FOUND');
-            
-            if (linkMatch) {
-              const item = {
-                title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
-                url: linkMatch[1],
-                image: imgMatch ? imgMatch[1] : '',
-                description: typeMatch ? typeMatch[1].trim() : ''
-              };
-              console.log('🔗 Fallback extracted container item:', item.title);
-              containerItems.push(item);
-            } else {
-              console.log('🔗 Fallback - No title match found for item', index + 1);
+        // Find the matching closing div by counting nested divs
+        let divCount = 1;
+        let currentPos = startPos + startPattern.length;
+        let endPos = -1;
+        
+        while (divCount > 0 && currentPos < compatContent.length) {
+          const nextOpenDiv = compatContent.indexOf('<div', currentPos);
+          const nextCloseDiv = compatContent.indexOf('</div>', currentPos);
+          
+          if (nextCloseDiv === -1) break;
+          
+          if (nextOpenDiv !== -1 && nextOpenDiv < nextCloseDiv) {
+            divCount++;
+            currentPos = nextOpenDiv + 4;
+          } else {
+            divCount--;
+            currentPos = nextCloseDiv + 6;
+            if (divCount === 0) {
+              endPos = nextCloseDiv + 6;
+              break;
             }
-          });
+          }
+        }
+        
+        if (endPos > startPos) {
+          const itemHtml = compatContent.substring(startPos, endPos);
+          itemMatches.push(itemHtml);
+          console.log(`🔗 Found complete item ${itemMatches.length}: ${itemHtml.length} chars`);
+          searchPos = endPos;
+        } else {
+          break;
         }
       }
+      
+      console.log('🔗 Total compatible items extracted:', itemMatches.length);
+      
+      // Now parse each complete item div
+      itemMatches.forEach((itemHtml, index) => {
+        console.log(`🔗 Processing item ${index + 1}/${itemMatches.length}`);
+        
+        // Extract image
+        const imgMatch = itemHtml.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
+        
+        // Extract title and URL from the link
+        const linkMatch = itemHtml.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/);
+        
+        // Extract description from the type div
+        const typeMatch = itemHtml.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
+        
+        console.log('🔗 Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
+        console.log('🔗 Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
+        console.log('🔗 Type match:', typeMatch ? 'FOUND' : 'NOT FOUND');
+        
+        if (linkMatch) {
+          const item = {
+            title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
+            url: linkMatch[1],
+            image: imgMatch ? imgMatch[1] : '',
+            description: typeMatch ? typeMatch[1].trim() : ''
+          };
+          
+          console.log('🔗 Successfully extracted item:', item.title);
+          console.log('🔗 Item URL:', item.url);
+          console.log('🔗 Item image:', item.image ? item.image.substring(0, 50) + '...' : 'MISSING');
+          console.log('🔗 Item description:', item.description || 'MISSING');
+          
+          containerItems.push(item);
+        } else {
+          console.log('🔗 Failed to extract link from item', index + 1);
+        }
+      });
       
       console.log('🔗 Final compatible container items:', containerItems.length);
       if (title || containerItems.length > 0) {
