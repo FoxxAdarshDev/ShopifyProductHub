@@ -53,8 +53,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     
     // Try to extract structured content from our template format
     
-    // Extract description content - look for description div
-    const descDiv = html.match(/<div[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract description content - look for tab-content with id="description"
+    const descDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
     console.log('🔍 Description div search result:', descDiv ? 'FOUND' : 'NOT FOUND');
     if (descDiv && descDiv[1]) {
       console.log('📄 Found description div with structured content');
@@ -70,16 +70,16 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       console.log('📄 Paragraphs in description div:', paragraphs ? paragraphs.length : 0);
       const textContent = paragraphs ? paragraphs.map(p => p.replace(/<[^>]*>/g, '').trim()).join('\n\n') : '';
       
-      // Extract logo grid images
-      const logoMatches = descDiv[1].match(/<img[^>]*src="([^"]*)"[^>]*>/g);
-      const logos = logoMatches ? logoMatches.map(img => {
+      // Extract logo grid images from the logo-grid div
+      const logoGridMatch = descDiv[1].match(/<div[^>]*class="logo-grid"[^>]*>([\s\S]*?)<\/div>/);
+      const logos = logoGridMatch ? logoGridMatch[1].match(/<img[^>]*src="([^"]*)"[^>]*>/g)?.map(img => {
         const srcMatch = img.match(/src="([^"]*)"/);
         const altMatch = img.match(/alt="([^"]*)"/);
         return {
           url: srcMatch ? srcMatch[1] : '',
           alt: altMatch ? altMatch[1] : ''
         };
-      }) : [];
+      }) || [] : [];
       console.log('📄 Logo images found:', logos.length);
       
       if (textContent || title || logos.length > 0) {
@@ -92,8 +92,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract features content - look for features div
-    const featDiv = html.match(/<div[^>]*id="features"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract features content - look for tab-content with id="features"
+    const featDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="features"[^>]*>([\s\S]*?)<\/div>/);
     console.log('🔍 Features div search result:', featDiv ? 'FOUND' : 'NOT FOUND');
     if (featDiv && featDiv[1]) {
       console.log('🎯 Found features div with structured content');
@@ -139,8 +139,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract specifications content
-    const specDiv = html.match(/<div[^>]*id="specifications"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract specifications content - look for tab-content with id="specification" 
+    const specDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="specification"[^>]*>([\s\S]*?)<\/div>/);
     console.log('🔍 Specifications div search result:', specDiv ? 'FOUND' : 'NOT FOUND');
     if (specDiv && specDiv[1]) {
       console.log('📊 Found specifications div with structured content');
@@ -173,8 +173,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract compatible container content
-    const compatDiv = html.match(/<div[^>]*id="compatible-container"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract compatible container content - look for tab-content with id="compatible-container"
+    const compatDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>([\s\S]*?)<\/div>/);
     console.log('🔍 Compatible Container div search result:', compatDiv ? 'FOUND' : 'NOT FOUND');
     if (compatDiv && compatDiv[1]) {
       console.log('🔗 Found compatible container div with structured content');
@@ -187,17 +187,17 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       
       if (itemDivs) {
         itemDivs.forEach((itemDiv, index) => {
-          console.log(`🔗 Processing container item ${index + 1}:`, itemDiv.substring(0, 100) + '...');
-          const titleMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/);
+          console.log(`🔗 Processing container item ${index + 1}:`, itemDiv.substring(0, 150) + '...');
+          const titleMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*[^>]*>(.*?)<\/a>/);
           const imgMatch = itemDiv.match(/<img[^>]*src="([^"]*)"[^>]*>/);
-          const descMatch = itemDiv.match(/<p[^>]*>(.*?)<\/p>/);
+          const typeMatch = itemDiv.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
           
           if (titleMatch) {
             const item = {
               title: titleMatch[2].replace(/<[^>]*>/g, '').trim(),
               url: titleMatch[1],
               image: imgMatch ? imgMatch[1] : '',
-              description: descMatch ? descMatch[1].replace(/<[^>]*>/g, '').trim() : ''
+              description: typeMatch ? typeMatch[1].trim() : ''
             };
             console.log('🔗 Extracted container item:', item.title);
             containerItems.push(item);
@@ -215,8 +215,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract documentation content
-    const docDiv = html.match(/<div[^>]*id="documentation"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract documentation content - look for tab-content with id="documentation"
+    const docDiv = html.match(/<div[^>]*id="documentation"[^>]*class="[^"]*tab-content[^"]*"[^>]*>([\s\S]*?)<\/div>/);
     console.log('🔍 Documentation div search result:', docDiv ? 'FOUND' : 'NOT FOUND');
     if (docDiv && docDiv[1]) {
       console.log('📚 Found documentation div with structured content');
@@ -250,8 +250,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract videos content
-    const videoDiv = html.match(/<div[^>]*id="videos"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract videos content - look for tab-content with id="videos" 
+    const videoDiv = html.match(/<div[^>]*id="videos"[^>]*class="[^"]*tab-content[^"]*"[^>]*>([\s\S]*?)<\/div>/);
     console.log('🔍 Videos div search result:', videoDiv ? 'FOUND' : 'NOT FOUND');
     if (videoDiv && videoDiv[1]) {
       console.log('🎬 Found videos div with structured content');
@@ -272,7 +272,13 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         });
       }
       
-      if (videos.length > 0) {
+      // If no custom videos found but has default content, create empty videos section
+      if (videos.length === 0 && videoDiv[1].includes('Video coming soon')) {
+        extractedContent.videos = {
+          videos: []
+        };
+        console.log('✅ Videos section extracted (default content only)');
+      } else if (videos.length > 0) {
         extractedContent.videos = {
           videos
         };
