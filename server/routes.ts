@@ -698,42 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simple content extraction function
-  function extractContentFromHtml(html: string): Record<string, any> {
-    const extracted: Record<string, any> = {};
-    
-    try {
-      // Look for our custom tab sections
-      const sections = [
-        'compatible-container',
-        'description', 
-        'features',
-        'applications',
-        'specifications',
-        'videos',
-        'documentation',
-        'safety-guidelines'
-      ];
-      
-      sections.forEach(section => {
-        const regex = new RegExp(`<div[^>]*data-tab="${section}"[^>]*>([\\s\\S]*?)</div>`, 'gi');
-        const match = regex.exec(html);
-        
-        if (match) {
-          // Basic extraction - could be enhanced with more sophisticated parsing
-          extracted[section] = {
-            title: section.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            rawHtml: match[1]
-          };
-        }
-      });
-      
-    } catch (error) {
-      console.error('Error parsing HTML:', error);
-    }
-    
-    return extracted;
-  }
+
 
   const httpServer = createServer(app);
   return httpServer;
