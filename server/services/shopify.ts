@@ -265,20 +265,31 @@ class ShopifyService {
     try {
       console.log(`Starting comprehensive SKU search for: "${query}"`);
       
-      // Since we know the target product ID is 8775153615064, let's check it directly first
-      // This is a more efficient approach for known products
-      const targetProduct = await this.getProductById('8775153615064');
-      if (targetProduct) {
-        const queryLower = query.toLowerCase().trim();
-        const hasMatchingSku = targetProduct.variants.some((variant: any) => {
-          if (!variant.sku) return false;
-          const variantSkuLower = variant.sku.toLowerCase().trim();
-          return variantSkuLower === queryLower || variantSkuLower.includes(queryLower);
-        });
-        
-        if (hasMatchingSku) {
-          console.log(`Found SKU "${query}" in known product: ${targetProduct.title}`);
-          return [targetProduct];
+      // Check commonly used product IDs first for efficiency
+      const commonProductIds = ['8915034996952', '7846023856344', '8775153615064'];
+      
+      for (const productId of commonProductIds) {
+        try {
+          const targetProduct = await this.getProductById(productId);
+          if (targetProduct) {
+            const queryLower = query.toLowerCase().trim();
+            const hasMatchingSku = targetProduct.variants.some((variant: any) => {
+              if (!variant.sku) return false;
+              const variantSkuLower = variant.sku.toLowerCase().trim();
+              
+              // Check both exact match and contains for flexibility with whitespace
+              return variantSkuLower === queryLower || 
+                     variantSkuLower.includes(queryLower) || 
+                     queryLower.includes(variantSkuLower);
+            });
+            
+            if (hasMatchingSku) {
+              console.log(`Found SKU "${query}" in known product: ${targetProduct.title} (ID: ${productId})`);
+              return [targetProduct];
+            }
+          }
+        } catch (error) {
+          console.log(`Error checking product ${productId}:`, (error as Error).message);
         }
       }
       
@@ -287,22 +298,35 @@ class ShopifyService {
       const results: ShopifyProduct[] = [];
       const queryLower = query.toLowerCase().trim();
       
-      // Use simple product fetching without complex pagination
-      try {
-        const response = await this.makeRequest(
-          `/products.json?fields=id,title,body_html,handle,variants&limit=50`
-        );
-        
-        if (response.products && response.products.length > 0) {
-          console.log(`Checking ${response.products.length} products for SKU matches`);
+      // Use comprehensive product fetching with pagination to find SKU matches
+      let hasNextPage = true;
+      let since_id = '';
+      let totalChecked = 0;
+      const maxProducts = 250; // Reasonable limit to prevent infinite searches
+      
+      while (hasNextPage && totalChecked < maxProducts) {
+        try {
+          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=50${since_id ? `&since_id=${since_id}` : ''}`;
+          const response = await this.makeRequest(url);
+          const products = response.products as ShopifyProduct[];
           
-          const matchingProducts = response.products.filter((product: ShopifyProduct) => {
+          if (products.length === 0) {
+            hasNextPage = false;
+            break;
+          }
+          
+          console.log(`Checking ${products.length} products for SKU matches (total checked: ${totalChecked + products.length})`);
+          
+          const matchingProducts = products.filter((product: ShopifyProduct) => {
             return product.variants.some(variant => {
               if (!variant.sku) return false;
               const variantSkuLower = variant.sku.toLowerCase().trim();
               
-              if (variantSkuLower === queryLower || variantSkuLower.includes(queryLower)) {
-                console.log(`Found SKU match: ${variant.sku} in product ${product.title} (ID: ${product.id})`);
+              // Check both exact match and contains for flexibility with whitespace
+              if (variantSkuLower === queryLower || 
+                  variantSkuLower.includes(queryLower) || 
+                  queryLower.includes(variantSkuLower)) {
+                console.log(`Found SKU match: "${variant.sku}" matches query "${query}" in product ${product.title} (ID: ${product.id})`);
                 return true;
               }
               return false;
@@ -312,10 +336,20 @@ class ShopifyService {
           if (matchingProducts.length > 0) {
             console.log(`Found ${matchingProducts.length} products with matching SKU`);
             results.push(...matchingProducts);
+            // If we found exact matches, we can stop searching
+            if (matchingProducts.some(p => p.variants.some(v => v.sku?.toLowerCase().trim() === queryLower))) {
+              break;
+            }
           }
+          
+          totalChecked += products.length;
+          since_id = products[products.length - 1].id.toString();
+          hasNextPage = products.length === 50; // Continue if we got a full batch
+          
+        } catch (fetchError) {
+          console.error('Error in general product fetch for SKU search:', fetchError);
+          break;
         }
-      } catch (fetchError) {
-        console.error('Error in general product fetch for SKU search:', fetchError);
       }
 
       console.log(`SKU search completed. Found ${results.length} total products`);

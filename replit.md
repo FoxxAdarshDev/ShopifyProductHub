@@ -121,6 +121,7 @@ Each product can have multiple content tabs:
   - Additional tabs (SKU Nomenclature, Safety Guidelines, Compatible Container, Sterilization Method) are inserted between the two groups
   - Applied consistent ordering across frontend tab selection, form display, visual preview, and HTML generation
 - **Added Sterilization Method Tab** (January 28, 2025): New additional content tab that works like Features tab with smart import functionality for sterilization methods list
+- **Fixed SKU Search Issue** (January 28, 2025): Resolved issue where product search by SKU failed due to trailing whitespace in Shopify SKU data. Updated search algorithm to handle whitespace normalization and improved matching logic for both exact and partial SKU matches. SKU search now works properly alongside Product ID search.
 
 ## Key Configuration
 - **Database URL**: Required environment variable for PostgreSQL connection
