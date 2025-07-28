@@ -1135,11 +1135,30 @@ Pressure Range,Up to 60 psi 4.1 bar`}
           </div>
 
           {/* Debug: Show current content data */}
-          <div className="p-2 bg-gray-100 rounded text-xs">
-            <strong>Debug:</strong> Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}
+          <div className="p-2 bg-gray-100 rounded text-xs space-y-2">
+            <div><strong>Debug:</strong> Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}</div>
             {contentData['compatible-container']?.compatibleItems?.length > 0 && (
               <div>First item: {JSON.stringify(contentData['compatible-container'].compatibleItems[0])}</div>
             )}
+            <button 
+              onClick={() => {
+                console.log('Test button clicked');
+                const testItem = {
+                  handle: 'test-handle',
+                  title: 'Test Product',
+                  image: 'https://example.com/test.jpg',
+                  sourceUrl: 'https://test.com',
+                  type: 'product'
+                };
+                console.log('Adding test item:', testItem);
+                const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                updateContent("compatible-container", "compatibleItems", [...currentItems, testItem]);
+                console.log('Test item added');
+              }}
+              className="bg-green-500 text-white px-2 py-1 rounded text-xs"
+            >
+              Test Add Item
+            </button>
           </div>
           
           {/* Display compatible items as cards */}
