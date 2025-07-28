@@ -341,6 +341,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   };
 
   const handleUrlInput = async (url: string) => {
+    console.log('handleUrlInput called with:', url);
     const urlData = parseShopifyUrl(url);
     if (!urlData) {
       console.log('Could not parse URL:', url);
@@ -349,6 +350,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
     console.log('Attempting to fetch data for:', urlData);
     const shopifyData = await fetchShopifyData(urlData);
+    console.log('Received shopifyData:', shopifyData);
     
     if (shopifyData) {
       // Create a new compatible item
@@ -360,9 +362,14 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         type: urlData.type
       };
 
+      console.log('Creating new item:', newItem);
+      
       // Add to the compatible items array
       const currentItems = contentData['compatible-container']?.compatibleItems || [];
-      updateContent("compatible-container", "compatibleItems", [...currentItems, newItem]);
+      console.log('Current items before update:', currentItems);
+      const updatedItems = [...currentItems, newItem];
+      console.log('Updated items:', updatedItems);
+      updateContent("compatible-container", "compatibleItems", updatedItems);
       
       // Also update the primary fields for backward compatibility
       if (currentItems.length === 0) {
