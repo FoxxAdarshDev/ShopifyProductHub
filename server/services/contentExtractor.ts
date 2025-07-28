@@ -35,6 +35,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
   });
   
   try {
+    console.log('🚀 ENTERING TRY BLOCK - Extraction starting');
+    
     // NOTE: Skip basic extraction for description since we want structured extraction only
     // The structured extraction below will handle description content properly
     
@@ -56,10 +58,18 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     
     // Try to extract structured content from our template format
     
-    // Extract description content - try multiple patterns
-    console.log('🔍 Starting description div extraction...');
+    // Extract description content - FORCED EXTRACTION WITH LOGO FOCUS
+    console.log('🔍 ===== STARTING FORCED DESCRIPTION DIV EXTRACTION =====');
     console.log('🔍 HTML contains id="description":', html.includes('id="description"'));
     console.log('🔍 HTML contains tab-content:', html.includes('tab-content'));
+    console.log('🔍 HTML contains logo-grid:', html.includes('logo-grid'));
+    
+    // Force extract with direct search for the description content
+    // Since we know the H2 and text are being extracted, let's find where that's happening
+    const h2InHtml = html.includes('VersaCap® 38-430 with 3×');
+    const logoInHtml = html.includes('class_vi_web_large.png');
+    console.log('🔍 HTML contains expected H2:', h2InHtml);
+    console.log('🔍 HTML contains expected logo URL:', logoInHtml);
     
     // Try pattern 1: Original complex pattern
     let descDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
@@ -78,6 +88,19 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       descDiv = html.match(/id="description"[^>]*>([\s\S]*?)<\/div>/);
       console.log('🔍 Pattern 3 (flexible) result:', descDiv ? 'FOUND' : 'NOT FOUND');
     }
+    
+    // FORCE EXTRACTION: If patterns fail, search for logo-grid directly
+    if (!descDiv && html.includes('logo-grid')) {
+      console.log('🔍 FORCING logo extraction from full HTML since div pattern failed...');
+      const logoGridMatch = html.match(/<div[^>]*class="logo-grid"[^>]*>([\s\S]*?)<\/div>/);
+      if (logoGridMatch) {
+        console.log('🔍 Found logo-grid directly in HTML - forcing description creation');
+        // Create a forced description extraction
+        descDiv = ['', html]; // Use full HTML as content for extraction, with empty first element
+      }
+    }
+    
+    console.log('🔍 Final descDiv status:', descDiv ? 'FOUND' : 'NOT FOUND');
     
     if (descDiv && descDiv[1]) {
       console.log('📄 Found description div with structured content');
@@ -607,12 +630,50 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
+    // CRITICAL FIX: Force logo extraction if description exists but has empty logos
+    if (extractedContent.description && extractedContent.description.logos && extractedContent.description.logos.length === 0) {
+      console.log('🔧 CRITICAL FIX: Description found with empty logos, forcing logo extraction...');
+      const logoGridMatch = html.match(/<div[^>]*class="logo-grid"[^>]*>([\s\S]*?)<\/div>/);
+      console.log('🔧 Logo grid search result:', logoGridMatch ? 'FOUND' : 'NOT FOUND');
+      
+      if (logoGridMatch && logoGridMatch[1]) {
+        console.log('🔧 Logo grid content found:', logoGridMatch[1]);
+        const imgMatches = logoGridMatch[1].match(/<img[^>]*>/g);
+        console.log('🔧 Img tags in logo grid:', imgMatches ? imgMatches.length : 0);
+        
+        if (imgMatches) {
+          const logos: Array<{url: string, alt: string}> = [];
+          imgMatches.forEach((img, index) => {
+            console.log(`🔧 Processing logo ${index + 1}:`, img);
+            const srcMatch = img.match(/src="([^"]*)"/);
+            const altMatch = img.match(/alt="([^"]*)"/);
+            if (srcMatch) {
+              const logoObj = {
+                url: srcMatch[1],
+                alt: altMatch ? altMatch[1] : ''
+              };
+              logos.push(logoObj);
+              console.log('🔧 Successfully extracted logo:', logoObj);
+            }
+          });
+          
+          if (logos.length > 0) {
+            extractedContent.description.logos = logos;
+            console.log('🔧 FIXED: Added', logos.length, 'logos to description');
+          }
+        }
+      }
+    }
+
     console.log('🎉 Final extraction result keys:', Object.keys(extractedContent));
     console.log('🎉 Additional tabs extracted:', Object.keys(extractedContent).filter(k => ['sku-nomenclature', 'safety-guidelines', 'sterilization-method'].includes(k)));
+    console.log('🎉 Final description logos count:', extractedContent.description?.logos?.length || 0);
     return extractedContent;
     
   } catch (error) {
     console.error('❌ Content extraction error:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.log('❌ Partial extraction result before error:', Object.keys(extractedContent));
     return extractedContent;
   }
 }
