@@ -205,6 +205,86 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     }
   };
 
+  // Smart URL handling for Shopify collections and products
+  const parseShopifyUrl = (url: string) => {
+    if (!url.trim()) return null;
+
+    const cleanUrl = url.trim();
+    
+    // Extract collection handle from URL patterns:
+    // https://foxxbioprocess.myshopify.com/collections/compatible-bottles
+    // /collections/compatible-bottles
+    // compatible-bottles
+    const collectionMatch = cleanUrl.match(/(?:\/collections\/|^)([a-z0-9-]+)(?:\?|$|\/)/);
+    if (collectionMatch) {
+      return {
+        type: 'collection',
+        handle: collectionMatch[1],
+        url: cleanUrl
+      };
+    }
+
+    // Extract product handle from URL patterns:
+    // https://foxxbioprocess.myshopify.com/products/product-name
+    // /products/product-name
+    // product-name
+    const productMatch = cleanUrl.match(/(?:\/products\/|^)([a-z0-9-]+)(?:\?|$|\/)/);
+    if (productMatch) {
+      return {
+        type: 'product',
+        handle: productMatch[1],
+        url: cleanUrl
+      };
+    }
+
+    return null;
+  };
+
+  const fetchShopifyData = async (urlData: any) => {
+    try {
+      if (urlData.type === 'collection') {
+        // Fetch collection data
+        const response = await fetch(`/api/shopify/collections/${urlData.handle}`);
+        if (response.ok) {
+          const collection = await response.json();
+          return {
+            title: collection.title,
+            image: collection.image?.src || null,
+            handle: urlData.handle
+          };
+        }
+      } else if (urlData.type === 'product') {
+        // Fetch product data
+        const response = await fetch(`/api/shopify/products/handle/${urlData.handle}`);
+        if (response.ok) {
+          const product = await response.json();
+          return {
+            title: product.title,
+            image: product.images?.[0]?.src || null,
+            handle: urlData.handle
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Shopify data:', error);
+    }
+    return null;
+  };
+
+  const handleUrlInput = async (url: string) => {
+    const urlData = parseShopifyUrl(url);
+    if (!urlData) return;
+
+    const shopifyData = await fetchShopifyData(urlData);
+    if (shopifyData) {
+      // Update the form with fetched data
+      updateContent("compatible-container", "collectionHandle", urlData.handle);
+      updateContent("compatible-container", "title", shopifyData.title);
+      updateContent("compatible-container", "fetchedImage", shopifyData.image);
+      updateContent("compatible-container", "sourceUrl", url);
+    }
+  };
+
   const renderDescriptionForm = () => (
     <Card key="description" className="content-form">
       <CardHeader className="form-section-header">
@@ -215,15 +295,6 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       </CardHeader>
       <CardContent className="form-section-content">
         <div className="space-y-4">
-          <div>
-            <Label className="block text-sm font-medium text-slate-700 mb-2">Product Title</Label>
-            <Input
-              placeholder="Enter product title..."
-              value={contentData.description?.title || ""}
-              onChange={(e) => updateContent("description", "title", e.target.value)}
-              data-testid="input-description-title"
-            />
-          </div>
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">H2 Heading</Label>
             <Input
@@ -902,6 +973,61 @@ Pressure Range,Up to 60 psi 4.1 bar`}
       </CardHeader>
       <CardContent className="form-section-content">
         <div className="space-y-4">
+          {/* Smart URL Input Section */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <ClipboardPaste className="w-5 h-5 text-blue-600" />
+              <h3 className="font-medium text-blue-900">Smart URL Import</h3>
+            </div>
+            <p className="text-sm text-blue-700 mb-3">
+              Paste a Shopify collection or product URL to automatically fetch title and image data.
+            </p>
+            <Input
+              placeholder="https://foxxbioprocess.myshopify.com/collections/compatible-bottles or /products/product-name"
+              onPaste={async (e) => {
+                setTimeout(async () => {
+                  const input = e.target as HTMLInputElement;
+                  if (input.value.trim()) {
+                    await handleUrlInput(input.value);
+                    input.value = "";
+                  }
+                }, 10);
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  const input = e.target as HTMLInputElement;
+                  if (input.value.trim()) {
+                    await handleUrlInput(input.value);
+                    input.value = "";
+                  }
+                }
+              }}
+              data-testid="input-url-import"
+            />
+            <p className="text-xs text-blue-600 mt-2">
+              Supports: Collection URLs, Product URLs, or just the handle name
+            </p>
+          </div>
+
+          {/* Display fetched image if available */}
+          {contentData['compatible-container']?.fetchedImage && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <img 
+                  src={contentData['compatible-container'].fetchedImage} 
+                  alt="Fetched from Shopify"
+                  className="w-16 h-16 object-cover rounded border"
+                />
+                <div>
+                  <p className="font-medium text-green-900">Image fetched successfully!</p>
+                  <p className="text-sm text-green-700">
+                    Source: {contentData['compatible-container']?.sourceUrl}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">Collection Handle</Label>
             <Input

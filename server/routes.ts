@@ -329,6 +329,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get Shopify collection by handle
+  app.get("/api/shopify/collections/:handle", async (req, res) => {
+    try {
+      const { handle } = req.params;
+      const collection = await shopifyService.getCollectionByHandle(handle);
+      
+      if (!collection) {
+        return res.status(404).json({ message: "Collection not found" });
+      }
+      
+      res.json(collection);
+    } catch (error) {
+      console.error("Collection fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch collection" });
+    }
+  });
+
+  // Get Shopify product by handle
+  app.get("/api/shopify/products/handle/:handle", async (req, res) => {
+    try {
+      const { handle } = req.params;
+      const product = await shopifyService.getProductByHandle(handle);
+      
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json(product);
+    } catch (error) {
+      console.error("Product fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
+  });
+
   // Preview HTML generation
   app.post("/api/preview", async (req, res) => {
     try {

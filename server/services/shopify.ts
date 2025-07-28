@@ -261,7 +261,7 @@ class ShopifyService {
       const targetProduct = await this.getProductById('8775153615064');
       if (targetProduct) {
         const queryLower = query.toLowerCase().trim();
-        const hasMatchingSku = targetProduct.variants.some(variant => {
+        const hasMatchingSku = targetProduct.variants.some((variant: any) => {
           if (!variant.sku) return false;
           const variantSkuLower = variant.sku.toLowerCase().trim();
           return variantSkuLower === queryLower || variantSkuLower.includes(queryLower);
@@ -600,6 +600,29 @@ class ShopifyService {
     
     console.log(`File URL not available after ${maxWaitSeconds} seconds of polling`);
     return null;
+  }
+
+  async getCollectionByHandle(handle: string): Promise<any> {
+    try {
+      const response = await this.makeRequest(`/collections.json?handle=${handle}&fields=id,title,handle,image`);
+      if (response.collections && response.collections.length > 0) {
+        return response.collections[0];
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching collection by handle:', error);
+      return null;
+    }
+  }
+
+  async getProductByHandle(handle: string): Promise<any> {
+    try {
+      const response = await this.makeRequest(`/products/${handle}.json?fields=id,title,handle,images`);
+      return response.product || null;
+    } catch (error) {
+      console.error('Error fetching product by handle:', error);
+      return null;
+    }
   }
 }
 
