@@ -105,22 +105,63 @@ export default function ProductManager() {
     },
   });
 
-  const handleProductFound = (product: any, content: any[]) => {
+  const handleProductFound = async (product: any, content: any[]) => {
     setSelectedProduct(product);
     
-    // Set selected tabs based on existing content
-    const existingTabs = content.map(c => c.tabType);
-    setSelectedTabs(existingTabs);
+    // First, try to load draft content from database
+    let finalContentMap: any = {};
+    let finalSelectedTabs: string[] = [];
     
-    // Set content data
-    const contentMap: any = {};
-    content.forEach(c => {
-      contentMap[c.tabType] = c.content;
-    });
-    setContentData(contentMap);
+    try {
+      const response = await apiRequest("GET", `/api/draft-content/${product.id}`);
+      const draftData = await response.json();
+      
+      if (draftData.draftContent && draftData.draftContent.length > 0) {
+        // Use draft content if it exists
+        console.log('Loading draft content from database');
+        draftData.draftContent.forEach((draft: any) => {
+          finalContentMap[draft.tabType] = draft.content;
+          if (!finalSelectedTabs.includes(draft.tabType)) {
+            finalSelectedTabs.push(draft.tabType);
+          }
+        });
+      }
+    } catch (error) {
+      console.log('No draft content found, checking for existing Shopify content');
+    }
+    
+    // If no draft content, try to extract content from Shopify description
+    if (Object.keys(finalContentMap).length === 0) {
+      try {
+        const response = await apiRequest("GET", `/api/extract-content/${product.id}`);
+        const extractionData = await response.json();
+        
+        if (extractionData.extractedContent && Object.keys(extractionData.extractedContent).length > 0) {
+          console.log('Loading extracted content from Shopify description');
+          finalContentMap = extractionData.extractedContent;
+          finalSelectedTabs = Object.keys(extractionData.extractedContent);
+        }
+      } catch (error) {
+        console.log('No content could be extracted from Shopify description');
+      }
+    }
+    
+    // Fallback to database content if neither draft nor extracted content exists
+    if (Object.keys(finalContentMap).length === 0 && content.length > 0) {
+      console.log('Using database content as fallback');
+      const existingTabs = content.map(c => c.tabType);
+      finalSelectedTabs = existingTabs;
+      
+      content.forEach(c => {
+        finalContentMap[c.tabType] = c.content;
+      });
+    }
+    
+    setSelectedTabs(finalSelectedTabs);
+    setContentData(finalContentMap);
   };
 
-  const handleSaveContent = () => {
+  const handleSaveContent = async () => {
     if (!selectedProduct) return;
 
     const contentArray = selectedTabs.map(tabType => ({
@@ -129,15 +170,28 @@ export default function ProductManager() {
       isActive: true
     }));
 
+    // Save content to database first
     updateContentMutation.mutate({
       productId: selectedProduct.id,
       content: contentArray
     });
   };
 
-  const handleUpdateShopify = () => {
+  const handleUpdateShopify = async () => {
     if (!selectedProduct) return;
-    updateShopifyMutation.mutate(selectedProduct.id);
+    
+    // Update Shopify first
+    updateShopifyMutation.mutate(selectedProduct.id, {
+      onSuccess: async () => {
+        // After successful Shopify update, delete draft content
+        try {
+          await apiRequest("DELETE", `/api/draft-content/${selectedProduct.id}`);
+          console.log('Draft content cleaned up after successful Shopify update');
+        } catch (error) {
+          console.error('Failed to clean up draft content:', error);
+        }
+      }
+    });
   };
 
   return (
@@ -315,6 +369,7 @@ export default function ProductManager() {
                 selectedTabs={selectedTabs}
                 contentData={contentData}
                 onContentChange={setContentData}
+                productId={selectedProduct?.id}
               />
               
               <PreviewPanel

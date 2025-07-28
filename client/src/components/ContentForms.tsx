@@ -12,9 +12,10 @@ interface ContentFormsProps {
   selectedTabs: string[];
   contentData: any;
   onContentChange: (data: any) => void;
+  productId?: string;
 }
 
-export default function ContentForms({ selectedTabs, contentData, onContentChange }: ContentFormsProps) {
+export default function ContentForms({ selectedTabs, contentData, onContentChange, productId }: ContentFormsProps) {
   const updateContent = (tabType: string, field: string, value: any) => {
     const updated = {
       ...contentData,
@@ -341,6 +342,37 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     return null;
   };
 
+  // Auto-save draft content to database
+  const saveDraftContent = async (tabType: string, content: any) => {
+    if (!productId) return;
+    
+    try {
+      await fetch('/api/draft-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopifyProductId: productId,
+          tabType,
+          content
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save draft content:', error);
+    }
+  };
+
+  // Enhanced updateContent function that auto-saves drafts
+  const updateContentWithDraftSave = (tabType: string, field: string, value: any) => {
+    updateContent(tabType, field, value);
+    
+    // Auto-save to draft storage after a short delay
+    setTimeout(() => {
+      const currentTabData = contentData[tabType] || {};
+      const updatedTabData = { ...currentTabData, [field]: value };
+      saveDraftContent(tabType, updatedTabData);
+    }, 500); // 500ms delay to batch rapid changes
+  };
+
   const handleUrlInput = async (url: string) => {
     console.log('🔥 handleUrlInput called with URL:', url);
     const urlData = parseShopifyUrl(url);
@@ -397,6 +429,13 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     
     // Always ensure the section title
     updateContent("compatible-container", "title", "Compatible Container");
+    
+    // Auto-save the updated compatible container data
+    saveDraftContent("compatible-container", {
+      title: "Compatible Container",
+      compatibleItems: updatedItems,
+      collectionHandle: urlData.handle
+    });
     
     console.log('✅ Compatible container item added successfully');
   };
@@ -1151,11 +1190,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
 
 
           
-          {/* Debug current state */}
-          <div className="text-xs text-gray-500 mb-2">
-            Container exists: {contentData['compatible-container'] ? 'Yes' : 'No'} | 
-            Items: {contentData['compatible-container']?.compatibleItems?.length || 0}
-          </div>
+
 
           {/* Display compatible items as cards */}
           {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
@@ -1182,7 +1217,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                             const updatedItems = currentItems.map((existingItem: any, i: number) => 
                               i === index ? { ...existingItem, title: e.target.value } : existingItem
                             );
-                            updateContent("compatible-container", "compatibleItems", updatedItems);
+                            updateContentWithDraftSave("compatible-container", "compatibleItems", updatedItems);
                           }}
                           className="font-medium text-blue-600 border-none shadow-none p-0 h-auto bg-transparent"
                           placeholder="Edit title..."
@@ -1194,7 +1229,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                             const updatedItems = currentItems.map((existingItem: any, i: number) => 
                               i === index ? { ...existingItem, image: e.target.value } : existingItem
                             );
-                            updateContent("compatible-container", "compatibleItems", updatedItems);
+                            updateContentWithDraftSave("compatible-container", "compatibleItems", updatedItems);
                           }}
                           className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1"
                           placeholder="Image URL (optional)..."
@@ -1217,7 +1252,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                         onClick={() => {
                           const currentItems = contentData['compatible-container']?.compatibleItems || [];
                           const updatedItems = currentItems.filter((_: any, i: number) => i !== index);
-                          updateContent("compatible-container", "compatibleItems", updatedItems);
+                          updateContentWithDraftSave("compatible-container", "compatibleItems", updatedItems);
                         }}
                         className="text-red-400 hover:text-red-600"
                       >
@@ -1267,7 +1302,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="Compatible Container"
               value={contentData['compatible-container']?.title || "Compatible Container"}
-              onChange={(e) => updateContent("compatible-container", "title", e.target.value)}
+              onChange={(e) => updateContentWithDraftSave("compatible-container", "title", e.target.value)}
               data-testid="input-compatible-title"
             />
           </div>

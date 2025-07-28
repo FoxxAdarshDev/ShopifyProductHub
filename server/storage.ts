@@ -3,6 +3,7 @@ import {
   contentTemplates, 
   productContent, 
   logoLibrary,
+  draftContent,
   type Product, 
   type InsertProduct,
   type ContentTemplate,
@@ -10,7 +11,9 @@ import {
   type ProductContent,
   type InsertProductContent,
   type Logo,
-  type InsertLogo
+  type InsertLogo,
+  type DraftContent,
+  type InsertDraftContent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like } from "drizzle-orm";
@@ -161,6 +164,54 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLogo(id: string): Promise<void> {
     await db.delete(logoLibrary).where(eq(logoLibrary.id, id));
+  }
+
+  // Draft Content Management
+  async getDraftContentByProduct(shopifyProductId: string): Promise<DraftContent[]> {
+    return await db.select().from(draftContent).where(eq(draftContent.shopifyProductId, shopifyProductId));
+  }
+
+  async getDraftContentByProductAndType(shopifyProductId: string, tabType: string): Promise<DraftContent | undefined> {
+    const [content] = await db
+      .select()
+      .from(draftContent)
+      .where(and(eq(draftContent.shopifyProductId, shopifyProductId), eq(draftContent.tabType, tabType)));
+    return content || undefined;
+  }
+
+  async saveDraftContent(insertContent: InsertDraftContent): Promise<DraftContent> {
+    // First try to update existing draft content
+    const existing = await this.getDraftContentByProductAndType(insertContent.shopifyProductId, insertContent.tabType);
+    
+    if (existing) {
+      return await this.updateDraftContent(existing.id, insertContent);
+    } else {
+      const [content] = await db
+        .insert(draftContent)
+        .values(insertContent)
+        .returning();
+      return content;
+    }
+  }
+
+  async updateDraftContent(id: string, updateData: Partial<InsertDraftContent>): Promise<DraftContent> {
+    const [content] = await db
+      .update(draftContent)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(draftContent.id, id))
+      .returning();
+    return content;
+  }
+
+  async deleteDraftContentByProduct(shopifyProductId: string): Promise<void> {
+    await db.delete(draftContent).where(eq(draftContent.shopifyProductId, shopifyProductId));
+  }
+
+  async deleteDraftContentByProductAndType(shopifyProductId: string, tabType: string): Promise<void> {
+    await db.delete(draftContent).where(and(
+      eq(draftContent.shopifyProductId, shopifyProductId),
+      eq(draftContent.tabType, tabType)
+    ));
   }
 }
 

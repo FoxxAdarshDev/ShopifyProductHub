@@ -49,6 +49,16 @@ export const logoLibrary = pgTable("logo_library", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Draft content storage - temporary storage for unsaved content
+export const draftContent = pgTable("draft_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shopifyProductId: varchar("shopify_product_id").notNull(), // Using Shopify product ID directly
+  tabType: text("tab_type").notNull(),
+  content: jsonb("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const productContentRelations = relations(productContent, ({ one }) => ({
   product: one(products, {
     fields: [productContent.productId],
@@ -89,6 +99,12 @@ export const insertLogoSchema = createInsertSchema(logoLibrary).omit({
   createdAt: true,
 });
 
+export const insertDraftContentSchema = createInsertSchema(draftContent).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -104,3 +120,6 @@ export type ProductContent = typeof productContent.$inferSelect;
 
 export type InsertLogo = z.infer<typeof insertLogoSchema>;
 export type Logo = typeof logoLibrary.$inferSelect;
+
+export type InsertDraftContent = z.infer<typeof insertDraftContentSchema>;
+export type DraftContent = typeof draftContent.$inferSelect;

@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { shopifyService } from "./services/shopify";
 import { htmlGenerator } from "./services/htmlGenerator";
-import { insertProductSchema, insertProductContentSchema, insertContentTemplateSchema, insertLogoSchema } from "@shared/schema";
+import { extractContentFromHtml } from "./services/contentExtractor";
+import { insertProductSchema, insertProductContentSchema, insertContentTemplateSchema, insertLogoSchema, insertDraftContentSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -372,6 +373,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Preview generation error:", error);
       res.status(500).json({ message: "Failed to generate preview" });
+    }
+  });
+
+  // ==== DRAFT CONTENT MANAGEMENT ROUTES ====
+
+  // Get all draft content for a product
+  app.get("/api/draft-content/:shopifyProductId", async (req, res) => {
+    try {
+      const { shopifyProductId } = req.params;
+      const draftContent = await storage.getDraftContentByProduct(shopifyProductId);
+      res.json({ draftContent });
+    } catch (error) {
+      console.error("Draft content fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch draft content" });
+    }
+  });
+
+  // Save draft content for a specific tab type
+  app.post("/api/draft-content", async (req, res) => {
+    try {
+      const validatedData = insertDraftContentSchema.parse(req.body);
+      const draftContent = await storage.saveDraftContent(validatedData);
+      res.json({ draftContent });
+    } catch (error) {
+      console.error("Draft content save error:", error);
+      res.status(500).json({ message: "Failed to save draft content" });
+    }
+  });
+
+  // Delete draft content for a product (after successful Shopify save)
+  app.delete("/api/draft-content/:shopifyProductId", async (req, res) => {
+    try {
+      const { shopifyProductId } = req.params;
+      await storage.deleteDraftContentByProduct(shopifyProductId);
+      res.json({ message: "Draft content deleted successfully" });
+    } catch (error) {
+      console.error("Draft content delete error:", error);
+      res.status(500).json({ message: "Failed to delete draft content" });
+    }
+  });
+
+  // Extract existing content from Shopify product description
+  app.get("/api/extract-content/:shopifyProductId", async (req, res) => {
+    try {
+      const { shopifyProductId } = req.params;
+      
+      // Get the product from Shopify
+      const shopifyProduct = await shopifyService.getProductById(shopifyProductId);
+      if (!shopifyProduct || !shopifyProduct.body_html) {
+        return res.json({ extractedContent: {} });
+      }
+
+      // Extract content from HTML description
+      const extractedContent = extractContentFromHtml(shopifyProduct.body_html);
+      res.json({ extractedContent });
+    } catch (error) {
+      console.error("Content extraction error:", error);
+      res.status(500).json({ message: "Failed to extract content" });
     }
   });
 
