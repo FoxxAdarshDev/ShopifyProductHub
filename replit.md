@@ -115,6 +115,11 @@ Each product can have multiple content tabs:
 - **SEO Optimization**: Added dynamic SKU data attributes to all HTML sections for better Google crawling
 - **HTML Generator**: Updated to include productSku parameter and data-sku attributes on all container elements
 - **Image Support**: Added image URL input fields for compatible container items with visual preview
+- **Fixed Tab Ordering System** (January 28, 2025): Implemented fixed tab ordering with two distinct groups:
+  - Group 1: Description, Features, Applications (positions 1-3)
+  - Group 2: Specifications, Documentation, Videos (positions 4-6)
+  - Additional tabs (SKU Nomenclature, Safety Guidelines, Compatible Container) are inserted between the two groups
+  - Applied consistent ordering across frontend tab selection, form display, visual preview, and HTML generation
 
 ## Key Configuration
 - **Database URL**: Required environment variable for PostgreSQL connection

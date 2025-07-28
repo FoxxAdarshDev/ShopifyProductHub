@@ -10,20 +10,60 @@ interface ContentItem {
   content: any;
 }
 
+// Define the fixed tab ordering groups
+const TAB_ORDER_GROUPS = {
+  GROUP_1: ['description', 'features', 'applications'],
+  GROUP_2: ['specifications', 'documentation', 'videos'],
+  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container']
+};
+
+// Function to order tabs according to the fixed groups
+const orderTabs = (content: ProductContent[]): ProductContent[] => {
+  const orderedContent: ProductContent[] = [];
+  
+  // Add Group 1 tabs in order (if available)
+  TAB_ORDER_GROUPS.GROUP_1.forEach(tabType => {
+    const item = content.find(c => c.tabType === tabType);
+    if (item && item.isActive) {
+      orderedContent.push(item);
+    }
+  });
+  
+  // Add Additional tabs in between groups (if available)
+  TAB_ORDER_GROUPS.ADDITIONAL.forEach(tabType => {
+    const item = content.find(c => c.tabType === tabType);
+    if (item && item.isActive) {
+      orderedContent.push(item);
+    }
+  });
+  
+  // Add Group 2 tabs in order (if available)
+  TAB_ORDER_GROUPS.GROUP_2.forEach(tabType => {
+    const item = content.find(c => c.tabType === tabType);
+    if (item && item.isActive) {
+      orderedContent.push(item);
+    }
+  });
+  
+  return orderedContent;
+};
+
 class HtmlGenerator {
   generateProductHtml(content: ProductContent[], productSku?: string): string {
     const sku = productSku || 'unknown-sku';
     let html = `<div class="container" data-sku="${sku}">\n`;
     
+    // Order content according to fixed groups before processing
+    const orderedContent = orderTabs(content);
+    
     // Get the product title from description content if available
-    const descriptionContent = content.find(c => c.tabType === 'description');
+    const descriptionContent = orderedContent.find(c => c.tabType === 'description');
     if (descriptionContent && (descriptionContent.content as any)?.title) {
       html += `    <h2 data-sku="${sku}">${(descriptionContent.content as any).title}</h2>\n`;
     }
 
-    // Generate tabs based on content
-    content.forEach(item => {
-      if (!item.isActive) return;
+    // Generate tabs based on ordered content
+    orderedContent.forEach(item => {
 
       switch (item.tabType) {
         case 'description':

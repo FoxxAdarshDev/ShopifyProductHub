@@ -12,6 +12,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Define the fixed tab ordering groups
+const TAB_ORDER_GROUPS = {
+  GROUP_1: ['description', 'features', 'applications'],
+  GROUP_2: ['specifications', 'documentation', 'videos'],
+  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container']
+};
+
+// Function to order tabs according to the fixed groups
+const orderTabs = (tabs: string[]): string[] => {
+  const orderedTabs: string[] = [];
+  
+  // Add Group 1 tabs in order (if selected)
+  TAB_ORDER_GROUPS.GROUP_1.forEach(tab => {
+    if (tabs.includes(tab)) {
+      orderedTabs.push(tab);
+    }
+  });
+  
+  // Add Additional tabs in between groups (if selected)
+  TAB_ORDER_GROUPS.ADDITIONAL.forEach(tab => {
+    if (tabs.includes(tab)) {
+      orderedTabs.push(tab);
+    }
+  });
+  
+  // Add Group 2 tabs in order (if selected)
+  TAB_ORDER_GROUPS.GROUP_2.forEach(tab => {
+    if (tabs.includes(tab)) {
+      orderedTabs.push(tab);
+    }
+  });
+  
+  return orderedTabs;
+};
+
 export default function ProductManager() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
@@ -92,7 +127,9 @@ export default function ProductManager() {
       }
     }
     
-    setSelectedTabs(finalSelectedTabs);
+    // Apply fixed ordering to tabs before setting them
+    const orderedTabs = orderTabs(finalSelectedTabs);
+    setSelectedTabs(orderedTabs);
     setContentData(finalContentMap);
     
     // Check if we have draft content or content data

@@ -22,13 +22,53 @@ const additionalTabs = [
   { id: "compatible-container", label: "Compatible Container", icon: Package2 },
 ];
 
+// Define the fixed tab ordering groups (same as ProductManager)
+const TAB_ORDER_GROUPS = {
+  GROUP_1: ['description', 'features', 'applications'],
+  GROUP_2: ['specifications', 'documentation', 'videos'],
+  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container']
+};
+
+// Function to order tabs according to the fixed groups
+const orderTabs = (tabs: string[]): string[] => {
+  const orderedTabs: string[] = [];
+  
+  // Add Group 1 tabs in order (if selected)
+  TAB_ORDER_GROUPS.GROUP_1.forEach(tab => {
+    if (tabs.includes(tab)) {
+      orderedTabs.push(tab);
+    }
+  });
+  
+  // Add Additional tabs in between groups (if selected)
+  TAB_ORDER_GROUPS.ADDITIONAL.forEach(tab => {
+    if (tabs.includes(tab)) {
+      orderedTabs.push(tab);
+    }
+  });
+  
+  // Add Group 2 tabs in order (if selected)
+  TAB_ORDER_GROUPS.GROUP_2.forEach(tab => {
+    if (tabs.includes(tab)) {
+      orderedTabs.push(tab);
+    }
+  });
+  
+  return orderedTabs;
+};
+
 export default function TabSelector({ selectedTabs, onTabsChange }: TabSelectorProps) {
   const handleTabToggle = (tabId: string) => {
+    let newTabs: string[];
     if (selectedTabs.includes(tabId)) {
-      onTabsChange(selectedTabs.filter(id => id !== tabId));
+      newTabs = selectedTabs.filter(id => id !== tabId);
     } else {
-      onTabsChange([...selectedTabs, tabId]);
+      newTabs = [...selectedTabs, tabId];
     }
+    
+    // Apply fixed ordering before calling onTabsChange
+    const orderedTabs = orderTabs(newTabs);
+    onTabsChange(orderedTabs);
   };
 
   return (
