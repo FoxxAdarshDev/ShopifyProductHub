@@ -208,7 +208,7 @@ class ShopifyService {
 
   async searchAllProducts(query: string): Promise<ShopifyProduct[]> {
     try {
-      console.log(`Starting optimized search for: "${query}"`);
+      console.log(`Starting comprehensive search for: "${query}"`);
       
       // First, try direct search by product ID if the query looks like an ID
       if (/^\d+$/.test(query)) {
@@ -228,7 +228,7 @@ class ShopifyService {
       
       // For any query that could be a SKU (contains letters/numbers/dashes), search by SKU
       if (query.length >= 3) {
-        console.log(`Query might be SKU, starting SKU search: "${query}"`);
+        console.log(`Query might be SKU, starting exhaustive SKU search: "${query}"`);
         searchPromises.push(this.searchBySKU(query));
       }
 
@@ -240,10 +240,10 @@ class ShopifyService {
         index === self.findIndex(p => p.id === product.id)
       );
 
-      console.log(`Optimized search found ${uniqueResults.length} unique products`);
+      console.log(`Comprehensive search found ${uniqueResults.length} unique products`);
       return uniqueResults;
     } catch (error) {
-      console.error('Error in optimized product search:', error);
+      console.error('Error in comprehensive product search:', error);
       return [];
     }
   }
@@ -265,48 +265,22 @@ class ShopifyService {
     try {
       console.log(`Starting comprehensive SKU search for: "${query}"`);
       
-      // Check commonly used product IDs first for efficiency
-      const commonProductIds = ['8915034996952', '7846023856344', '8775153615064'];
-      
-      for (const productId of commonProductIds) {
-        try {
-          const targetProduct = await this.getProductById(productId);
-          if (targetProduct) {
-            const queryLower = query.toLowerCase().trim();
-            const hasMatchingSku = targetProduct.variants.some((variant: any) => {
-              if (!variant.sku) return false;
-              const variantSkuLower = variant.sku.toLowerCase().trim();
-              
-              // Check both exact match and contains for flexibility with whitespace
-              return variantSkuLower === queryLower || 
-                     variantSkuLower.includes(queryLower) || 
-                     queryLower.includes(variantSkuLower);
-            });
-            
-            if (hasMatchingSku) {
-              console.log(`Found SKU "${query}" in known product: ${targetProduct.title} (ID: ${productId})`);
-              return [targetProduct];
-            }
-          }
-        } catch (error) {
-          console.log(`Error checking product ${productId}:`, (error as Error).message);
-        }
-      }
-      
-      // If not found in known product, fall back to general product fetching
-      console.log(`SKU not found in known product, starting general search`);
       const results: ShopifyProduct[] = [];
       const queryLower = query.toLowerCase().trim();
       
-      // Use comprehensive product fetching with pagination to find SKU matches
+      // Use exhaustive product fetching with unlimited pagination to find SKU matches
+      // This ensures we search ALL products in the store, just like Product ID search
       let hasNextPage = true;
       let since_id = '';
       let totalChecked = 0;
-      const maxProducts = 250; // Reasonable limit to prevent infinite searches
+      let pageCount = 0;
+      const maxPages = 50; // Safety limit (50 pages * 250 products = 12,500 products max)
       
-      while (hasNextPage && totalChecked < maxProducts) {
+      console.log(`Starting exhaustive SKU search through all products in store`);
+      
+      while (hasNextPage && pageCount < maxPages) {
         try {
-          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=50${since_id ? `&since_id=${since_id}` : ''}`;
+          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
           const response = await this.makeRequest(url);
           const products = response.products as ShopifyProduct[];
           
@@ -315,7 +289,9 @@ class ShopifyService {
             break;
           }
           
-          console.log(`Checking ${products.length} products for SKU matches (total checked: ${totalChecked + products.length})`);
+          pageCount++;
+          totalChecked += products.length;
+          console.log(`Page ${pageCount}: Checking ${products.length} products for SKU matches (total checked: ${totalChecked})`);
           
           const matchingProducts = products.filter((product: ShopifyProduct) => {
             return product.variants.some(variant => {
@@ -334,25 +310,21 @@ class ShopifyService {
           });
 
           if (matchingProducts.length > 0) {
-            console.log(`Found ${matchingProducts.length} products with matching SKU`);
+            console.log(`Page ${pageCount}: Found ${matchingProducts.length} products with matching SKU`);
             results.push(...matchingProducts);
-            // If we found exact matches, we can stop searching
-            if (matchingProducts.some(p => p.variants.some(v => v.sku?.toLowerCase().trim() === queryLower))) {
-              break;
-            }
           }
           
-          totalChecked += products.length;
+          // Set up for next page
           since_id = products[products.length - 1].id.toString();
-          hasNextPage = products.length === 50; // Continue if we got a full batch
+          hasNextPage = products.length === 250; // Continue if we got a full batch
           
         } catch (fetchError) {
-          console.error('Error in general product fetch for SKU search:', fetchError);
+          console.error(`Error fetching page ${pageCount + 1} for SKU search:`, fetchError);
           break;
         }
       }
 
-      console.log(`SKU search completed. Found ${results.length} total products`);
+      console.log(`Exhaustive SKU search completed. Checked ${totalChecked} products across ${pageCount} pages. Found ${results.length} total matching products`);
       return results;
     } catch (error) {
       console.error('Error in SKU search:', error);
