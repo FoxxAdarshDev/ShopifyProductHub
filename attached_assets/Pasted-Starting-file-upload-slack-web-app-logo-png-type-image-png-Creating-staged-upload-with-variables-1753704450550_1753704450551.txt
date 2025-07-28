@@ -1,0 +1,79 @@
+Starting file upload: slack-web-app-logo.png, type: image/png
+Creating staged upload with variables: {
+  "input": [
+    {
+      "filename": "slack-web-app-logo.png",
+      "mimeType": "image/png",
+      "httpMethod": "POST",
+      "resource": "IMAGE"
+    }
+  ]
+}
+Staged upload response: {
+  "data": {
+    "stagedUploadsCreate": {
+      "stagedTargets": [
+        {
+          "url": "https://shopify-staged-uploads.storage.googleapis.com/",
+          "resourceUrl": "https://shopify-staged-uploads.storage.googleapis.com/tmp/62148051160/products/44bac098-4809-4639-b8c8-c1ec07f608c0/slack-web-app-logo.png",
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "image/png"
+            },
+            {
+              "name": "success_action_status",
+              "value": "201"
+            },
+            {
+              "name": "acl",
+              "value": "private"
+            },
+            {
+              "name": "key",
+              "value": "tmp/62148051160/products/44bac098-4809-4639-b8c8-c1ec07f608c0/slack-web-app-logo.png"
+            },
+            {
+              "name": "x-goog-date",
+              "value": "20250728T120707Z"
+            },
+            {
+              "name": "x-goog-credential",
+              "value": "merchant-assets@shopify-tiers.iam.gserviceaccount.com/20250728/auto/storage/goog4_request"
+            },
+            {
+              "name": "x-goog-algorithm",
+              "value": "GOOG4-RSA-SHA256"
+            },
+            {
+              "name": "x-goog-signature",
+              "value": "7f54e13570b0299c051cd9a32957faa4d579da2a1229ec2d7067c9346fe8b927a14d94511be551c7e2bc845bcd9d3fcb00e6e19b549b5334d32479f3ddd7910a0f6251e9ad9c7e6c7c0b116575336eced3cda9735dbf701ffaeb2d4114c81e956aedf6b69480a202da8dbdfc6663eef0ed244d398fb55815cf8e0eedba57bcb8775dd864f70f8be2f13b921e262edfacb0e32172a4e2edaccb9ddd209843a10be903e6b33232b169740ac45942c6befa134399745a8b17c558abcb9aa34e5f9d76266cb181cae64e5dc6bb0ec0affbf0bb264044ab32d7082d7ef59a5505312c2a3981cabe928f7992e8bca6faf04db55d92070851f45755de78497af5220f04"
+            },
+            {
+              "name": "policy",
+              "value": "eyJjb25kaXRpb25zIjpbeyJDb250ZW50LVR5cGUiOiJpbWFnZVwvcG5nIn0seyJzdWNjZXNzX2FjdGlvbl9zdGF0dXMiOiIyMDEifSx7ImFjbCI6InByaXZhdGUifSxbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwxLDIwOTcxNTIwXSx7ImJ1Y2tldCI6InNob3BpZnktc3RhZ2VkLXVwbG9hZHMifSx7ImtleSI6InRtcFwvNjIxNDgwNTExNjBcL3Byb2R1Y3RzXC80NGJhYzA5OC00ODA5LTQ2MzktYjhjOC1jMWVjMDdmNjA4YzBcL3NsYWNrLXdlYi1hcHAtbG9nby5wbmcifSx7IngtZ29vZy1kYXRlIjoiMjAyNTA3MjhUMTIwNzA3WiJ9LHsieC1nb29nLWNyZWRlbnRpYWwiOiJtZXJjaGFudC1hc3NldHNAc2hvcGlmeS10aWVycy5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbVwvMjAyNTA3MjhcL2F1dG9cL3N0b3JhZ2VcL2dvb2c0X3JlcXVlc3QifSx7IngtZ29vZy1hbGdvcml0aG0iOiJHT09HNC1SU0EtU0hBMjU2In1dLCJleHBpcmF0aW9uIjoiMjAyNS0wNy0yOVQxMjowNzowN1oifQ=="
+            }
+          ]
+        }
+      ],
+      "userErrors": []
+    }
+  },
+  "extensions": {
+    "cost": {
+      "requestedQueryCost": 11,
+      "actualQueryCost": 11,
+      "throttleStatus": {
+        "maximumAvailable": 2000,
+        "currentlyAvailable": 1989,
+        "restoreRate": 100
+      }
+    }
+  }
+}
+Uploading to staged target: https://shopify-staged-uploads.storage.googleapis.com/
+Error uploading file to Shopify: Error: Upload failed: 400 - Invalid multipart request with 0 mime parts.
+    at ShopifyService.uploadFile (/home/runner/workspace/server/services/shopify.ts:408:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:298:23)
+Returning data URL as fallback due to upload error

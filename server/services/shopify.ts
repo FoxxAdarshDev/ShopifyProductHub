@@ -383,24 +383,23 @@ class ShopifyService {
       console.log('Uploading to staged target:', stagedTarget.url);
 
       // Step 2: Upload file to the staged URL
-      const FormDataNode = (await import('form-data')).default;
-      const formData = new FormDataNode();
+      // Use global FormData (available in Node.js 18+)
+      const formData = new FormData();
       
       // Add parameters FIRST (order is critical)
       stagedTarget.parameters.forEach((param: any) => {
         formData.append(param.name, param.value);
       });
       
+      // Create a Blob from the buffer for the file
+      const fileBlob = new Blob([buffer], { type: contentType || 'image/png' });
+      
       // Add file LAST
-      formData.append('file', buffer, {
-        filename: filename,
-        contentType: contentType || 'image/png'
-      });
+      formData.append('file', fileBlob, filename);
 
       const uploadResponse = await fetch(stagedTarget.url, {
         method: 'POST',
-        body: formData as any,
-        headers: formData.getHeaders()
+        body: formData
       });
 
       if (!uploadResponse.ok) {
