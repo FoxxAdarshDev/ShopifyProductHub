@@ -35,22 +35,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
   });
   
   try {
-    // Test basic extraction first - just get any paragraph text
-    const allParagraphs = html.match(/<p[^>]*>(.*?)<\/p>/g);
-    console.log('📄 All paragraphs found:', allParagraphs ? allParagraphs.length : 0);
-    
-    if (allParagraphs && allParagraphs.length > 0) {
-      // If we find paragraphs, create a basic description
-      const textContent = allParagraphs.map(p => p.replace(/<[^>]*>/g, '').trim()).join('\n\n');
-      console.log('📝 Extracted text content preview:', textContent.substring(0, 100) + '...');
-      
-      extractedContent.description = {
-        title: '',
-        description: textContent,
-        logos: []
-      };
-      console.log('✅ Description created successfully');
-    }
+    // NOTE: Skip basic extraction for description since we want structured extraction only
+    // The structured extraction below will handle description content properly
     
     // Test basic list extraction
     const allListItems = html.match(/<li[^>]*>(.*?)<\/li>/g);
@@ -70,12 +56,33 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     
     // Try to extract structured content from our template format
     
-    // Extract description content - look for tab-content with id="description"
-    const descDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
-    console.log('🔍 Description div search result:', descDiv ? 'FOUND' : 'NOT FOUND');
+    // Extract description content - try multiple patterns
+    console.log('🔍 Starting description div extraction...');
+    console.log('🔍 HTML contains id="description":', html.includes('id="description"'));
+    console.log('🔍 HTML contains tab-content:', html.includes('tab-content'));
+    
+    // Try pattern 1: Original complex pattern
+    let descDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
+    console.log('🔍 Pattern 1 (complex) result:', descDiv ? 'FOUND' : 'NOT FOUND');
+    
+    // Try pattern 2: Simpler id-first pattern
+    if (!descDiv) {
+      console.log('🔍 Trying pattern 2 (id-first)...');
+      descDiv = html.match(/<div[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
+      console.log('🔍 Pattern 2 (id-first) result:', descDiv ? 'FOUND' : 'NOT FOUND');
+    }
+    
+    // Try pattern 3: Very flexible pattern
+    if (!descDiv) {
+      console.log('🔍 Trying pattern 3 (flexible)...');
+      descDiv = html.match(/id="description"[^>]*>([\s\S]*?)<\/div>/);
+      console.log('🔍 Pattern 3 (flexible) result:', descDiv ? 'FOUND' : 'NOT FOUND');
+    }
+    
     if (descDiv && descDiv[1]) {
       console.log('📄 Found description div with structured content');
       console.log('📄 Description div content preview:', descDiv[1].substring(0, 200) + '...');
+      console.log('📄 Full description div content length:', descDiv[1].length);
       
       // Extract H2 heading if present
       const h2Match = descDiv[1].match(/<h2[^>]*>(.*?)<\/h2>/);
@@ -92,20 +99,38 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       console.log('📄 Logo grid div found:', logoGridMatch ? 'YES' : 'NO');
       if (logoGridMatch) {
         console.log('📄 Logo grid content:', logoGridMatch[1]);
+        console.log('📄 Logo grid raw content length:', logoGridMatch[1].length);
       }
       
-      const logos = logoGridMatch ? logoGridMatch[1].match(/<img[^>]*src="([^"]*)"[^>]*>/g)?.map(img => {
-        const srcMatch = img.match(/src="([^"]*)"/);
-        const altMatch = img.match(/alt="([^"]*)"/);
-        console.log('📄 Processing logo image:', srcMatch ? srcMatch[1] : 'NO SRC');
-        return {
-          url: srcMatch ? srcMatch[1] : '',
-          alt: altMatch ? altMatch[1] : ''
-        };
-      }) || [] : [];
-      console.log('📄 Logo images found:', logos.length);
+      let logos: Array<{url: string, alt: string}> = [];
+      if (logoGridMatch && logoGridMatch[1]) {
+        const logoContent = logoGridMatch[1];
+        console.log('📄 Searching for img tags in logo content...');
+        const imgMatches = logoContent.match(/<img[^>]*>/g);
+        console.log('📄 Raw img tags found:', imgMatches ? imgMatches.length : 0);
+        if (imgMatches) {
+          imgMatches.forEach((img, index) => {
+            console.log(`📄 Processing img tag ${index + 1}:`, img);
+            const srcMatch = img.match(/src="([^"]*)"/);
+            const altMatch = img.match(/alt="([^"]*)"/);
+            if (srcMatch) {
+              const logoObj = {
+                url: srcMatch[1],
+                alt: altMatch ? altMatch[1] : ''
+              };
+              logos.push(logoObj);
+              console.log('📄 Successfully extracted logo:', logoObj);
+            } else {
+              console.log('📄 No src found in img tag:', img);
+            }
+          });
+        } else {
+          console.log('📄 No img tags found in logo grid content');
+        }
+      }
+      console.log('📄 Final logo images found:', logos.length);
       if (logos.length > 0) {
-        console.log('📄 Logo details:', logos);
+        console.log('📄 Final logo details:', logos);
       }
       
       if (textContent || title || logos.length > 0) {
@@ -115,6 +140,9 @@ export function extractContentFromHtml(html: string): ExtractedContent {
           logos: logos
         };
         console.log('✅ Enhanced description extracted with title, text, and logos');
+        console.log('📄 Final description object:', { title, textLength: textContent.length, logoCount: logos.length });
+      } else {
+        console.log('❌ No description content extracted - title, text, and logos all empty');
       }
     }
 
