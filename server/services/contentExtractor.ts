@@ -17,6 +17,23 @@ export function extractContentFromHtml(html: string): ExtractedContent {
   
   console.log('🧪 Starting extraction with HTML length:', html.length);
   
+  // First, let's identify ALL tab-content divs in the HTML
+  const allTabDivs = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="([^"]*)"[^>]*>/g);
+  console.log('📋 ALL TAB DIVS FOUND:', allTabDivs ? allTabDivs.length : 0);
+  if (allTabDivs) {
+    allTabDivs.forEach((div, index) => {
+      const idMatch = div.match(/id="([^"]*)"/);
+      console.log(`📋 Tab ${index + 1}: ${idMatch ? idMatch[1] : 'NO ID'}`);
+    });
+  }
+  
+  // Check for specific tab types with simplified detection
+  const tabTypes = ['description', 'features', 'applications', 'specification', 'videos', 'documentation', 'compatible-container', 'sku-nomenclature', 'safety-guidelines', 'sterilization-method'];
+  tabTypes.forEach(tabType => {
+    const hasTab = html.includes(`id="${tabType}"`);
+    console.log(`🔍 Tab "${tabType}" present:`, hasTab ? 'YES' : 'NO');
+  });
+  
   try {
     // Test basic extraction first - just get any paragraph text
     const allParagraphs = html.match(/<p[^>]*>(.*?)<\/p>/g);
@@ -186,45 +203,48 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract compatible container content - look for tab-content with id="compatible-container"
-    const compatDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract compatible container content - Updated pattern to match the actual HTML structure
+    const compatDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/);
     console.log('🔍 Compatible Container div search result:', compatDiv ? 'FOUND' : 'NOT FOUND');
+    
+    // If first pattern doesn't work, try alternative patterns
+    let compatContent = null;
     if (compatDiv && compatDiv[1]) {
+      compatContent = compatDiv[1];
+      console.log('🔗 Found compatible container with first pattern');
+    } else {
+      // Try pattern without the trailing </div>
+      const altCompatDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>([\s\S]*?)(?=<div[^>]*class="tab-content"|$)/);
+      if (altCompatDiv && altCompatDiv[1]) {
+        compatContent = altCompatDiv[1];
+        console.log('🔗 Found compatible container with alternative pattern');
+      }
+    }
+    
+    if (compatContent) {
       console.log('🔗 Found compatible container div with structured content');
-      console.log('🔗 Compatible container div content preview:', compatDiv[1].substring(0, 200) + '...');
+      console.log('🔗 Compatible container div content preview:', compatContent.substring(0, 300) + '...');
       
-      // Extract container items
+      // Extract title if present
+      const titleMatch = compatContent.match(/<h3[^>]*>(.*?)<\/h3>/);
+      const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+      console.log('🔗 Compatible container title found:', title || 'None');
+      
+      // Extract container items using a more robust pattern
       const containerItems: Array<{title: string, url: string, image: string, description: string}> = [];
-      // Simpler approach - split by compatible-item divs
-      const itemDivs = [];
-      const itemStartPattern = /<div[^>]*class="compatible-item"[^>]*>/g;
-      let match;
-      let lastIndex = 0;
       
-      while ((match = itemStartPattern.exec(compatDiv[1])) !== null) {
-        if (lastIndex > 0) {
-          // Extract the previous item
-          const itemContent = compatDiv[1].substring(lastIndex, match.index);
-          itemDivs.push(itemContent);
-        }
-        lastIndex = match.index;
+      // Find all compatible-item divs with multiple pattern attempts
+      let itemMatches = compatContent.match(/<div[^>]*class="compatible-item"[^>]*>[\s\S]*?<span[^>]*class="compatible-item-arrow"[^>]*>.*?<\/span>\s*<\/div>/g);
+      console.log('🔗 Compatible items found with span-ending pattern:', itemMatches ? itemMatches.length : 0);
+      
+      if (!itemMatches || itemMatches.length === 0) {
+        // Try simpler pattern
+        itemMatches = compatContent.match(/<div[^>]*class="compatible-item"[^>]*>[\s\S]*?(?=<div[^>]*class="compatible-item"|<\/div>\s*<\/div>|$)/g);
+        console.log('🔗 Compatible items found with lookahead pattern:', itemMatches ? itemMatches.length : 0);
       }
       
-      // Add the last item
-      if (lastIndex > 0) {
-        const remaining = compatDiv[1].substring(lastIndex);
-        const itemEndMatch = remaining.match(/^[\s\S]*?(?=<\/div>\s*<\/div>|$)/);
-        if (itemEndMatch) {
-          itemDivs.push(itemEndMatch[0]);
-        }
-      }
-      
-      console.log('🔗 Extracted item divs using split method:', itemDivs.length);
-      console.log('🔗 Container items found:', itemDivs ? itemDivs.length : 0);
-      console.log('🔗 Full compatible container content length:', compatDiv[1].length);
-      
-      if (itemDivs) {
-        itemDivs.forEach((itemDiv, index) => {
+      if (itemMatches && itemMatches.length > 0) {
+        itemMatches.forEach((itemDiv, index) => {
           console.log(`🔗 Processing container item ${index + 1}:`, itemDiv.substring(0, 200) + '...');
           
           // Extract image
@@ -255,11 +275,13 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         });
       }
       
-      if (containerItems.length > 0) {
+      console.log('🔗 Final compatible container items:', containerItems.length);
+      if (title || containerItems.length > 0) {
         extractedContent['compatible-container'] = {
+          title: title,
           compatibleItems: containerItems
         };
-        console.log('✅ Compatible container extracted');
+        console.log('✅ Compatible container extracted successfully');
       }
     }
 

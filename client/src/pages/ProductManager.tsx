@@ -128,16 +128,12 @@ export default function ProductManager() {
           finalContentMap = extractionData.extractedContent;
           finalSelectedTabs = Object.keys(extractionData.extractedContent);
           
-          // If this is our template structure, show success message
-          if (extractionData.isOurTemplate) {
-            console.log('🎯 Auto-detected and loaded our template structure');
-            
-            // Show success message for auto-extraction
-            toast({
-              title: "Content Auto-Loaded",
-              description: `Detected existing layout with ${finalSelectedTabs.length} sections: ${finalSelectedTabs.join(', ')}`,
-            });
-          }
+          // Show success message for auto-extraction
+          console.log('🎯 Auto-detected and loaded template structure');
+          toast({
+            title: "Content Auto-Loaded",
+            description: `Detected existing layout with ${finalSelectedTabs.length} sections: ${finalSelectedTabs.join(', ')}`,
+          });
         }
       } catch (error) {
         console.log('No content could be extracted from Shopify description');
