@@ -1326,36 +1326,10 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                         </div>
 
                         <div className="w-full">
-                          <label className="text-xs font-medium text-gray-700 block mb-1">Product Handle/Description</label>
-                          <Input
-                            value={item.description || item.handle || ''}
-                            onChange={(e) => {
-                              const currentItems = contentData['compatible-container']?.compatibleItems || [];
-                              const updatedItems = currentItems.map((existingItem: any, i: number) => 
-                                i === index ? { ...existingItem, description: e.target.value, handle: e.target.value } : existingItem
-                              );
-                              updateContent("compatible-container", "compatibleItems", updatedItems);
-                            }}
-                            className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1 w-full"
-                            placeholder="Product handle or description..."
-                          />
-                        </div>
-
-                        <div className="w-full">
                           <label className="text-xs font-medium text-gray-700 block mb-1">Product URL</label>
-                          <Textarea
-                            value={item.url || item.sourceUrl || ''}
-                            onChange={(e) => {
-                              const currentItems = contentData['compatible-container']?.compatibleItems || [];
-                              const updatedItems = currentItems.map((existingItem: any, i: number) => 
-                                i === index ? { ...existingItem, url: e.target.value, sourceUrl: e.target.value } : existingItem
-                              );
-                              updateContent("compatible-container", "compatibleItems", updatedItems);
-                            }}
-                            className="text-xs text-blue-600 border border-gray-200 rounded px-2 py-2 w-full min-h-[50px] resize-none font-mono"
-                            placeholder="Product URL..."
-                            rows={2}
-                          />
+                          <div className="text-xs text-blue-600 border border-gray-200 rounded px-2 py-2 w-full min-h-[50px] bg-gray-50 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                            {item.url || item.sourceUrl || 'No URL available'}
+                          </div>
                         </div>
                       </div>
                     </div>
