@@ -212,10 +212,12 @@ export default function ProductManager() {
                         </pre>
                       </div>
                     ) : (
-                      <div 
-                        className="prose prose-sm max-w-none border rounded-lg p-4 bg-slate-50"
-                        dangerouslySetInnerHTML={{ __html: selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>' }}
-                      />
+                      <div className="border rounded-lg p-6 bg-white shadow-sm">
+                        <div 
+                          className="shopify-content"
+                          dangerouslySetInnerHTML={{ __html: selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>' }}
+                        />
+                      </div>
                     )}
                   </div>
                 </CardContent>
