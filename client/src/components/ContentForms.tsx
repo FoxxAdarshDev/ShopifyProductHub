@@ -342,13 +342,17 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   };
 
   const handleUrlInput = async (url: string) => {
+    console.log('🔥 handleUrlInput called with URL:', url);
     const urlData = parseShopifyUrl(url);
     if (!urlData) {
-      console.log('Could not parse URL:', url);
+      console.log('❌ Could not parse URL:', url);
       return;
     }
 
+    console.log('📡 Parsed URL data:', urlData);
+    console.log('🔍 About to fetch Shopify data...');
     const shopifyData = await fetchShopifyData(urlData);
+    console.log('📦 Received shopifyData:', shopifyData);
     
     if (shopifyData) {
       // Create a new compatible item
@@ -1116,11 +1120,16 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="https://foxxbioprocess.myshopify.com/collections/compatible-bottles or /products/product-name"
               onPaste={async (e) => {
+                console.log('🎯 Paste event detected');
                 setTimeout(async () => {
                   const input = e.target as HTMLInputElement;
+                  console.log('📋 Input value after paste:', input.value);
                   if (input.value.trim()) {
+                    console.log('✅ Calling handleUrlInput with:', input.value);
                     await handleUrlInput(input.value);
                     input.value = "";
+                  } else {
+                    console.log('❌ No input value to process');
                   }
                 }, 10);
               }}
