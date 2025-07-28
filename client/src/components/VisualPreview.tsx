@@ -216,7 +216,9 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
       {data?.title && (
         <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
       )}
-      {data?.videoUrl && (
+      
+      {/* Show video if available, otherwise show placeholder */}
+      {data?.videoUrl ? (
         <div className="aspect-video">
           <iframe
             src={data.videoUrl}
@@ -226,7 +228,28 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
             allowFullScreen
           />
         </div>
+      ) : (
+        <div className="p-4 bg-slate-100 rounded-lg text-center">
+          <p className="text-slate-600">Video coming soon</p>
+        </div>
       )}
+      
+      {/* Always show YouTube channel link */}
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+              <span className="text-white text-xs font-bold">YouTube</span>
+            </div>
+            <span className="font-medium text-slate-800">Foxx Life Sciences</span>
+          </div>
+        </div>
+        <p className="mt-2 text-sm text-slate-600">
+          <span dangerouslySetInnerHTML={{ 
+            __html: data?.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank" class="text-blue-600 hover:underline">YouTube Channel</a>!'
+          }} />
+        </p>
+      </div>
     </div>
   );
 
@@ -235,6 +258,8 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
       {data?.title && (
         <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
       )}
+      
+      {/* Show specific product datasheet if available */}
       {data?.datasheetTitle && data?.datasheetUrl && (
         <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
           <FileDown className="w-6 h-6 text-blue-600" />
@@ -251,6 +276,19 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
           </div>
         </div>
       )}
+      
+      {/* Always show default product datasheets link */}
+      <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
+        <FileDown className="w-6 h-6 text-green-600" />
+        <div>
+          <h4 className="font-medium text-slate-800">Product Datasheets</h4>
+          <p className="text-sm text-slate-600">
+            <span dangerouslySetInnerHTML={{ 
+              __html: data?.defaultDatasheetText || 'Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank" class="text-blue-600 hover:underline">here</a> for a full list of our product datasheets!'
+            }} />
+          </p>
+        </div>
+      </div>
     </div>
   );
 

@@ -234,13 +234,16 @@ class HtmlGenerator {
   private generateVideosTab(content: any, sku: string): string {
     let html = `    <div id="videos" class="tab-content" data-sku="${sku}">\n`;
     
-    if (content.videoUrl) {
+    // Always show "Video coming soon" if no specific video URL is provided
+    if (!content.videoUrl) {
+      html += `    <p>Video coming soon</p>\n`;
+    } else {
       html += `        <iframe width="560" height="315" src="${content.videoUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>\n`;
     }
 
-    if (content.youtubeChannelText) {
-      html += `    <p>${content.youtubeChannelText}</p>\n`;
-    }
+    // Always include YouTube channel link (default or custom)
+    const youtubeText = content.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!';
+    html += `    <p>${youtubeText}</p>\n`;
 
     html += '    </div>\n';
     return html;
@@ -249,17 +252,23 @@ class HtmlGenerator {
   private generateDocumentationTab(content: any, sku: string): string {
     let html = `    <div id="documentation" class="tab-content" data-sku="${sku}">\n`;
     
+    // Add specific product datasheet if provided
     if (content.datasheetUrl) {
       const absoluteUrl = convertToAbsoluteUrl(content.datasheetUrl);
       html += `    <p><a href="${absoluteUrl}" target="_blank">${content.datasheetTitle || 'Product Datasheet'}</a></p>\n`;
     }
 
+    // Add additional links if provided
     if (content.additionalLinks && Array.isArray(content.additionalLinks)) {
       content.additionalLinks.forEach((link: { url: string; title: string }) => {
         const absoluteUrl = convertToAbsoluteUrl(link.url);
         html += `    <p><a href="${absoluteUrl}" target="_blank">${link.title}</a></p>\n`;
       });
     }
+
+    // Always include default product datasheets link
+    const defaultDatasheetText = content.defaultDatasheetText || 'Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank">here</a> for a full list of our product datasheets!';
+    html += `    <p>${defaultDatasheetText}</p>\n`;
 
     html += '    </div>\n';
     return html;
