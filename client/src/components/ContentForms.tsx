@@ -130,6 +130,81 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     }
   };
 
+  // Smart text processing for features and applications
+  const parseListText = (text: string): string[] => {
+    if (!text.trim()) return [];
+
+    // Remove common bullet point characters and clean up
+    const cleanText = text
+      .replace(/^[\s]*[•·‣⁃▪▫▬▭⌐◦‣⁃]/gm, '') // Remove bullet characters at start of lines
+      .replace(/^[\s]*[-*]/gm, '') // Remove dash/asterisk bullets
+      .replace(/^[\s]*\d+[\.\)]/gm, '') // Remove numbered lists
+      .trim();
+
+    // Check if text contains HTML list elements
+    if (cleanText.includes('<li>') || cleanText.includes('<ul>') || cleanText.includes('<ol>')) {
+      return parseHTMLList(cleanText);
+    }
+
+    // Split by line breaks first (handles copy-paste from sheets/documents)
+    const lines = cleanText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+    
+    if (lines.length > 1) {
+      // Multiple lines - treat each as separate item
+      return lines;
+    }
+
+    // Single line - split by periods if it looks like sentences
+    const singleLine = lines[0] || cleanText;
+    
+    // Check if it looks like multiple sentences (has periods followed by capital letters or spaces)
+    if (singleLine.match(/\.\s+[A-Z]/) || singleLine.match(/\.[A-Z]/)) {
+      // Split by periods and clean up
+      return singleLine
+        .split('.')
+        .map(sentence => sentence.trim())
+        .filter(sentence => sentence.length > 0)
+        .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1)); // Capitalize first letter
+    }
+
+    // Single item
+    return [singleLine];
+  };
+
+  const parseHTMLList = (htmlText: string): string[] => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const listItems = doc.querySelectorAll('li');
+    const items: string[] = [];
+
+    listItems.forEach(item => {
+      const text = item.textContent?.trim();
+      if (text) {
+        items.push(text);
+      }
+    });
+
+    return items.length > 0 ? items : [htmlText.replace(/<[^>]*>/g, '').trim()];
+  };
+
+  const handleSmartTextInput = (tabType: string, field: string, text: string) => {
+    const parsedItems = parseListText(text);
+    const currentItems = contentData[tabType]?.[field] || [];
+    
+    if (parsedItems.length > 1) {
+      // Multiple items found - replace current items
+      updateContent(tabType, field, parsedItems);
+    } else if (parsedItems.length === 1) {
+      // Single item - just update normally
+      const targetIndex = currentItems.length - 1; // Assuming we're updating the last item
+      if (targetIndex >= 0) {
+        updateArrayItem(tabType, field, targetIndex, parsedItems[0]);
+      } else {
+        updateContent(tabType, field, parsedItems);
+      }
+    }
+  };
+
   const renderDescriptionForm = () => (
     <Card key="description" className="content-form">
       <CardHeader className="form-section-header">
@@ -147,6 +222,15 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
               value={contentData.description?.title || ""}
               onChange={(e) => updateContent("description", "title", e.target.value)}
               data-testid="input-description-title"
+            />
+          </div>
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">H2 Heading</Label>
+            <Input
+              placeholder="Enter H2 heading..."
+              value={contentData.description?.h2Heading || ""}
+              onChange={(e) => updateContent("description", "h2Heading", e.target.value)}
+              data-testid="input-description-h2"
             />
           </div>
           <div>
@@ -178,6 +262,74 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         </CardTitle>
       </CardHeader>
       <CardContent className="form-section-content">
+        {/* Smart Import Section */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardPaste className="w-5 h-5 text-blue-600" />
+            <h3 className="font-medium text-blue-900">Smart Import Features</h3>
+          </div>
+          <p className="text-sm text-blue-700 mb-3">
+            Paste text with features and it will automatically split by periods or lines. Supports bullet points from spreadsheets.
+          </p>
+          <Textarea
+            placeholder={`Paste your features here. Examples:
+
+From spreadsheet/bullet points:
+• Delivers clear, tamper-evident indication
+• VersaCap technology provides flexibility
+• Adapter rotates independently
+
+From paragraph:
+Delivers clear indication. VersaCap provides flexibility. Adapter rotates independently.
+
+From HTML:
+<ul><li>Feature 1</li><li>Feature 2</li></ul>`}
+            rows={4}
+            className="w-full mb-3"
+            onPaste={(e) => {
+              setTimeout(() => {
+                const textarea = e.target as HTMLTextAreaElement;
+                if (textarea.value.trim()) {
+                  const parsed = parseListText(textarea.value);
+                  const currentFeatures = contentData.features?.features || [];
+                  updateContent("features", "features", [...currentFeatures, ...parsed]);
+                  textarea.value = "";
+                }
+              }, 10);
+            }}
+            data-testid="textarea-features-import"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const textarea = document.querySelector('[data-testid="textarea-features-import"]') as HTMLTextAreaElement;
+                if (textarea?.value.trim()) {
+                  const parsed = parseListText(textarea.value);
+                  const currentFeatures = contentData.features?.features || [];
+                  updateContent("features", "features", [...currentFeatures, ...parsed]);
+                  textarea.value = "";
+                }
+              }}
+              data-testid="button-import-features"
+            >
+              <Upload className="w-4 h-4 mr-1" />
+              Import Features
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => updateContent("features", "features", [])}
+              className="text-red-600 hover:text-red-800"
+              data-testid="button-clear-features"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Clear All
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-3">
           {(contentData.features?.features || []).map((feature: string, index: number) => (
             <div key={index} className="flex items-start space-x-3">
@@ -224,16 +376,85 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         </CardTitle>
       </CardHeader>
       <CardContent className="form-section-content">
+        {/* Smart Import Section */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardPaste className="w-5 h-5 text-blue-600" />
+            <h3 className="font-medium text-blue-900">Smart Import Applications</h3>
+          </div>
+          <p className="text-sm text-blue-700 mb-3">
+            Paste text with applications and it will automatically split by periods or lines. Supports bullet points from spreadsheets.
+          </p>
+          <Textarea
+            placeholder={`Paste your applications here. Examples:
+
+From spreadsheet/bullet points:
+• Biopharmaceutical manufacturing
+• Laboratory sample collection
+• Medical device testing
+
+From paragraph:
+Biopharmaceutical manufacturing. Laboratory sample collection. Medical device testing.
+
+From HTML:
+<ul><li>Application 1</li><li>Application 2</li></ul>`}
+            rows={4}
+            className="w-full mb-3"
+            onPaste={(e) => {
+              setTimeout(() => {
+                const textarea = e.target as HTMLTextAreaElement;
+                if (textarea.value.trim()) {
+                  const parsed = parseListText(textarea.value);
+                  const currentApplications = contentData.applications?.applications || [];
+                  updateContent("applications", "applications", [...currentApplications, ...parsed]);
+                  textarea.value = "";
+                }
+              }, 10);
+            }}
+            data-testid="textarea-applications-import"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const textarea = document.querySelector('[data-testid="textarea-applications-import"]') as HTMLTextAreaElement;
+                if (textarea?.value.trim()) {
+                  const parsed = parseListText(textarea.value);
+                  const currentApplications = contentData.applications?.applications || [];
+                  updateContent("applications", "applications", [...currentApplications, ...parsed]);
+                  textarea.value = "";
+                }
+              }}
+              data-testid="button-import-applications"
+            >
+              <Upload className="w-4 h-4 mr-1" />
+              Import Applications
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => updateContent("applications", "applications", [])}
+              className="text-red-600 hover:text-red-800"
+              data-testid="button-clear-applications"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Clear All
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-3">
           {(contentData.applications?.applications || []).map((application: string, index: number) => (
             <div key={index} className="flex items-start space-x-3">
               <span className="text-slate-400 mt-2">•</span>
-              <Input
+              <Textarea
+                rows={2}
                 placeholder="Enter application..."
                 value={application}
                 onChange={(e) => updateArrayItem("applications", "applications", index, e.target.value)}
                 className="flex-1"
-                data-testid={`input-application-${index}`}
+                data-testid={`textarea-application-${index}`}
               />
               <Button
                 variant="ghost"
