@@ -360,10 +360,18 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         type: urlData.type
       };
       
+      // Ensure state is initialized before adding items
+      if (!contentData['compatible-container']) {
+        updateContent("compatible-container", "title", "Compatible Container");
+        updateContent("compatible-container", "compatibleItems", []);
+      }
+      
       // Add to the compatible items array
       const currentItems = contentData['compatible-container']?.compatibleItems || [];
       const updatedItems = [...currentItems, newItem];
+      console.log('About to update compatible items:', updatedItems);
       updateContent("compatible-container", "compatibleItems", updatedItems);
+      console.log('Updated compatible items in state');
       
       // Also update the primary fields for backward compatibility
       if (currentItems.length === 0) {
@@ -1079,11 +1087,12 @@ Pressure Range,Up to 60 psi 4.1 bar`}
   const renderCompatibleContainerForm = () => {
     // Initialize Compatible Container state if it doesn't exist
     React.useEffect(() => {
-      if (!contentData['compatible-container']) {
+      if (!contentData['compatible-container'] || !contentData['compatible-container'].compatibleItems) {
         updateContent("compatible-container", "title", "Compatible Container");
         updateContent("compatible-container", "compatibleItems", []);
+        console.log('Initialized Compatible Container state');
       }
-    }, []);
+    }, [contentData]);
 
     return (
     <Card key="compatible-container" className="content-form">
@@ -1131,7 +1140,24 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             </p>
           </div>
 
-
+          {/* Debug state */}
+          <div className="bg-yellow-100 p-2 text-xs">
+            <div><strong>State Debug:</strong></div>
+            <div>Compatible Container exists: {contentData['compatible-container'] ? 'Yes' : 'No'}</div>
+            <div>Items array exists: {contentData['compatible-container']?.compatibleItems ? 'Yes' : 'No'}</div>
+            <div>Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}</div>
+            <button 
+              onClick={() => {
+                console.log('Force initialize clicked');
+                updateContent("compatible-container", "title", "Compatible Container");
+                updateContent("compatible-container", "compatibleItems", []);
+                console.log('Force initialization done');
+              }}
+              className="bg-blue-500 text-white px-2 py-1 rounded ml-2"
+            >
+              Force Initialize
+            </button>
+          </div>
           
           {/* Display compatible items as cards */}
           {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
