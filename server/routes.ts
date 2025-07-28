@@ -359,6 +359,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             hasDraftContent = draftContent.length > 0;
           }
           
+          // If content is already saved to Shopify (detected our template), don't show draft mode
+          if (isOurTemplateStructure) {
+            hasDraftContent = false; // Hide draft mode when content is published to Shopify
+          }
+          
           // If we detected our template structure in Shopify but no local content, mark it as New Layout
           if (isOurTemplateStructure && !hasNewLayout) {
             hasNewLayout = true;

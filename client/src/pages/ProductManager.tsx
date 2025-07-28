@@ -79,6 +79,7 @@ export default function ProductManager() {
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [hasDraftContent, setHasDraftContent] = useState(false);
   const [showExtractButton, setShowExtractButton] = useState(false);
+  const [hasShopifyTemplate, setHasShopifyTemplate] = useState(false);
   const { toast } = useToast();
   const params = useParams();
   const productId = params.productId;
@@ -165,8 +166,22 @@ export default function ProductManager() {
     setSelectedTabs(orderedTabs);
     setContentData(finalContentMap);
     
+    // Check if content has our template structure in Shopify
+    let hasShopifyTemplate = false;
+    if (product.description) {
+      const html = product.description;
+      const hasContainerClass = html.includes('class="container"');
+      const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
+      const hasDataSkuAttributes = html.includes('data-sku=');
+      
+      hasShopifyTemplate = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
+    }
+    setHasShopifyTemplate(hasShopifyTemplate);
+    
     // Check if we have draft content or content data
-    setHasDraftContent(Object.keys(finalContentMap).length > 0);
+    // Hide draft mode if content is already saved to Shopify
+    const showDraftMode = Object.keys(finalContentMap).length > 0 && !hasShopifyTemplate;
+    setHasDraftContent(showDraftMode);
     
     // Show extract button only if no content was found and there's a description to extract from
     if (Object.keys(finalContentMap).length === 0 && product.description && product.description.trim() !== '') {
@@ -403,7 +418,7 @@ export default function ProductManager() {
                     <Package className="w-5 h-5" />
                     Product Information
                     <div className="flex items-center gap-2 ml-auto">
-                      {hasDraftContent && selectedTabs.length > 0 && (
+                      {hasDraftContent && selectedTabs.length > 0 && !hasShopifyTemplate && (
                         <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                           Draft Mode
                         </Badge>
