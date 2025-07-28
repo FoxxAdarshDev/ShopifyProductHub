@@ -606,7 +606,18 @@ class ShopifyService {
     try {
       console.log(`Looking for collection with handle: "${handle}"`);
       
-      // First, let's list all collections to see what's available
+      // First try direct collection API call
+      try {
+        const directResponse = await this.makeRequest(`/collections/${handle}.json`);
+        if (directResponse.collection) {
+          console.log(`Found collection directly: "${directResponse.collection.title}"`);
+          return directResponse.collection;
+        }
+      } catch (directError) {
+        console.log(`Direct collection lookup failed for "${handle}", trying collection list...`);
+      }
+      
+      // Fallback: list all collections to find by handle
       const allCollectionsResponse = await this.makeRequest('/collections.json?fields=id,title,handle,image&limit=250');
       const allCollections = allCollectionsResponse.collections || [];
       console.log(`Found ${allCollections.length} total collections`);
@@ -641,10 +652,12 @@ class ShopifyService {
 
   async getProductByHandle(handle: string): Promise<any> {
     try {
-      const response = await this.makeRequest(`/products/${handle}.json?fields=id,title,handle,images`);
+      console.log(`Fetching product by handle: ${handle}`);
+      const response = await this.makeRequest(`/products/${handle}.json`);
+      console.log(`Product response for ${handle}:`, response.product ? 'Found' : 'Not found');
       return response.product || null;
     } catch (error) {
-      console.error('Error fetching product by handle:', error);
+      console.error('Error fetching product by handle:', handle, error);
       return null;
     }
   }

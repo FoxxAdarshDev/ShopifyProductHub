@@ -278,25 +278,36 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     try {
       if (urlData.type === 'collection') {
         // Fetch collection data
-        const response = await fetch(`/api/shopify/collections/${urlData.handle}`);
+        const response = await fetch(`/api/shopify/collections/handle/${urlData.handle}`);
         if (response.ok) {
-          const collection = await response.json();
-          return {
-            title: collection.title,
-            image: collection.image?.src || null,
-            handle: urlData.handle
-          };
+          const data = await response.json();
+          const collection = data.collection;
+          if (collection) {
+            // Get collection image or first product image
+            let imageUrl = collection.image?.src || null;
+            if (!imageUrl && collection.products?.length > 0 && collection.products[0].images?.length > 0) {
+              imageUrl = collection.products[0].images[0].src;
+            }
+            return {
+              title: collection.title,
+              image: imageUrl,
+              handle: urlData.handle
+            };
+          }
         }
       } else if (urlData.type === 'product') {
         // Fetch product data
         const response = await fetch(`/api/shopify/products/handle/${urlData.handle}`);
         if (response.ok) {
-          const product = await response.json();
-          return {
-            title: product.title,
-            image: product.images?.[0]?.src || null,
-            handle: urlData.handle
-          };
+          const data = await response.json();
+          const product = data.product;
+          if (product) {
+            return {
+              title: product.title,
+              image: product.images?.[0]?.src || null,
+              handle: urlData.handle
+            };
+          }
         }
       }
     } catch (error) {
@@ -1164,26 +1175,27 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               type="button"
               variant="outline"
               onClick={() => {
-                // Clear the URL input for next item
+                // Focus the URL input for next item
                 const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
-                if (urlInput) urlInput.value = '';
+                if (urlInput) {
+                  urlInput.focus();
+                  urlInput.value = '';
+                  // Temporarily change placeholder to encourage input
+                  const originalPlaceholder = urlInput.placeholder;
+                  urlInput.placeholder = "Paste URL here and press Enter to add another item";
+                  // Reset placeholder after focus loss
+                  urlInput.addEventListener('blur', () => {
+                    urlInput.placeholder = originalPlaceholder;
+                  }, { once: true });
+                }
               }}
-              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Another Compatible Item
             </Button>
           </div>
 
-          <div>
-            <Label className="block text-sm font-medium text-slate-700 mb-2">Collection Handle</Label>
-            <Input
-              placeholder="compatible-bottles"
-              value={contentData['compatible-container']?.collectionHandle || ""}
-              onChange={(e) => updateContent("compatible-container", "collectionHandle", e.target.value)}
-              data-testid="input-collection-handle"
-            />
-          </div>
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">Section Title</Label>
             <Input
