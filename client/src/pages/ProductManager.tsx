@@ -323,6 +323,7 @@ export default function ProductManager() {
                 onSaveContent={handleSaveContent}
                 onUpdateShopify={handleUpdateShopify}
                 isLoading={updateContentMutation.isPending || updateShopifyMutation.isPending}
+                productSku={selectedProduct.sku}
               />
             </>
           )}

@@ -366,8 +366,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Preview HTML generation
   app.post("/api/preview", async (req, res) => {
     try {
-      const { content } = req.body;
-      const html = htmlGenerator.generateProductHtml(content);
+      const { content, productSku } = req.body;
+      const html = htmlGenerator.generateProductHtml(content, productSku);
       res.json({ html });
     } catch (error) {
       console.error("Preview generation error:", error);

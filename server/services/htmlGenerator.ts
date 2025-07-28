@@ -11,13 +11,14 @@ interface ContentItem {
 }
 
 class HtmlGenerator {
-  generateProductHtml(content: ProductContent[]): string {
-    let html = '<div class="container">\n';
+  generateProductHtml(content: ProductContent[], productSku?: string): string {
+    const sku = productSku || 'unknown-sku';
+    let html = `<div class="container" data-sku="${sku}">\n`;
     
     // Get the product title from description content if available
     const descriptionContent = content.find(c => c.tabType === 'description');
     if (descriptionContent && (descriptionContent.content as any)?.title) {
-      html += `    <h2>${(descriptionContent.content as any).title}</h2>\n`;
+      html += `    <h2 data-sku="${sku}">${(descriptionContent.content as any).title}</h2>\n`;
     }
 
     // Generate tabs based on content
@@ -26,31 +27,31 @@ class HtmlGenerator {
 
       switch (item.tabType) {
         case 'description':
-          html += this.generateDescriptionTab(item.content);
+          html += this.generateDescriptionTab(item.content, sku);
           break;
         case 'features':
-          html += this.generateFeaturesTab(item.content);
+          html += this.generateFeaturesTab(item.content, sku);
           break;
         case 'applications':
-          html += this.generateApplicationsTab(item.content);
+          html += this.generateApplicationsTab(item.content, sku);
           break;
         case 'specifications':
-          html += this.generateSpecificationsTab(item.content);
+          html += this.generateSpecificationsTab(item.content, sku);
           break;
         case 'videos':
-          html += this.generateVideosTab(item.content);
+          html += this.generateVideosTab(item.content, sku);
           break;
         case 'documentation':
-          html += this.generateDocumentationTab(item.content);
+          html += this.generateDocumentationTab(item.content, sku);
           break;
         case 'safety-guidelines':
-          html += this.generateSafetyTab(item.content);
+          html += this.generateSafetyTab(item.content, sku);
           break;
         case 'sku-nomenclature':
-          html += this.generateSKUNomenclatureTab(item.content);
+          html += this.generateSKUNomenclatureTab(item.content, sku);
           break;
         case 'compatible-container':
-          html += this.generateCompatibleContainerTab(item.content);
+          html += this.generateCompatibleContainerTab(item.content, sku);
           break;
       }
     });
@@ -59,8 +60,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateDescriptionTab(content: any): string {
-    let html = '    <div class="tab-content active" id="description">\n';
+  private generateDescriptionTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content active" id="description" data-sku="${sku}">\n`;
     
     if (content.description) {
       // Split description into paragraphs
@@ -85,8 +86,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateFeaturesTab(content: any): string {
-    let html = '    <div class="tab-content" id="features">\n';
+  private generateFeaturesTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content" id="features" data-sku="${sku}">\n`;
     html += '     <ul>\n';
     
     if (content.features && Array.isArray(content.features)) {
@@ -100,8 +101,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateApplicationsTab(content: any): string {
-    let html = '    <div class="tab-content" id="applications">\n';
+  private generateApplicationsTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content" id="applications" data-sku="${sku}">\n`;
     html += '    <ul>\n';
     
     if (content.applications && Array.isArray(content.applications)) {
@@ -115,8 +116,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateSpecificationsTab(content: any): string {
-    let html = '    <div class="tab-content" id="specification">\n';
+  private generateSpecificationsTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content" id="specification" data-sku="${sku}">\n`;
     html += '    <table style="width: 100%; height: 78.3752px;">\n';
     html += '    <tbody>\n';
     html += '    <tr>\n';
@@ -139,8 +140,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateVideosTab(content: any): string {
-    let html = '    <div id="videos" class="tab-content">\n';
+  private generateVideosTab(content: any, sku: string): string {
+    let html = `    <div id="videos" class="tab-content" data-sku="${sku}">\n`;
     
     if (content.videoUrl) {
       html += `        <iframe width="560" height="315" src="${content.videoUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>\n`;
@@ -154,8 +155,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateDocumentationTab(content: any): string {
-    let html = '    <div id="documentation" class="tab-content">\n';
+  private generateDocumentationTab(content: any, sku: string): string {
+    let html = `    <div id="documentation" class="tab-content" data-sku="${sku}">\n`;
     
     if (content.datasheetUrl) {
       html += `    <p><a href="${content.datasheetUrl}" target="_blank">${content.datasheetTitle || 'Product Datasheet'}</a></p>\n`;
@@ -171,8 +172,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateSafetyTab(content: any): string {
-    let html = '    <div class="tab-content" id="safety-guidelines">\n';
+  private generateSafetyTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content" id="safety-guidelines" data-sku="${sku}">\n`;
     html += '        <ul>\n';
     
     if (content.guidelines && Array.isArray(content.guidelines)) {
@@ -186,8 +187,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateSKUNomenclatureTab(content: any): string {
-    let html = '    <div class="tab-content" id="sku-nomenclature">\n';
+  private generateSKUNomenclatureTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content" id="sku-nomenclature" data-sku="${sku}">\n`;
     
     if (content.title) {
       html += `        <h3>${content.title}</h3>\n`;
@@ -242,8 +243,8 @@ class HtmlGenerator {
     return html;
   }
 
-  private generateCompatibleContainerTab(content: any): string {
-    let html = '    <div class="tab-content" id="compatible-container">\n';
+  private generateCompatibleContainerTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content compatible-container" id="compatible-container" data-sku="${sku}">\n`;
     
     if (content.title) {
       html += `        <h3>${content.title}</h3>\n`;
@@ -253,9 +254,27 @@ class HtmlGenerator {
       html += `        <p>${content.description}</p>\n`;
     }
     
-    if (content.collectionHandle) {
+    // Generate compatible items if available
+    if (content.compatibleItems && Array.isArray(content.compatibleItems) && content.compatibleItems.length > 0) {
+      html += '        <div class="compatible-items-grid">\n';
+      content.compatibleItems.forEach((item: any) => {
+        html += '            <div class="compatible-item">\n';
+        
+        if (item.image) {
+          html += `                <img src="${item.image}" alt="${item.title}" loading="lazy" />\n`;
+        }
+        
+        html += '                <div class="compatible-item-content">\n';
+        html += `                    <a href="${item.sourceUrl}" target="_blank" class="compatible-item-title">${item.title}</a>\n`;
+        html += `                    <div class="compatible-item-type">${item.type === 'collection' ? 'Collection' : 'Product'}: ${item.handle}</div>\n`;
+        html += '                </div>\n';
+        html += '                <span class="compatible-item-arrow">→</span>\n';
+        html += '            </div>\n';
+      });
+      html += '        </div>\n';
+    } else if (content.collectionHandle) {
+      // Fallback to collection link if no compatible items
       html += `        <div class="collection-showcase" data-collection="${content.collectionHandle}">\n`;
-      html += `            <!-- This will be populated by Shopify's collection liquid tags -->\n`;
       html += `            <p>Browse compatible products in the <a href="/collections/${content.collectionHandle}">product collection</a>.</p>\n`;
       html += '        </div>\n';
     }

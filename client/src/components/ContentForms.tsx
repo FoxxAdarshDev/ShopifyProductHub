@@ -1097,21 +1097,42 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                           className="w-16 h-16 object-cover rounded border"
                         />
                       )}
-                      <div>
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={item.title}
+                          onChange={(e) => {
+                            const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                            const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                              i === index ? { ...existingItem, title: e.target.value } : existingItem
+                            );
+                            updateContent("compatible-container", "compatibleItems", updatedItems);
+                          }}
+                          className="font-medium text-blue-600 border-none shadow-none p-0 h-auto bg-transparent"
+                          placeholder="Edit title..."
+                        />
+                        <Input
+                          value={item.image || ''}
+                          onChange={(e) => {
+                            const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                            const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                              i === index ? { ...existingItem, image: e.target.value } : existingItem
+                            );
+                            updateContent("compatible-container", "compatibleItems", updatedItems);
+                          }}
+                          className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1"
+                          placeholder="Image URL (optional)..."
+                        />
+                        <p className="text-sm text-gray-500">
+                          {item.type === 'collection' ? 'Collection' : 'Product'}: {item.handle}
+                        </p>
                         <a 
                           href={item.sourceUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                          className="text-xs text-blue-400 hover:text-blue-600 hover:underline truncate max-w-xs block"
                         >
-                          {item.title}
-                        </a>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {item.type === 'collection' ? 'Collection' : 'Product'}: {item.handle}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate max-w-xs">
                           {item.sourceUrl}
-                        </p>
+                        </a>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

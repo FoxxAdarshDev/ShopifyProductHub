@@ -11,6 +11,7 @@ interface PreviewPanelProps {
   onSaveContent: () => void;
   onUpdateShopify: () => void;
   isLoading: boolean;
+  productSku?: string;
 }
 
 export default function PreviewPanel({ 
@@ -18,7 +19,8 @@ export default function PreviewPanel({
     selectedTabs, 
     onSaveContent, 
     onUpdateShopify, 
-    isLoading 
+    isLoading,
+    productSku 
 }: PreviewPanelProps) {
   const [previewHtml, setPreviewHtml] = useState("");
   const [showPreview, setShowPreview] = useState(false);
@@ -31,7 +33,10 @@ export default function PreviewPanel({
         isActive: true
       }));
 
-      const response = await apiRequest("POST", "/api/preview", { content: contentArray });
+      const response = await apiRequest("POST", "/api/preview", { 
+        content: contentArray, 
+        productSku: productSku || 'unknown-sku' 
+      });
       return response.json();
     },
     onSuccess: (data) => {
