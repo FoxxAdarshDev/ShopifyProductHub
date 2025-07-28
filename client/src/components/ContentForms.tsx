@@ -918,119 +918,86 @@ Pressure Range,Up to 60 psi 4.1 bar`}
     </Card>
   );
 
-  const renderVideosForm = () => {
-    // Set default values when videos tab is first rendered
-    React.useEffect(() => {
-      if (!contentData.videos?.defaultsSet) {
-        const defaultContent = {
-          videoPlaceholder: "Video coming soon",
-          youtubeChannelText: 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!',
-          defaultsSet: true
-        };
-        onContentChange({
-          ...contentData,
-          videos: { ...contentData.videos, ...defaultContent }
-        });
-      }
-    }, []);
-
-    return (
-      <Card key="videos" className="content-form">
-        <CardHeader className="form-section-header">
-          <CardTitle className="flex items-center">
-            <Video className="w-5 h-5 text-primary mr-3" />
-            Videos Content
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="form-section-content">
-          <div className="space-y-4">
-            {/* Default content info */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Default content included:</strong> "Video coming soon" placeholder and YouTube channel link will always appear.
-              </p>
-            </div>
-            
-            <div>
-              <Label className="block text-sm font-medium text-slate-700 mb-2">Video URL (YouTube Embed - Optional)</Label>
-              <Input
-                placeholder="https://www.youtube.com/embed/..."
-                value={contentData.videos?.videoUrl || ""}
-                onChange={(e) => updateContent("videos", "videoUrl", e.target.value)}
-                data-testid="input-video-url"
-              />
-            </div>
-            
-            <div>
-              <Label className="block text-sm font-medium text-slate-700 mb-2">YouTube Channel Text (Default Included)</Label>
-              <Input
-                placeholder='Check out all of our videos on our YouTube Channel!'
-                value={contentData.videos?.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!'}
-                onChange={(e) => updateContent("videos", "youtubeChannelText", e.target.value)}
-                data-testid="input-youtube-text"
-              />
-            </div>
+  const renderVideosForm = () => (
+    <Card key="videos" className="content-form">
+      <CardHeader className="form-section-header">
+        <CardTitle className="flex items-center">
+          <Video className="w-5 h-5 text-primary mr-3" />
+          Videos Content
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="form-section-content">
+        <div className="space-y-4">
+          {/* Default content info */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>Default content included:</strong> "Video coming soon" placeholder and YouTube channel link will always appear.
+            </p>
           </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderDocumentationForm = () => {
-    // Set default values when documentation tab is first rendered
-    React.useEffect(() => {
-      if (!contentData.documentation?.defaultsSet) {
-        const defaultContent = {
-          defaultDatasheetText: 'Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank">here</a> for a full list of our product datasheets!',
-          defaultsSet: true
-        };
-        onContentChange({
-          ...contentData,
-          documentation: { ...contentData.documentation, ...defaultContent }
-        });
-      }
-    }, []);
-
-    return (
-      <Card key="documentation" className="content-form">
-        <CardHeader className="form-section-header">
-          <CardTitle className="flex items-center">
-            <FileDown className="w-5 h-5 text-primary mr-3" />
-            Documentation Content
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="form-section-content">
-          <div className="space-y-4">
-            {/* Default content info */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Default content included:</strong> Link to product datasheets page will always appear.
-              </p>
-            </div>
-            
-            <div>
-              <Label className="block text-sm font-medium text-slate-700 mb-2">Datasheet Title (Optional)</Label>
-              <Input
-                placeholder="Product Datasheet"
-                value={contentData.documentation?.datasheetTitle || ""}
-                onChange={(e) => updateContent("documentation", "datasheetTitle", e.target.value)}
-                data-testid="input-datasheet-title"
-              />
-            </div>
-            <div>
-              <Label className="block text-sm font-medium text-slate-700 mb-2">Datasheet URL (Optional)</Label>
-              <Input
-                placeholder="https://cdn.shopify.com/..."
-                value={contentData.documentation?.datasheetUrl || ""}
-                onChange={(e) => updateContent("documentation", "datasheetUrl", e.target.value)}
-                data-testid="input-datasheet-url"
-              />
-            </div>
+          
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">Video URL (YouTube Embed - Optional)</Label>
+            <Input
+              placeholder="https://www.youtube.com/embed/..."
+              value={contentData.videos?.videoUrl || ""}
+              onChange={(e) => updateContent("videos", "videoUrl", e.target.value)}
+              data-testid="input-video-url"
+            />
           </div>
-        </CardContent>
-      </Card>
-    );
-  };
+          
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">YouTube Channel Text (Default Included)</Label>
+            <Input
+              placeholder='Check out all of our videos on our YouTube Channel!'
+              value={contentData.videos?.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!'}
+              onChange={(e) => updateContent("videos", "youtubeChannelText", e.target.value)}
+              data-testid="input-youtube-text"
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderDocumentationForm = () => (
+    <Card key="documentation" className="content-form">
+      <CardHeader className="form-section-header">
+        <CardTitle className="flex items-center">
+          <FileDown className="w-5 h-5 text-primary mr-3" />
+          Documentation Content
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="form-section-content">
+        <div className="space-y-4">
+          {/* Default content info */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>Default content included:</strong> Link to product datasheets page will always appear.
+            </p>
+          </div>
+          
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">Datasheet Title (Optional)</Label>
+            <Input
+              placeholder="Product Datasheet"
+              value={contentData.documentation?.datasheetTitle || ""}
+              onChange={(e) => updateContent("documentation", "datasheetTitle", e.target.value)}
+              data-testid="input-datasheet-title"
+            />
+          </div>
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-2">Datasheet URL (Optional)</Label>
+            <Input
+              placeholder="https://cdn.shopify.com/..."
+              value={contentData.documentation?.datasheetUrl || ""}
+              onChange={(e) => updateContent("documentation", "datasheetUrl", e.target.value)}
+              data-testid="input-datasheet-url"
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   const renderSafetyForm = () => (
     <Card key="safety-guidelines" className="content-form">
