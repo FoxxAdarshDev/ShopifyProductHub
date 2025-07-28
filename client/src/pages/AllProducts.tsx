@@ -58,7 +58,7 @@ export default function AllProducts() {
   const [totalFetched, setTotalFetched] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
-  const [contentFilter, setContentFilter] = useState<'all' | 'shopify' | 'new-layout' | 'none'>('all');
+  const [contentFilter, setContentFilter] = useState<'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none'>('all');
   const { toast } = useToast();
 
   const productsPerPage = 20;
@@ -157,6 +157,8 @@ export default function AllProducts() {
           return status.hasShopifyContent;
         case 'new-layout':
           return status.hasNewLayout;
+        case 'draft-mode':
+          return status.hasNewLayout; // Draft mode = has new layout content
         case 'none':
           return !status.hasShopifyContent && !status.hasNewLayout;
         default:
@@ -174,6 +176,7 @@ export default function AllProducts() {
   const totalProducts = baseProducts.length;
   const shopifyContentCount = baseProducts.filter(p => contentStatus[p.id]?.hasShopifyContent).length;
   const newLayoutCount = baseProducts.filter(p => contentStatus[p.id]?.hasNewLayout).length;
+  const draftModeCount = baseProducts.filter(p => contentStatus[p.id]?.hasNewLayout).length; // Same as new layout since draft = new layout
   const noContentCount = baseProducts.filter(p => {
     const status = contentStatus[p.id];
     return !status?.hasShopifyContent && !status?.hasNewLayout;
@@ -234,6 +237,10 @@ export default function AllProducts() {
                 <span>New Layout: {newLayoutCount}</span>
               </div>
               <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>Draft Mode: {draftModeCount}</span>
+              </div>
+              <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                 <span>No Content: {noContentCount}</span>
               </div>
@@ -270,7 +277,7 @@ export default function AllProducts() {
           {/* Content Filter */}
           <div className="flex items-center gap-3">
             <Filter className="w-4 h-4 text-slate-500" />
-            <Select value={contentFilter} onValueChange={(value: 'all' | 'shopify' | 'new-layout' | 'none') => setContentFilter(value)}>
+            <Select value={contentFilter} onValueChange={(value: 'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none') => setContentFilter(value)}>
               <SelectTrigger className="w-48" data-testid="select-content-filter">
                 <SelectValue placeholder="Filter by content" />
               </SelectTrigger>
@@ -278,6 +285,7 @@ export default function AllProducts() {
                 <SelectItem value="all">All Products ({totalProducts})</SelectItem>
                 <SelectItem value="shopify">Shopify Content ({shopifyContentCount})</SelectItem>
                 <SelectItem value="new-layout">New Layout ({newLayoutCount})</SelectItem>
+                <SelectItem value="draft-mode">Draft Mode ({draftModeCount})</SelectItem>
                 <SelectItem value="none">No Content ({noContentCount})</SelectItem>
               </SelectContent>
             </Select>
