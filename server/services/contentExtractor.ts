@@ -334,7 +334,134 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
+    // ====================== ADDITIONAL CONTENT TABS EXTRACTION ======================
+    
+    // Extract SKU Nomenclature content - look for tab-content with id="sku-nomenclature"
+    const skuDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="sku-nomenclature"[^>]*>([\s\S]*?)<\/div>/);
+    console.log('🔍 SKU Nomenclature div search result:', skuDiv ? 'FOUND' : 'NOT FOUND');
+    if (skuDiv && skuDiv[1]) {
+      console.log('🏷️ Found SKU nomenclature div with structured content');
+      console.log('🏷️ SKU nomenclature div content preview:', skuDiv[1].substring(0, 200) + '...');
+      
+      // Extract title (H3 heading)
+      const titleMatch = skuDiv[1].match(/<h3[^>]*>(.*?)<\/h3>/);
+      const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+      console.log('🏷️ SKU nomenclature title found:', title || 'None');
+      
+      // Extract main image if present
+      const mainImageMatch = skuDiv[1].match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
+      const mainImage = mainImageMatch ? mainImageMatch[1] : '';
+      console.log('🏷️ SKU nomenclature main image found:', mainImage || 'None');
+      
+      // Extract the table data for SKU breakdown
+      const tableMatch = skuDiv[1].match(/<table[^>]*>([\s\S]*?)<\/table>/);
+      const nomenclatureItems: Array<{position: string, description: string, options: string}> = [];
+      
+      if (tableMatch) {
+        const rowMatches = tableMatch[1].match(/<tr[^>]*>[\s\S]*?<\/tr>/g);
+        console.log('🏷️ SKU table rows found:', rowMatches ? rowMatches.length : 0);
+        
+        if (rowMatches && rowMatches.length > 1) { // Skip header row
+          rowMatches.slice(1).forEach((row, index) => {
+            console.log(`🏷️ Processing SKU row ${index + 2}:`, row.replace(/\s+/g, ' ').substring(0, 150) + '...');
+            const cells = [];
+            const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
+            let cellMatch;
+            while ((cellMatch = cellRegex.exec(row)) !== null) {
+              cells.push(cellMatch[1].replace(/<[^>]*>/g, '').trim());
+            }
+            console.log('🏷️ Extracted SKU cells:', cells);
+            
+            if (cells.length >= 3) {
+              const position = cells[0];
+              const description = cells[1];
+              const options = cells[2];
+              console.log('🏷️ SKU nomenclature row:', position, '=', description, 'options:', options);
+              if (position && description && position !== 'Position' && description !== 'Description') {
+                nomenclatureItems.push({ position, description, options });
+              }
+            }
+          });
+        }
+      }
+      
+      console.log('🏷️ Final SKU nomenclature array:', nomenclatureItems.length, 'items');
+      if (title || mainImage || nomenclatureItems.length > 0) {
+        extractedContent['sku-nomenclature'] = {
+          title: title,
+          mainImage: mainImage,
+          nomenclatureItems
+        };
+        console.log('✅ SKU nomenclature extracted successfully');
+      }
+    }
+
+    // Extract Safety Guidelines content - look for tab-content with id="safety-guidelines"
+    const safetyDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="safety-guidelines"[^>]*>([\s\S]*?)<\/div>/);
+    console.log('🔍 Safety Guidelines div search result:', safetyDiv ? 'FOUND' : 'NOT FOUND');
+    if (safetyDiv && safetyDiv[1]) {
+      console.log('🛡️ Found safety guidelines div with structured content');
+      console.log('🛡️ Safety guidelines div content preview:', safetyDiv[1].substring(0, 200) + '...');
+      
+      const listItems = safetyDiv[1].match(/<li[^>]*>(.*?)<\/li>/g);
+      console.log('🛡️ Safety guidelines list items found:', listItems ? listItems.length : 0);
+      
+      if (listItems && listItems.length > 0) {
+        const guidelines = listItems.map(li => {
+          const cleaned = li.replace(/<span[^>]*style="[^"]*"[^>]*>/g, '')
+                   .replace(/<\/span>/g, '')
+                   .replace(/<[^>]*>/g, '')
+                   .trim();
+          console.log('🛡️ Cleaned safety guideline:', cleaned);
+          return cleaned;
+        }).filter(g => g);
+        
+        console.log('🛡️ Final safety guidelines array:', guidelines);
+        if (guidelines.length > 0) {
+          extractedContent['safety-guidelines'] = {
+            guidelines
+          };
+          console.log('✅ Safety guidelines extracted successfully');
+        }
+      }
+    }
+
+    // Extract Sterilization Method content - look for tab-content with id="sterilization-method"
+    const sterilDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="sterilization-method"[^>]*>([\s\S]*?)<\/div>/);
+    console.log('🔍 Sterilization Method div search result:', sterilDiv ? 'FOUND' : 'NOT FOUND');
+    if (sterilDiv && sterilDiv[1]) {
+      console.log('🧪 Found sterilization method div with structured content');
+      console.log('🧪 Sterilization method div content preview:', sterilDiv[1].substring(0, 200) + '...');
+      
+      // Extract title (H3 heading)
+      const titleMatch = sterilDiv[1].match(/<h3[^>]*>(.*?)<\/h3>/);
+      const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+      console.log('🧪 Sterilization method title found:', title || 'None');
+      
+      const listItems = sterilDiv[1].match(/<li[^>]*>(.*?)<\/li>/g);
+      console.log('🧪 Sterilization method list items found:', listItems ? listItems.length : 0);
+      
+      const methods = listItems ? listItems.map(li => {
+        const cleaned = li.replace(/<span[^>]*style="[^"]*"[^>]*>/g, '')
+                 .replace(/<\/span>/g, '')
+                 .replace(/<[^>]*>/g, '')
+                 .trim();
+        console.log('🧪 Cleaned sterilization method:', cleaned);
+        return cleaned;
+      }).filter(m => m) : [];
+      
+      console.log('🧪 Final sterilization methods array:', methods);
+      if (title || methods.length > 0) {
+        extractedContent['sterilization-method'] = {
+          title: title,
+          methods
+        };
+        console.log('✅ Sterilization methods extracted successfully');
+      }
+    }
+
     console.log('🎉 Final extraction result keys:', Object.keys(extractedContent));
+    console.log('🎉 Additional tabs extracted:', Object.keys(extractedContent).filter(k => ['sku-nomenclature', 'safety-guidelines', 'sterilization-method'].includes(k)));
     return extractedContent;
     
   } catch (error) {
