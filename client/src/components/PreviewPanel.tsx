@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,7 @@ export default function PreviewPanel({
   const [previewHtml, setPreviewHtml] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [autoGenerate, setAutoGenerate] = useState(false);
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -46,6 +47,27 @@ export default function PreviewPanel({
       setShowPreview(true);
     },
   });
+
+  // Auto-generate HTML when content changes if enabled
+  useEffect(() => {
+    if (autoGenerate && selectedTabs.length > 0) {
+      const hasContent = selectedTabs.some(tabType => {
+        const data = contentData[tabType];
+        return data && Object.values(data).some(value => 
+          value && (typeof value === 'string' ? value.trim() : Array.isArray(value) ? value.length > 0 : true)
+        );
+      });
+      
+      if (hasContent) {
+        // Debounce auto-generation
+        const timeoutId = setTimeout(() => {
+          previewMutation.mutate();
+        }, 2000); // 2-second delay after content changes
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [contentData, selectedTabs, autoGenerate]);
 
   const handlePreview = () => {
     previewMutation.mutate();
@@ -123,16 +145,30 @@ export default function PreviewPanel({
           
           <TabsContent value="html" className="mt-6">
             <div className="space-y-4">
-              <Button
-                variant="outline"
-                onClick={handlePreview}
-                disabled={previewMutation.isPending}
-                data-testid="button-preview"
-                className="w-full"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                {previewMutation.isPending ? "Generating..." : "Generate HTML Code"}
-              </Button>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handlePreview}
+                  disabled={previewMutation.isPending}
+                  data-testid="button-preview"
+                  className="flex-1"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {previewMutation.isPending ? "Generating..." : "Generate HTML Code"}
+                </Button>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="auto-generate"
+                    checked={autoGenerate}
+                    onChange={(e) => setAutoGenerate(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="auto-generate" className="text-sm text-slate-600">
+                    Auto-generate HTML
+                  </label>
+                </div>
+              </div>
               
               {showPreview && (
                 <div className="preview-html">

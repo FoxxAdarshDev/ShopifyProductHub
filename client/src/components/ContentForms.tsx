@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";  
 import { Label } from "@/components/ui/label";
 import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Plus, Trash2, Hash, Package2, Upload, ClipboardPaste } from "lucide-react";
 import LogoManager from "./LogoManager";
 import FileUpload from "./FileUpload";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ContentFormsProps {
   selectedTabs: string[];
@@ -17,6 +18,51 @@ interface ContentFormsProps {
 }
 
 export default function ContentForms({ selectedTabs, contentData, onContentChange, productId, onDraftStatusChange }: ContentFormsProps) {
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-save functionality with 1-second delay
+  const saveDraftContent = async (tabType: string, content: any, updatedContentData: any) => {
+    if (!productId) return;
+    
+    try {
+      await apiRequest("POST", "/api/draft-content", {
+        shopifyProductId: productId,
+        tabType: tabType,
+        content: content
+      });
+      
+      // Update draft status if callback is provided
+      if (onDraftStatusChange) {
+        // Check if any selected tabs have meaningful content using the updated content data
+        const hasContent = selectedTabs.some(tabType => {
+          const data = updatedContentData[tabType];
+          if (!data) return false;
+          
+          // Check different types of content
+          return Object.values(data).some(value => {
+            if (typeof value === 'string') {
+              return value.trim().length > 0;
+            } else if (Array.isArray(value)) {
+              return value.length > 0 && value.some(item => 
+                typeof item === 'string' ? item.trim().length > 0 : 
+                typeof item === 'object' && item !== null
+              );
+            } else if (typeof value === 'object' && value !== null) {
+              return Object.values(value).some(subValue => 
+                typeof subValue === 'string' ? subValue.trim().length > 0 : 
+                Array.isArray(subValue) ? subValue.length > 0 : Boolean(subValue)
+              );
+            }
+            return Boolean(value);
+          });
+        });
+        onDraftStatusChange(hasContent);
+      }
+    } catch (error) {
+      console.error('Failed to save draft content:', error);
+    }
+  };
+
   const updateContent = (tabType: string, field: string, value: any) => {
     const updated = {
       ...contentData,
@@ -26,7 +72,25 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       },
     };
     onContentChange(updated);
+    
+    // Auto-save with 1-second delay
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveDraftContent(tabType, updated[tabType], updated);
+    }, 1000);
   };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const addArrayItem = (tabType: string, field: string, defaultValue: any) => {
     const current = contentData[tabType]?.[field] || [];
@@ -343,41 +407,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     return null;
   };
 
-  // Auto-save draft content to database
-  const saveDraftContent = async (tabType: string, content: any) => {
-    if (!productId) return;
-    
-    try {
-      await fetch('/api/draft-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shopifyProductId: productId,
-          tabType,
-          content
-        })
-      });
-    } catch (error) {
-      console.error('Failed to save draft content:', error);
-    }
-  };
 
-  // Enhanced updateContent function that auto-saves drafts
-  const updateContentWithDraftSave = (tabType: string, field: string, value: any) => {
-    updateContent(tabType, field, value);
-    
-    // Mark as having draft content
-    if (onDraftStatusChange) {
-      onDraftStatusChange(true);
-    }
-    
-    // Auto-save to draft storage after a short delay
-    setTimeout(() => {
-      const currentTabData = contentData[tabType] || {};
-      const updatedTabData = { ...currentTabData, [field]: value };
-      saveDraftContent(tabType, updatedTabData);
-    }, 1000); // 1000ms delay to batch rapid changes
-  };
 
   const handleUrlInput = async (url: string) => {
     console.log('🔥 handleUrlInput called with URL:', url);
@@ -451,11 +481,19 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     
     // Auto-save the updated compatible container data
     setTimeout(() => {
+      const updatedContentData = {
+        ...contentData,
+        'compatible-container': {
+          title: "Compatible Container",
+          compatibleItems: updatedItems,
+          collectionHandle: urlData.handle
+        }
+      };
       saveDraftContent("compatible-container", {
         title: "Compatible Container",
         compatibleItems: updatedItems,
         collectionHandle: urlData.handle
-      });
+      }, updatedContentData);
     }, 100);
     
     console.log('✅ Compatible container item added successfully');
@@ -910,7 +948,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="Product Datasheet"
               value={contentData.documentation?.datasheetTitle || ""}
-              onChange={(e) => updateContentWithDraftSave("documentation", "datasheetTitle", e.target.value)}
+              onChange={(e) => updateContent("documentation", "datasheetTitle", e.target.value)}
               data-testid="input-datasheet-title"
             />
           </div>
@@ -919,7 +957,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="https://cdn.shopify.com/..."
               value={contentData.documentation?.datasheetUrl || ""}
-              onChange={(e) => updateContentWithDraftSave("documentation", "datasheetUrl", e.target.value)}
+              onChange={(e) => updateContent("documentation", "datasheetUrl", e.target.value)}
               data-testid="input-datasheet-url"
             />
           </div>
@@ -1238,7 +1276,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                             const updatedItems = currentItems.map((existingItem: any, i: number) => 
                               i === index ? { ...existingItem, title: e.target.value } : existingItem
                             );
-                            updateContentWithDraftSave("compatible-container", "compatibleItems", updatedItems);
+                            updateContent("compatible-container", "compatibleItems", updatedItems);
                           }}
                           className="font-medium text-blue-600 border-none shadow-none p-0 h-auto bg-transparent"
                           placeholder="Edit title..."
@@ -1250,7 +1288,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                             const updatedItems = currentItems.map((existingItem: any, i: number) => 
                               i === index ? { ...existingItem, image: e.target.value } : existingItem
                             );
-                            updateContentWithDraftSave("compatible-container", "compatibleItems", updatedItems);
+                            updateContent("compatible-container", "compatibleItems", updatedItems);
                           }}
                           className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1"
                           placeholder="Image URL (optional)..."
@@ -1273,7 +1311,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                         onClick={() => {
                           const currentItems = contentData['compatible-container']?.compatibleItems || [];
                           const updatedItems = currentItems.filter((_: any, i: number) => i !== index);
-                          updateContentWithDraftSave("compatible-container", "compatibleItems", updatedItems);
+                          updateContent("compatible-container", "compatibleItems", updatedItems);
                         }}
                         className="text-red-400 hover:text-red-600"
                       >
@@ -1323,7 +1361,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="Compatible Container"
               value={contentData['compatible-container']?.title || "Compatible Container"}
-              onChange={(e) => updateContentWithDraftSave("compatible-container", "title", e.target.value)}
+              onChange={(e) => updateContent("compatible-container", "title", e.target.value)}
               data-testid="input-compatible-title"
             />
           </div>
