@@ -259,44 +259,45 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
     </div>
   );
 
-  const renderDocumentationPreview = (data: any) => (
-    <div className="space-y-4">
-      {data?.title && (
-        <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
-      )}
-      
-      {/* Show specific product datasheet if available */}
-      {data?.datasheetTitle && data?.datasheetUrl && (
-        <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-          <FileDown className="w-6 h-6 text-blue-600" />
+  const renderDocumentationPreview = (data: any) => {
+    console.log('📚 Documentation preview data:', data);
+    return (
+      <div className="space-y-4">
+        {data?.title && (
+          <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
+        )}
+        
+        {/* Show specific product datasheet if available */}
+        {(data?.datasheetTitle && data?.datasheetUrl) && (
+          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+            <FileDown className="w-6 h-6 text-blue-600" />
+            <div>
+              <h4 className="font-medium text-slate-800">{data.datasheetTitle}</h4>
+              <a 
+                href={data.datasheetUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Download PDF →
+              </a>
+            </div>
+          </div>
+        )}
+        
+        {/* Always show default product datasheets link */}
+        <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
+          <FileDown className="w-6 h-6 text-green-600" />
           <div>
-            <h4 className="font-medium text-slate-800">{data.datasheetTitle}</h4>
-            <a 
-              href={convertToAbsoluteUrl(data.datasheetUrl)} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Download PDF →
-            </a>
+            <h4 className="font-medium text-slate-800">Product Datasheets</h4>
+            <p className="text-sm text-slate-600">
+              Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank" className="text-blue-600 hover:underline">here</a> for a full list of our product datasheets!
+            </p>
           </div>
         </div>
-      )}
-      
-      {/* Always show default product datasheets link */}
-      <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-        <FileDown className="w-6 h-6 text-green-600" />
-        <div>
-          <h4 className="font-medium text-slate-800">Product Datasheets</h4>
-          <p className="text-sm text-slate-600">
-            <span dangerouslySetInnerHTML={{ 
-              __html: data?.defaultDatasheetText || 'Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank" class="text-blue-600 hover:underline">here</a> for a full list of our product datasheets!'
-            }} />
-          </p>
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSafetyPreview = (data: any) => (
     <div className="space-y-4">
