@@ -21,7 +21,8 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
       documentation: <FileDown className="w-4 h-4" />,
       "safety-guidelines": <Shield className="w-4 h-4" />,
       "sku-nomenclature": <Hash className="w-4 h-4" />,
-      "compatible-container": <Package2 className="w-4 h-4" />
+      "compatible-container": <Package2 className="w-4 h-4" />,
+      "sterilization-method": <Star className="w-4 h-4" />
     };
     return icons[tabType] || <FileText className="w-4 h-4" />;
   };
@@ -36,7 +37,8 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
       documentation: "Documentation",
       "safety-guidelines": "Safety Guidelines",
       "sku-nomenclature": "SKU Nomenclature",
-      "compatible-container": "Compatible Container"
+      "compatible-container": "Compatible Container",
+      "sterilization-method": "Sterilization Method"
     };
     return titles[tabType] || tabType;
   };
@@ -260,6 +262,24 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
     </div>
   );
 
+  const renderSterilizationMethodPreview = (data: any) => (
+    <div className="space-y-4">
+      {data?.title && (
+        <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
+      )}
+      {data?.methods?.length > 0 && (
+        <ul className="space-y-2">
+          {data.methods.map((method: string, index: number) => (
+            <li key={index} className="flex items-start gap-2">
+              <Star className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+              <span className="text-slate-600">{method}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
   const renderTabContent = (tabType: string, data: any) => {
     switch (tabType) {
       case 'description':
@@ -280,6 +300,8 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
         return renderSafetyPreview(data);
       case 'sku-nomenclature':
         return renderSKUNomenclaturePreview(data);
+      case 'sterilization-method':
+        return renderSterilizationMethodPreview(data);
       default:
         return <div className="text-slate-500 italic">No preview available for this content type.</div>;
     }

@@ -1379,6 +1379,120 @@ Pressure Range,Up to 60 psi 4.1 bar`}
     </Card>
   );
 
+  const renderSterilizationMethodForm = () => (
+    <Card key="sterilization-method" className="content-form">
+      <CardHeader className="form-section-header">
+        <CardTitle className="flex items-center">
+          <Star className="w-5 h-5 text-primary mr-3" />
+          Sterilization Method Content
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="form-section-content">
+        {/* Smart Import Section */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardPaste className="w-5 h-5 text-blue-600" />
+            <h3 className="font-medium text-blue-900">Smart Import Methods</h3>
+          </div>
+          <p className="text-sm text-blue-700 mb-3">
+            Paste text with sterilization methods and it will automatically split by periods or lines. Supports bullet points from spreadsheets.
+          </p>
+          <Textarea
+            placeholder={`Paste your sterilization methods here. Examples:
+
+From spreadsheet/bullet points:
+• Autoclave sterilization (121°C for 15 minutes)
+• Gamma irradiation compatible
+• Chemical sterilization with ethylene oxide
+
+From paragraph:
+Autoclave sterilization. Gamma irradiation compatible. Chemical sterilization.
+
+From HTML:
+<ul><li>Method 1</li><li>Method 2</li></ul>`}
+            rows={4}
+            className="w-full mb-3"
+            onPaste={(e) => {
+              setTimeout(() => {
+                const textarea = e.target as HTMLTextAreaElement;
+                if (textarea.value.trim()) {
+                  const parsed = parseListText(textarea.value);
+                  const currentMethods = contentData['sterilization-method']?.methods || [];
+                  updateContent("sterilization-method", "methods", [...currentMethods, ...parsed]);
+                  textarea.value = "";
+                }
+              }, 10);
+            }}
+            data-testid="textarea-methods-import"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const textarea = document.querySelector('[data-testid="textarea-methods-import"]') as HTMLTextAreaElement;
+                if (textarea?.value.trim()) {
+                  const parsed = parseListText(textarea.value);
+                  const currentMethods = contentData['sterilization-method']?.methods || [];
+                  updateContent("sterilization-method", "methods", [...currentMethods, ...parsed]);
+                  textarea.value = "";
+                }
+              }}
+              data-testid="button-import-methods"
+            >
+              <Upload className="w-4 h-4 mr-1" />
+              Import Methods
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => updateContent("sterilization-method", "methods", [])}
+              className="text-red-600 hover:text-red-800"
+              data-testid="button-clear-methods"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Clear All
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {(contentData['sterilization-method']?.methods || []).map((method: string, index: number) => (
+            <div key={index} className="flex items-start space-x-3">
+              <span className="text-slate-400 mt-2">•</span>
+              <Textarea
+                rows={2}
+                placeholder="Enter sterilization method..."
+                value={method}
+                onChange={(e) => updateArrayItem("sterilization-method", "methods", index, e.target.value)}
+                className="flex-1"
+                data-testid={`textarea-method-${index}`}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeArrayItem("sterilization-method", "methods", index)}
+                className="text-red-500 hover:text-red-700 mt-2"
+                data-testid={`button-remove-method-${index}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => addArrayItem("sterilization-method", "methods", "")}
+          className="mt-4 text-primary hover:text-primary/80"
+          data-testid="button-add-method"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Add Another Method
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
   const formRenderers: { [key: string]: () => JSX.Element } = {
     description: renderDescriptionForm,
     features: renderFeaturesForm,
@@ -1389,6 +1503,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
     "safety-guidelines": renderSafetyForm,
     "sku-nomenclature": renderSKUNomenclatureForm,
     "compatible-container": renderCompatibleContainerForm,
+    "sterilization-method": renderSterilizationMethodForm,
   };
 
   return (

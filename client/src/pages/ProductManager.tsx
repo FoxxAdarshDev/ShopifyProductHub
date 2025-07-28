@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 const TAB_ORDER_GROUPS = {
   GROUP_1: ['description', 'features', 'applications'],
   GROUP_2: ['specifications', 'documentation', 'videos'],
-  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container']
+  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container', 'sterilization-method']
 };
 
 // Function to order tabs according to the fixed groups

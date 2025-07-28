@@ -14,7 +14,7 @@ interface ContentItem {
 const TAB_ORDER_GROUPS = {
   GROUP_1: ['description', 'features', 'applications'],
   GROUP_2: ['specifications', 'documentation', 'videos'],
-  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container']
+  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container', 'sterilization-method']
 };
 
 // Function to order tabs according to the fixed groups
@@ -92,6 +92,9 @@ class HtmlGenerator {
           break;
         case 'compatible-container':
           html += this.generateCompatibleContainerTab(item.content, sku);
+          break;
+        case 'sterilization-method':
+          html += this.generateSterilizationMethodTab(item.content, sku);
           break;
       }
     });
@@ -318,6 +321,25 @@ class HtmlGenerator {
       html += `        <div class="collection-showcase" data-collection="${content.collectionHandle}">\n`;
       html += `            <p>Browse compatible products in the <a href="/collections/${content.collectionHandle}">product collection</a>.</p>\n`;
       html += '        </div>\n';
+    }
+
+    html += '    </div>\n';
+    return html;
+  }
+
+  private generateSterilizationMethodTab(content: any, sku: string): string {
+    let html = `    <div class="tab-content" id="sterilization-method" data-sku="${sku}">\n`;
+    
+    if (content.title) {
+      html += `        <h3>${content.title}</h3>\n`;
+    }
+
+    if (content.methods && Array.isArray(content.methods)) {
+      html += '        <ul>\n';
+      content.methods.forEach((method: string) => {
+        html += `            <li><span style="line-height: 1.4;">${method}</span></li>\n`;
+      });
+      html += '        </ul>\n';
     }
 
     html += '    </div>\n';

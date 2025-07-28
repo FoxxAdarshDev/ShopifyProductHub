@@ -20,13 +20,14 @@ const additionalTabs = [
   { id: "sku-nomenclature", label: "SKU Nomenclature", icon: Hash },
   { id: "safety-guidelines", label: "Safety Usage Guidelines", icon: Shield },
   { id: "compatible-container", label: "Compatible Container", icon: Package2 },
+  { id: "sterilization-method", label: "Sterilization Method", icon: Star },
 ];
 
 // Define the fixed tab ordering groups (same as ProductManager)
 const TAB_ORDER_GROUPS = {
   GROUP_1: ['description', 'features', 'applications'],
   GROUP_2: ['specifications', 'documentation', 'videos'],
-  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container']
+  ADDITIONAL: ['sku-nomenclature', 'safety-guidelines', 'compatible-container', 'sterilization-method']
 };
 
 // Function to order tabs according to the fixed groups
