@@ -47,6 +47,31 @@ const orderTabs = (tabs: string[]): string[] => {
   return orderedTabs;
 };
 
+// Helper function to convert relative URLs to absolute URLs in HTML content
+const convertRelativeUrlsInHtml = (html: string): string => {
+  if (!html) return html;
+  
+  // Convert href attributes with relative URLs
+  const hrefRegex = /href=["']([^"']+)["']/g;
+  const srcRegex = /src=["']([^"']+)["']/g;
+  
+  let convertedHtml = html.replace(hrefRegex, (match, url) => {
+    if (url.startsWith('/') && !url.startsWith('http')) {
+      return match.replace(url, `https://foxxbioprocess.com${url}`);
+    }
+    return match;
+  });
+  
+  convertedHtml = convertedHtml.replace(srcRegex, (match, url) => {
+    if (url.startsWith('/') && !url.startsWith('http')) {
+      return match.replace(url, `https://foxxbioprocess.com${url}`);
+    }
+    return match;
+  });
+  
+  return convertedHtml;
+};
+
 export default function ProductManager() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
@@ -495,7 +520,7 @@ export default function ProductManager() {
                       <div className="border rounded-lg p-6 bg-white shadow-sm">
                         <div 
                           className="shopify-content"
-                          dangerouslySetInnerHTML={{ __html: selectedProduct.description || '<p class="text-slate-500 italic">No description available</p>' }}
+                          dangerouslySetInnerHTML={{ __html: convertRelativeUrlsInHtml(selectedProduct.description) || '<p class="text-slate-500 italic">No description available</p>' }}
                         />
                       </div>
                     )}
