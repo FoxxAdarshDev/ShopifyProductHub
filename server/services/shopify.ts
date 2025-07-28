@@ -383,8 +383,8 @@ class ShopifyService {
       console.log('Uploading to staged target:', stagedTarget.url);
 
       // Step 2: Upload file to the staged URL
-      const FormData = require('form-data');
-      const formData = new FormData();
+      const FormDataNode = (await import('form-data')).default;
+      const formData = new FormDataNode();
       
       // Add parameters FIRST (order is critical)
       stagedTarget.parameters.forEach((param: any) => {
@@ -399,7 +399,7 @@ class ShopifyService {
 
       const uploadResponse = await fetch(stagedTarget.url, {
         method: 'POST',
-        body: formData,
+        body: formData as any,
         headers: formData.getHeaders()
       });
 
@@ -471,19 +471,28 @@ class ShopifyService {
       if (fileResult.data?.fileCreate?.files?.length > 0) {
         const file = fileResult.data.fileCreate.files[0];
         
-        // For images, try to get the image URL
+        // Get the actual Shopify CDN URL
         let fileUrl = null;
+        
         if (file.image?.url) {
           fileUrl = file.image.url;
+          console.log('Got image URL immediately:', fileUrl);
         } else {
-          // For non-images or when image URL is not immediately available,
-          // we can construct a URL pattern or wait for processing
+          // File might need processing time, try to get URL via file query
           console.log('File uploaded but URL not immediately available. File status:', file.fileStatus);
+          console.log('File ID:', file.id);
           
-          // Return a success indicator with file ID for now
-          // In a real app, you might poll the file status until it's ready
           if (file.id) {
-            fileUrl = `https://${this.store}/admin/files/${file.id}`;
+            // Query the file by ID to get the CDN URL
+            try {
+              const fileQueryResult = await this.getFileById(file.id);
+              if (fileQueryResult?.url) {
+                fileUrl = fileQueryResult.url;
+                console.log('Got file URL from query:', fileUrl);
+              }
+            } catch (queryError) {
+              console.log('Error querying file by ID:', queryError);
+            }
           }
         }
         
@@ -504,6 +513,59 @@ class ShopifyService {
       
       console.log('Returning data URL as fallback due to upload error');
       return dataUrl;
+    }
+  }
+
+  async getFileById(fileId: string): Promise<{ url: string } | null> {
+    try {
+      const fileQuery = `
+        query getFile($id: ID!) {
+          node(id: $id) {
+            ... on MediaImage {
+              image {
+                url
+              }
+            }
+            ... on GenericFile {
+              url
+            }
+          }
+        }
+      `;
+
+      const response = await fetch(`https://${this.store}/admin/api/2024-10/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': this.accessToken,
+        },
+        body: JSON.stringify({
+          query: fileQuery,
+          variables: { id: fileId }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+      }
+
+      const node = result.data?.node;
+      if (node?.image?.url) {
+        return { url: node.image.url };
+      } else if (node?.url) {
+        return { url: node.url };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error querying file by ID:', error);
+      return null;
     }
   }
 }
