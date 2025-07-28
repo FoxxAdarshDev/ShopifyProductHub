@@ -92,6 +92,24 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     };
   }, []);
 
+  // Initialize Compatible Container state if it doesn't exist
+  useEffect(() => {
+    if (selectedTabs.includes('compatible-container')) {
+      if (!contentData['compatible-container'] || !contentData['compatible-container'].compatibleItems) {
+        const updated = {
+          ...contentData,
+          'compatible-container': {
+            ...contentData['compatible-container'],
+            title: contentData['compatible-container']?.title || "Compatible Container",
+            compatibleItems: contentData['compatible-container']?.compatibleItems || []
+          }
+        };
+        onContentChange(updated);
+        console.log('Initialized Compatible Container state');
+      }
+    }
+  }, [selectedTabs, contentData]);
+
   const addArrayItem = (tabType: string, field: string, defaultValue: any) => {
     const current = contentData[tabType]?.[field] || [];
     updateContent(tabType, field, [...current, defaultValue]);
@@ -1177,17 +1195,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
     </Card>
   );
 
-  const renderCompatibleContainerForm = () => {
-    // Initialize Compatible Container state if it doesn't exist
-    React.useEffect(() => {
-      if (!contentData['compatible-container'] || !contentData['compatible-container'].compatibleItems) {
-        updateContent("compatible-container", "title", "Compatible Container");
-        updateContent("compatible-container", "compatibleItems", []);
-        console.log('Initialized Compatible Container state');
-      }
-    }, [contentData]);
-
-    return (
+  const renderCompatibleContainerForm = () => (
     <Card key="compatible-container" className="content-form">
       <CardHeader className="form-section-header">
         <CardTitle className="flex items-center">
@@ -1369,8 +1377,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
         </div>
       </CardContent>
     </Card>
-    );
-  };
+  );
 
   const formRenderers: { [key: string]: () => JSX.Element } = {
     description: renderDescriptionForm,
