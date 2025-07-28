@@ -145,17 +145,30 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     if (specDiv && specDiv[1]) {
       console.log('📊 Found specifications div with structured content');
       console.log('📊 Specifications div content preview:', specDiv[1].substring(0, 200) + '...');
-      const rowMatches = specDiv[1].match(/<tr[^>]*>(.*?)<\/tr>/g);
+      const tableMatch = specDiv[1].match(/<table[^>]*>([\s\S]*?)<\/table>/);
+      let rowMatches = null;
+      if (tableMatch) {
+        rowMatches = tableMatch[1].match(/<tr[^>]*>[\s\S]*?<\/tr>/g);
+      }
       console.log('📊 Table rows found:', rowMatches ? rowMatches.length : 0);
       if (rowMatches && rowMatches.length > 0) {
         const specifications: Array<{item: string, value: string}> = [];
         
-        // Skip header row (ITEM/VALUE)
-        rowMatches.slice(1).forEach(row => {
-          const cellMatches = row.match(/<td[^>]*>(.*?)<\/td>/g);
-          if (cellMatches && cellMatches.length >= 2) {
-            const item = cellMatches[0].replace(/<[^>]*>/g, '').trim();
-            const value = cellMatches[1].replace(/<[^>]*>/g, '').trim();
+        // Skip header row (ITEM/VALUE) - process all rows after the first
+        rowMatches.slice(1).forEach((row, index) => {
+          console.log(`📊 Processing row ${index + 2}:`, row.replace(/\s+/g, ' ').substring(0, 150) + '...');
+          const cells = [];
+          // Extract cell content more robustly
+          const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
+          let cellMatch;
+          while ((cellMatch = cellRegex.exec(row)) !== null) {
+            cells.push(cellMatch[1].replace(/<[^>]*>/g, '').trim());
+          }
+          console.log('📊 Extracted cells:', cells);
+          
+          if (cells.length >= 2) {
+            const item = cells[0];
+            const value = cells[1];
             console.log('📊 Spec row:', item, '=', value);
             if (item && value && item !== 'ITEM' && value !== 'VALUE') {
               specifications.push({ item, value });
@@ -182,20 +195,55 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       
       // Extract container items
       const containerItems: Array<{title: string, url: string, image: string, description: string}> = [];
-      const itemDivs = compatDiv[1].match(/<div[^>]*class="[^"]*compatible-item[^"]*"[^>]*>([\s\S]*?)<\/div>/g);
+      // Simpler approach - split by compatible-item divs
+      const itemDivs = [];
+      const itemStartPattern = /<div[^>]*class="compatible-item"[^>]*>/g;
+      let match;
+      let lastIndex = 0;
+      
+      while ((match = itemStartPattern.exec(compatDiv[1])) !== null) {
+        if (lastIndex > 0) {
+          // Extract the previous item
+          const itemContent = compatDiv[1].substring(lastIndex, match.index);
+          itemDivs.push(itemContent);
+        }
+        lastIndex = match.index;
+      }
+      
+      // Add the last item
+      if (lastIndex > 0) {
+        const remaining = compatDiv[1].substring(lastIndex);
+        const itemEndMatch = remaining.match(/^[\s\S]*?(?=<\/div>\s*<\/div>|$)/);
+        if (itemEndMatch) {
+          itemDivs.push(itemEndMatch[0]);
+        }
+      }
+      
+      console.log('🔗 Extracted item divs using split method:', itemDivs.length);
       console.log('🔗 Container items found:', itemDivs ? itemDivs.length : 0);
+      console.log('🔗 Full compatible container content length:', compatDiv[1].length);
       
       if (itemDivs) {
         itemDivs.forEach((itemDiv, index) => {
-          console.log(`🔗 Processing container item ${index + 1}:`, itemDiv.substring(0, 150) + '...');
-          const titleMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*[^>]*>(.*?)<\/a>/);
-          const imgMatch = itemDiv.match(/<img[^>]*src="([^"]*)"[^>]*>/);
+          console.log(`🔗 Processing container item ${index + 1}:`, itemDiv.substring(0, 200) + '...');
+          
+          // Extract image
+          const imgMatch = itemDiv.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
+          
+          // Extract title and URL from the link
+          const linkMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/);
+          
+          // Extract description from the type div
           const typeMatch = itemDiv.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
           
-          if (titleMatch) {
+          console.log('🔗 Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
+          console.log('🔗 Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
+          console.log('🔗 Type match:', typeMatch ? 'FOUND' : 'NOT FOUND');
+          
+          if (linkMatch) {
             const item = {
-              title: titleMatch[2].replace(/<[^>]*>/g, '').trim(),
-              url: titleMatch[1],
+              title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
+              url: linkMatch[1],
               image: imgMatch ? imgMatch[1] : '',
               description: typeMatch ? typeMatch[1].trim() : ''
             };
@@ -242,11 +290,14 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         });
       }
       
+      // Always create documentation section - include default link when no custom datasheets
+      extractedContent.documentation = {
+        datasheets: datasheets
+      };
       if (datasheets.length > 0) {
-        extractedContent.documentation = {
-          datasheets
-        };
-        console.log('✅ Documentation extracted');
+        console.log('✅ Documentation extracted with custom datasheets');
+      } else {
+        console.log('✅ Documentation section extracted (default content only)');
       }
     }
 
@@ -272,17 +323,14 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         });
       }
       
-      // If no custom videos found but has default content, create empty videos section
-      if (videos.length === 0 && videoDiv[1].includes('Video coming soon')) {
-        extractedContent.videos = {
-          videos: []
-        };
+      // Always create videos section if the div exists (for default content)
+      extractedContent.videos = {
+        videos: videos
+      };
+      if (videos.length === 0) {
         console.log('✅ Videos section extracted (default content only)');
-      } else if (videos.length > 0) {
-        extractedContent.videos = {
-          videos
-        };
-        console.log('✅ Videos extracted');
+      } else {
+        console.log('✅ Videos extracted with custom content');
       }
     }
 
