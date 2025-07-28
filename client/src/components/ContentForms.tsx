@@ -1128,6 +1128,14 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             </p>
           </div>
 
+          {/* Debug: Show current content data */}
+          <div className="p-2 bg-gray-100 rounded text-xs">
+            <strong>Debug:</strong> Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}
+            {contentData['compatible-container']?.compatibleItems?.length > 0 && (
+              <div>First item: {JSON.stringify(contentData['compatible-container'].compatibleItems[0])}</div>
+            )}
+          </div>
+          
           {/* Display compatible items as cards */}
           {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
             <div className="space-y-3">
