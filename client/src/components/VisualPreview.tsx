@@ -4,6 +4,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Hash, Package2 } from "lucide-react";
 
+// Helper function to convert relative URLs to absolute URLs on the frontend
+const convertToAbsoluteUrl = (url: string): string => {
+  if (!url) return url;
+  
+  // If URL is already absolute, return as is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // If it's a relative URL starting with /
+  if (url.startsWith('/')) {
+    return `https://foxxbioprocess.com${url}`;
+  }
+  
+  return url;
+};
+
 interface VisualPreviewProps {
   contentData: any;
   selectedTabs: string[];
@@ -173,7 +190,7 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
               </p>
               {item.sourceUrl && (
                 <a 
-                  href={item.sourceUrl} 
+                  href={convertToAbsoluteUrl(item.sourceUrl)} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 hover:underline"
@@ -218,7 +235,7 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
           <div>
             <h4 className="font-medium text-slate-800">{data.datasheetTitle}</h4>
             <a 
-              href={data.datasheetUrl} 
+              href={convertToAbsoluteUrl(data.datasheetUrl)} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:underline"
