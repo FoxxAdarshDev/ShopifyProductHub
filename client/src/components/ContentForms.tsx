@@ -1282,72 +1282,94 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               </Label>
               {contentData['compatible-container'].compatibleItems.map((item: any, index: number) => (
                 <div key={index} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-start gap-4">
                       {item.image && (
                         <img 
                           src={item.image} 
                           alt={item.title}
-                          className="w-16 h-16 object-cover rounded border"
+                          className="w-16 h-16 object-cover rounded border flex-shrink-0"
                         />
                       )}
-                      <div className="flex-1 space-y-2">
-                        <Input
-                          value={item.title}
-                          onChange={(e) => {
-                            const currentItems = contentData['compatible-container']?.compatibleItems || [];
-                            const updatedItems = currentItems.map((existingItem: any, i: number) => 
-                              i === index ? { ...existingItem, title: e.target.value } : existingItem
-                            );
-                            updateContent("compatible-container", "compatibleItems", updatedItems);
-                          }}
-                          className="font-medium text-blue-600 border-none shadow-none p-0 h-auto bg-transparent w-full"
-                          placeholder="Edit title..."
-                        />
-                        <Input
-                          value={item.image || ''}
-                          onChange={(e) => {
-                            const currentItems = contentData['compatible-container']?.compatibleItems || [];
-                            const updatedItems = currentItems.map((existingItem: any, i: number) => 
-                              i === index ? { ...existingItem, image: e.target.value } : existingItem
-                            );
-                            updateContent("compatible-container", "compatibleItems", updatedItems);
-                          }}
-                          className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1"
-                          placeholder="Image URL (optional)..."
-                        />
-                        <p className="text-sm text-gray-500">
-                          Product: {item.description || item.handle || 'No description'}
-                        </p>
-                        <Input
-                          value={item.url || item.sourceUrl || ''}
-                          onChange={(e) => {
-                            const currentItems = contentData['compatible-container']?.compatibleItems || [];
-                            const updatedItems = currentItems.map((existingItem: any, i: number) => 
-                              i === index ? { ...existingItem, url: e.target.value } : existingItem
-                            );
-                            updateContent("compatible-container", "compatibleItems", updatedItems);
-                          }}
-                          className="text-xs text-blue-400 border border-gray-200 rounded px-2 py-1 w-full"
-                          placeholder="Product URL..."
-                        />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="w-full">
+                          <label className="text-xs font-medium text-gray-700 block mb-1">Product Title</label>
+                          <Textarea
+                            value={item.title}
+                            onChange={(e) => {
+                              const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                              const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                                i === index ? { ...existingItem, title: e.target.value } : existingItem
+                              );
+                              updateContent("compatible-container", "compatibleItems", updatedItems);
+                            }}
+                            className="font-medium text-blue-600 border border-gray-200 rounded px-2 py-2 w-full min-h-[60px] resize-none text-sm"
+                            placeholder="Edit title..."
+                            rows={2}
+                          />
+                        </div>
+                        
+                        <div className="w-full">
+                          <label className="text-xs font-medium text-gray-700 block mb-1">Image URL</label>
+                          <Input
+                            value={item.image || ''}
+                            onChange={(e) => {
+                              const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                              const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                                i === index ? { ...existingItem, image: e.target.value } : existingItem
+                              );
+                              updateContent("compatible-container", "compatibleItems", updatedItems);
+                            }}
+                            className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1 w-full"
+                            placeholder="Image URL (optional)..."
+                          />
+                        </div>
+
+                        <div className="w-full">
+                          <label className="text-xs font-medium text-gray-700 block mb-1">Product Handle/Description</label>
+                          <Input
+                            value={item.description || item.handle || ''}
+                            onChange={(e) => {
+                              const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                              const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                                i === index ? { ...existingItem, description: e.target.value, handle: e.target.value } : existingItem
+                              );
+                              updateContent("compatible-container", "compatibleItems", updatedItems);
+                            }}
+                            className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-1 w-full"
+                            placeholder="Product handle or description..."
+                          />
+                        </div>
+
+                        <div className="w-full">
+                          <label className="text-xs font-medium text-gray-700 block mb-1">Product URL</label>
+                          <Textarea
+                            value={item.url || item.sourceUrl || ''}
+                            onChange={(e) => {
+                              const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                              const updatedItems = currentItems.map((existingItem: any, i: number) => 
+                                i === index ? { ...existingItem, url: e.target.value, sourceUrl: e.target.value } : existingItem
+                              );
+                              updateContent("compatible-container", "compatibleItems", updatedItems);
+                            }}
+                            className="text-xs text-blue-600 border border-gray-200 rounded px-2 py-2 w-full min-h-[50px] resize-none font-mono"
+                            placeholder="Product URL..."
+                            rows={2}
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex justify-end">
                       <button 
                         onClick={() => {
                           const currentItems = contentData['compatible-container']?.compatibleItems || [];
                           const updatedItems = currentItems.filter((_: any, i: number) => i !== index);
                           updateContent("compatible-container", "compatibleItems", updatedItems);
                         }}
-                        className="text-red-400 hover:text-red-600"
+                        className="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50"
+                        title="Remove this item"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
                       </button>
                     </div>
                   </div>
