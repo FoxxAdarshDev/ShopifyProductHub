@@ -10,6 +10,29 @@ interface ContentItem {
   content: any;
 }
 
+// Helper function to convert relative URLs to absolute URLs with proper domain
+const convertToAbsoluteUrl = (url: string): string => {
+  if (!url) return url;
+  
+  // If URL is already absolute, return as is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // If it's a relative URL starting with /
+  if (url.startsWith('/')) {
+    const shopifyStoreUrl = process.env.SHOPIFY_STORE_URL;
+    if (shopifyStoreUrl) {
+      // Convert foxxbioprocess.myshopify.com to foxxbioprocess.com
+      const storeName = shopifyStoreUrl.split('.')[0];
+      const domain = `https://${storeName}.com`;
+      return `${domain}${url}`;
+    }
+  }
+  
+  return url;
+};
+
 // Define the fixed tab ordering groups
 const TAB_ORDER_GROUPS = {
   GROUP_1: ['description', 'features', 'applications'],
@@ -206,12 +229,14 @@ class HtmlGenerator {
     let html = `    <div id="documentation" class="tab-content" data-sku="${sku}">\n`;
     
     if (content.datasheetUrl) {
-      html += `    <p><a href="${content.datasheetUrl}" target="_blank">${content.datasheetTitle || 'Product Datasheet'}</a></p>\n`;
+      const absoluteUrl = convertToAbsoluteUrl(content.datasheetUrl);
+      html += `    <p><a href="${absoluteUrl}" target="_blank">${content.datasheetTitle || 'Product Datasheet'}</a></p>\n`;
     }
 
     if (content.additionalLinks && Array.isArray(content.additionalLinks)) {
       content.additionalLinks.forEach((link: { url: string; title: string }) => {
-        html += `    <p><a href="${link.url}" target="_blank">${link.title}</a></p>\n`;
+        const absoluteUrl = convertToAbsoluteUrl(link.url);
+        html += `    <p><a href="${absoluteUrl}" target="_blank">${link.title}</a></p>\n`;
       });
     }
 
@@ -313,7 +338,8 @@ class HtmlGenerator {
         }
         
         html += '                <div class="compatible-item-content">\n';
-        html += `                    <a href="${item.sourceUrl}" target="_blank" class="compatible-item-title">${item.title}</a>\n`;
+        const absoluteUrl = convertToAbsoluteUrl(item.sourceUrl);
+        html += `                    <a href="${absoluteUrl}" target="_blank" class="compatible-item-title">${item.title}</a>\n`;
         html += `                    <div class="compatible-item-type">${item.type === 'collection' ? 'Collection' : 'Product'}: ${item.handle}</div>\n`;
         html += '                </div>\n';
         html += '                <span class="compatible-item-arrow">→</span>\n';
@@ -323,7 +349,8 @@ class HtmlGenerator {
     } else if (content.collectionHandle) {
       // Fallback to collection link if no compatible items
       html += `        <div class="collection-showcase" data-collection="${content.collectionHandle}">\n`;
-      html += `            <p>Browse compatible products in the <a href="/collections/${content.collectionHandle}">product collection</a>.</p>\n`;
+      const collectionUrl = convertToAbsoluteUrl(`/collections/${content.collectionHandle}`);
+      html += `            <p>Browse compatible products in the <a href="${collectionUrl}">product collection</a>.</p>\n`;
       html += '        </div>\n';
     }
 
