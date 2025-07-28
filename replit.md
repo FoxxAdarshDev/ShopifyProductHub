@@ -4,7 +4,7 @@
 
 This is a fully functional, production-ready web application for managing Shopify product content. The system automates the tedious process of manually adding HTML content to each product SKU by providing a user-friendly interface to create structured product tabs. Users can lookup products by SKU, select content tabs, fill out forms, and automatically generate and update HTML content in Shopify products.
 
-**Current Status:** Live and operational - successfully configured with PostgreSQL database and Shopify API integration. Manual product creation workflow implemented to handle API permission restrictions.
+**Current Status:** Live and operational - successfully migrated from Replit Agent to Replit environment with full file upload functionality, dynamic content labels, and HTML preview features. PostgreSQL database and Shopify API integration configured. File upload includes device upload with fallback to data URLs when Shopify permissions are restricted, plus enhanced URL input with hosting recommendations.
 
 ## User Preferences
 

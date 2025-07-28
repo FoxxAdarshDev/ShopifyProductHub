@@ -38,29 +38,41 @@ export default function FileUpload({
         try {
           const base64Data = e.target?.result as string;
           
-          // Upload to Shopify
-          const response = await apiRequest("POST", "/api/shopify/upload-file", {
-            file: base64Data,
-            filename: file.name,
-            contentType: file.type
+          // Try to upload to Shopify first
+          try {
+            const response = await apiRequest("POST", "/api/shopify/upload-file", {
+              file: base64Data,
+              filename: file.name,
+              contentType: file.type
+            });
+            
+            const result = await response.json();
+            
+            if (result.url && !result.url.startsWith('data:')) {
+              onChange(result.url);
+              toast({
+                title: "Success",
+                description: "File uploaded to Shopify successfully",
+              });
+              return;
+            }
+          } catch (uploadError) {
+            console.warn("Shopify upload failed, using local preview:", uploadError);
+          }
+          
+          // Fallback: use the base64 data URL for immediate preview
+          onChange(base64Data);
+          toast({
+            title: "File Ready",
+            description: "File loaded for preview. For production use, please use 'Enter URL' option with a public image URL.",
+            variant: "default",
           });
           
-          const result = await response.json();
-          
-          if (result.url) {
-            onChange(result.url);
-            toast({
-              title: "Success",
-              description: "File uploaded successfully",
-            });
-          } else {
-            throw new Error("No URL returned from upload");
-          }
         } catch (error) {
           console.error("Upload error:", error);
           toast({
             title: "Upload Failed",
-            description: "Failed to upload file to Shopify",
+            description: "Failed to process file. Please try using 'Enter URL' option instead.",
             variant: "destructive",
           });
         } finally {
@@ -133,23 +145,36 @@ export default function FileUpload({
       ) : (
         <div className="space-y-2">
           {showUrlInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder={placeholder}
-                value={urlValue}
-                onChange={(e) => setUrlValue(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={handleUrlSubmit} size="sm">
-                Add
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowUrlInput(false)} 
-                size="sm"
-              >
-                Cancel
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder={placeholder}
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={handleUrlSubmit} size="sm" disabled={!urlValue.trim()}>
+                  Add
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowUrlInput(false)} 
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+              </div>
+              <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                💡 <strong>Tip:</strong> Use public image URLs from your website, CDN, or upload to{" "}
+                <a href="https://imgur.com" target="_blank" className="text-blue-600 underline">
+                  Imgur
+                </a>
+                {" "}or{" "}
+                <a href="https://cloudinary.com" target="_blank" className="text-blue-600 underline">
+                  Cloudinary
+                </a>
+                {" "}for reliable hosting.
+              </div>
             </div>
           ) : (
             <div className="flex gap-2">
@@ -177,7 +202,7 @@ export default function FileUpload({
                 className="flex-1"
               >
                 <Link className="w-4 h-4 mr-2" />
-                Enter URL
+                Enter URL (Recommended)
               </Button>
             </div>
           )}
@@ -202,6 +227,11 @@ export default function FileUpload({
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
+          {value.startsWith('data:') && (
+            <p className="text-xs text-orange-600 mt-1">
+              ⚠️ Preview only - Use 'Enter URL' for production images
+            </p>
+          )}
         </div>
       )}
     </div>
