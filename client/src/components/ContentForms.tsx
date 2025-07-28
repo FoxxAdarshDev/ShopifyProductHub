@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Plus, Trash2, Hash, Package2 } from "lucide-react";
+import { FileText, Star, ClipboardList, Table, Video, FileDown, Shield, Plus, Trash2, Hash, Package2, Upload, ClipboardPaste } from "lucide-react";
 import LogoManager from "./LogoManager";
 import FileUpload from "./FileUpload";
 
@@ -40,6 +40,94 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     const updated = [...current];
     updated[index] = value;
     updateContent(tabType, field, updated);
+  };
+
+  // Parse table data from various formats (Excel, Google Sheets, HTML)
+  const parseTableData = (pastedData: string) => {
+    if (!pastedData.trim()) return [];
+
+    // Check if it's HTML table format
+    if (pastedData.includes('<table') || pastedData.includes('<tr') || pastedData.includes('<td')) {
+      return parseHTMLTable(pastedData);
+    }
+
+    // Check if it's tab-separated or CSV format (Excel/Google Sheets)
+    return parseDelimitedData(pastedData);
+  };
+
+  const parseHTMLTable = (htmlData: string) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlData, 'text/html');
+    const rows = doc.querySelectorAll('tr');
+    const specifications: { item: string; value: string }[] = [];
+
+    rows.forEach((row, index) => {
+      const cells = row.querySelectorAll('td, th');
+      if (cells.length >= 2) {
+        // Skip header row if it contains "Item" and "Value" or similar
+        const firstCell = cells[0].textContent?.trim().toLowerCase() || '';
+        const secondCell = cells[1].textContent?.trim().toLowerCase() || '';
+        
+        if (index === 0 && (firstCell.includes('item') || firstCell.includes('property') || 
+                           firstCell.includes('specification') || firstCell.includes('parameter')) &&
+                           (secondCell.includes('value') || secondCell.includes('description'))) {
+          return; // Skip header row
+        }
+
+        const item = cells[0].textContent?.trim() || '';
+        const value = cells[1].textContent?.trim() || '';
+        
+        if (item && value) {
+          specifications.push({ item, value });
+        }
+      }
+    });
+
+    return specifications;
+  };
+
+  const parseDelimitedData = (data: string) => {
+    const lines = data.trim().split('\n');
+    const specifications: { item: string; value: string }[] = [];
+
+    lines.forEach((line, index) => {
+      // Try tab-separated first (Excel default), then comma-separated
+      let cells = line.split('\t');
+      if (cells.length < 2) {
+        cells = line.split(',');
+      }
+      // Also try pipe-separated
+      if (cells.length < 2) {
+        cells = line.split('|');
+      }
+
+      if (cells.length >= 2) {
+        const item = cells[0].trim().replace(/^["']|["']$/g, ''); // Remove quotes
+        const value = cells[1].trim().replace(/^["']|["']$/g, '');
+
+        // Skip header row if it looks like headers
+        if (index === 0 && (item.toLowerCase().includes('item') || item.toLowerCase().includes('property') || 
+                           item.toLowerCase().includes('specification')) &&
+                           (value.toLowerCase().includes('value') || value.toLowerCase().includes('description'))) {
+          return;
+        }
+
+        if (item && value) {
+          specifications.push({ item, value });
+        }
+      }
+    });
+
+    return specifications;
+  };
+
+  const handleTableImport = (pastedData: string) => {
+    const parsedSpecs = parseTableData(pastedData);
+    if (parsedSpecs.length > 0) {
+      // Add to existing specifications
+      const currentSpecs = contentData.specifications?.specifications || [];
+      updateContent("specifications", "specifications", [...currentSpecs, ...parsedSpecs]);
+    }
   };
 
   const renderDescriptionForm = () => (
@@ -181,6 +269,74 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         </CardTitle>
       </CardHeader>
       <CardContent className="form-section-content">
+        {/* Table Import Section */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardPaste className="w-5 h-5 text-blue-600" />
+            <h3 className="font-medium text-blue-900">Import Table Data</h3>
+          </div>
+          <p className="text-sm text-blue-700 mb-3">
+            Paste table data from Excel, Google Sheets, or HTML tables. The system will automatically parse and add the specifications.
+          </p>
+          <div className="space-y-3">
+            <Textarea
+              placeholder={`Paste your table data here. Supported formats:
+
+Excel/Google Sheets (tab-separated):
+Material        Polycarbonate, USP Class VI
+Pressure Range  Up to 60 psi, 4.1 bar
+Color   White with white pull tab
+
+HTML Table:
+<table><tr><td>Material</td><td>Polycarbonate</td></tr></table>
+
+CSV Format:
+Material,Polycarbonate USP Class VI
+Pressure Range,Up to 60 psi 4.1 bar`}
+              rows={6}
+              className="w-full"
+              onPaste={(e) => {
+                // Small delay to let the paste content appear
+                setTimeout(() => {
+                  const textarea = e.target as HTMLTextAreaElement;
+                  if (textarea.value.trim()) {
+                    handleTableImport(textarea.value);
+                    textarea.value = ""; // Clear after import
+                  }
+                }, 10);
+              }}
+              data-testid="textarea-table-import"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const textarea = document.querySelector('[data-testid="textarea-table-import"]') as HTMLTextAreaElement;
+                  if (textarea?.value.trim()) {
+                    handleTableImport(textarea.value);
+                    textarea.value = "";
+                  }
+                }}
+                data-testid="button-import-table"
+              >
+                <Upload className="w-4 h-4 mr-1" />
+                Import Table Data
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => updateContent("specifications", "specifications", [])}
+                className="text-red-600 hover:text-red-800"
+                data-testid="button-clear-specifications"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Clear All
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="spec-table">
             <thead>
