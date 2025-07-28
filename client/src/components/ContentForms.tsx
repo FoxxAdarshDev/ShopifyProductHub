@@ -370,7 +370,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       const currentTabData = contentData[tabType] || {};
       const updatedTabData = { ...currentTabData, [field]: value };
       saveDraftContent(tabType, updatedTabData);
-    }, 500); // 500ms delay to batch rapid changes
+    }, 1000); // 1000ms delay to batch rapid changes
   };
 
   const handleUrlInput = async (url: string) => {
@@ -904,7 +904,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="Product Datasheet"
               value={contentData.documentation?.datasheetTitle || ""}
-              onChange={(e) => updateContent("documentation", "datasheetTitle", e.target.value)}
+              onChange={(e) => updateContentWithDraftSave("documentation", "datasheetTitle", e.target.value)}
               data-testid="input-datasheet-title"
             />
           </div>
@@ -913,7 +913,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Input
               placeholder="https://cdn.shopify.com/..."
               value={contentData.documentation?.datasheetUrl || ""}
-              onChange={(e) => updateContent("documentation", "datasheetUrl", e.target.value)}
+              onChange={(e) => updateContentWithDraftSave("documentation", "datasheetUrl", e.target.value)}
               data-testid="input-datasheet-url"
             />
           </div>

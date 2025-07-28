@@ -3,12 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Save, Upload } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Eye, Upload, AlertTriangle } from "lucide-react";
 
 interface PreviewPanelProps {
   contentData: any;
   selectedTabs: string[];
-  onSaveContent: () => void;
   onUpdateShopify: () => void;
   isLoading: boolean;
   productSku?: string;
@@ -17,13 +17,13 @@ interface PreviewPanelProps {
 export default function PreviewPanel({ 
     contentData, 
     selectedTabs, 
-    onSaveContent, 
     onUpdateShopify, 
     isLoading,
     productSku 
 }: PreviewPanelProps) {
   const [previewHtml, setPreviewHtml] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -66,25 +66,49 @@ export default function PreviewPanel({
               <Eye className="w-4 h-4 mr-2" />
               {previewMutation.isPending ? "Generating..." : "Preview HTML"}
             </Button>
-            <Button
-              variant="outline"
-              onClick={onSaveContent}
-              disabled={isLoading}
-              data-testid="button-save-template"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save Content
-            </Button>
+
           </div>
           <div className="flex space-x-4">
-            <Button
-              onClick={onUpdateShopify}
-              disabled={isLoading}
-              data-testid="button-update-shopify"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {isLoading ? "Updating..." : "Update Product"}
-            </Button>
+            <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  disabled={isLoading}
+                  data-testid="button-update-shopify"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {isLoading ? "Updating..." : "Update Product"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-orange-500" />
+                    Confirm Product Update
+                  </DialogTitle>
+                  <DialogDescription>
+                    This will update the Shopify product description with your current content. 
+                    This action cannot be undone. Are you sure you want to proceed?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowConfirmDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowConfirmDialog(false);
+                      onUpdateShopify();
+                    }}
+                    disabled={isLoading}
+                  >
+                    Update Product
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 

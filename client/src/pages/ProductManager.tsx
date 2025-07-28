@@ -161,21 +161,7 @@ export default function ProductManager() {
     setContentData(finalContentMap);
   };
 
-  const handleSaveContent = async () => {
-    if (!selectedProduct) return;
 
-    const contentArray = selectedTabs.map(tabType => ({
-      tabType,
-      content: contentData[tabType] || {},
-      isActive: true
-    }));
-
-    // Save content to database first
-    updateContentMutation.mutate({
-      productId: selectedProduct.id,
-      content: contentArray
-    });
-  };
 
   const handleUpdateShopify = async () => {
     if (!selectedProduct) return;
@@ -231,9 +217,14 @@ export default function ProductManager() {
                   <CardTitle className="flex items-center gap-2">
                     <Package className="w-5 h-5" />
                     Product Information
-                    <Badge variant="outline" className="ml-auto">
-                      Product ID: {selectedProduct.id}
-                    </Badge>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                        Draft Mode
+                      </Badge>
+                      <Badge variant="outline">
+                        Product ID: {selectedProduct.id}
+                      </Badge>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -375,7 +366,6 @@ export default function ProductManager() {
               <PreviewPanel
                 contentData={contentData}
                 selectedTabs={selectedTabs}
-                onSaveContent={handleSaveContent}
                 onUpdateShopify={handleUpdateShopify}
                 isLoading={updateContentMutation.isPending || updateShopifyMutation.isPending}
                 productSku={selectedProduct.sku}
