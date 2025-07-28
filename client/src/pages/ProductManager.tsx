@@ -263,10 +263,43 @@ export default function ProductManager() {
     },
     onSuccess: (data) => {
       if (data.extractedContent && Object.keys(data.extractedContent).length > 0) {
-        // Update content data with extracted content
-        setContentData(data.extractedContent);
+        // Transform extracted data to match frontend expectations
+        const transformedContent = { ...data.extractedContent };
+        
+        // Transform Compatible Container data structure
+        if (transformedContent['compatible-container']?.compatibleItems) {
+          console.log('🔄 Original compatible items:', transformedContent['compatible-container'].compatibleItems.length);
+          transformedContent['compatible-container'].compatibleItems = transformedContent['compatible-container'].compatibleItems.map((item: any, index: number) => {
+            // Extract handle from URL (get the last part after /products/ or /collections/)
+            const urlParts = item.url.split('/');
+            const handle = urlParts[urlParts.length - 1];
+            
+            // Determine type based on URL
+            const type = item.url.includes('/products/') ? 'product' : 'collection';
+            
+            const transformedItem = {
+              handle: handle,
+              title: item.title,
+              image: item.image,
+              sourceUrl: item.url,
+              type: type
+            };
+            
+            console.log(`🔄 Transformed item ${index + 1}:`, { 
+              title: transformedItem.title, 
+              handle: transformedItem.handle, 
+              type: transformedItem.type 
+            });
+            
+            return transformedItem;
+          });
+          console.log('✅ Final transformed items count:', transformedContent['compatible-container'].compatibleItems.length);
+        }
+        
+        // Update content data with transformed content
+        setContentData(transformedContent);
         // Select tabs that were extracted
-        const extractedTabs = Object.keys(data.extractedContent);
+        const extractedTabs = Object.keys(transformedContent);
         setSelectedTabs(orderTabs(extractedTabs));
         setHasDraftContent(true);
         setShowExtractButton(false);
