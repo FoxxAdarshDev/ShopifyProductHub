@@ -203,27 +203,62 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       }
     }
 
-    // Extract compatible container content - Updated pattern to match the actual HTML structure
-    const compatDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/);
-    console.log('🔍 Compatible Container div search result:', compatDiv ? 'FOUND' : 'NOT FOUND');
+    // Extract compatible container content - More robust approach
+    // First find the compatible container div opening tag
+    const compatDivMatch = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>/);
+    console.log('🔍 Compatible Container div search result:', compatDivMatch ? 'FOUND' : 'NOT FOUND');
     
-    // If first pattern doesn't work, try alternative patterns
     let compatContent = null;
-    if (compatDiv && compatDiv[1]) {
-      compatContent = compatDiv[1];
-      console.log('🔗 Found compatible container with first pattern');
-    } else {
-      // Try pattern without the trailing </div>
-      const altCompatDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*compatible-container[^"]*"[^>]*id="compatible-container"[^>]*>([\s\S]*?)(?=<div[^>]*class="tab-content"|$)/);
-      if (altCompatDiv && altCompatDiv[1]) {
-        compatContent = altCompatDiv[1];
-        console.log('🔗 Found compatible container with alternative pattern');
+    
+    if (compatDivMatch) {
+      const startPos = html.indexOf(compatDivMatch[0]) + compatDivMatch[0].length;
+      console.log('🔗 Compatible container starts at position:', startPos);
+      
+      // Look for the next closing </div> that's at the same level (account for nested divs)
+      let divCount = 1;
+      let currentPos = startPos;
+      let endPos = -1;
+      
+      while (divCount > 0 && currentPos < html.length) {
+        const nextOpenDiv = html.indexOf('<div', currentPos);
+        const nextCloseDiv = html.indexOf('</div>', currentPos);
+        
+        if (nextCloseDiv === -1) break;
+        
+        if (nextOpenDiv !== -1 && nextOpenDiv < nextCloseDiv) {
+          // Found opening div before closing div
+          divCount++;
+          currentPos = nextOpenDiv + 4;
+        } else {
+          // Found closing div
+          divCount--;
+          currentPos = nextCloseDiv + 6;
+          if (divCount === 0) {
+            endPos = nextCloseDiv;
+            break;
+          }
+        }
+      }
+      
+      if (endPos > startPos) {
+        compatContent = html.substring(startPos, endPos);
+        console.log('🔗 Found compatible container with manual div matching, length:', compatContent.length);
+      } else {
+        console.log('🔗 Could not find matching closing div, trying fallback');
+        // Fallback: try to capture everything until next major section or end
+        const fallbackContent = html.substring(startPos, html.indexOf('</div></div>', startPos) + 11);
+        if (fallbackContent.length > 100) {
+          compatContent = fallbackContent;
+          console.log('🔗 Using fallback content, length:', compatContent.length);
+        }
       }
     }
     
     if (compatContent) {
       console.log('🔗 Found compatible container div with structured content');
       console.log('🔗 Compatible container div content preview:', compatContent.substring(0, 300) + '...');
+      console.log('🔗 Full compatible container content length:', compatContent.length);
+      console.log('🔗 Contains all 4 items?', (compatContent.match(/compatible-item/g) || []).length);
       
       // Extract title if present
       const titleMatch = compatContent.match(/<h3[^>]*>(.*?)<\/h3>/);
@@ -233,46 +268,107 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       // Extract container items using a more robust pattern
       const containerItems: Array<{title: string, url: string, image: string, description: string}> = [];
       
-      // Find all compatible-item divs with multiple pattern attempts
-      let itemMatches = compatContent.match(/<div[^>]*class="compatible-item"[^>]*>[\s\S]*?<span[^>]*class="compatible-item-arrow"[^>]*>.*?<\/span>\s*<\/div>/g);
-      console.log('🔗 Compatible items found with span-ending pattern:', itemMatches ? itemMatches.length : 0);
+      // Completely new approach: directly extract all compatible-item-title links first
+      console.log('🔗 Looking for title links in content length:', compatContent.length);
+      // Count compatible items found
+      const itemCount = (compatContent.match(/compatible-item/g) || []).length;
+      console.log('🔗 Compatible items found in content:', itemCount);
       
-      if (!itemMatches || itemMatches.length === 0) {
-        // Try simpler pattern
-        itemMatches = compatContent.match(/<div[^>]*class="compatible-item"[^>]*>[\s\S]*?(?=<div[^>]*class="compatible-item"|<\/div>\s*<\/div>|$)/g);
-        console.log('🔗 Compatible items found with lookahead pattern:', itemMatches ? itemMatches.length : 0);
+      // Try the simplest pattern first - just find any links with compatible-item-title class
+      const simpleTitleLinks = compatContent.match(/<a[^>]*compatible-item-title[^>]*>.*?<\/a>/g);
+      console.log('🔗 Simple title links found:', simpleTitleLinks ? simpleTitleLinks.length : 0);
+      
+      if (simpleTitleLinks && simpleTitleLinks.length > 0) {
+        console.log('🔗 Example link found:', simpleTitleLinks[0].substring(0, 100) + '...');
       }
       
-      if (itemMatches && itemMatches.length > 0) {
-        itemMatches.forEach((itemDiv, index) => {
-          console.log(`🔗 Processing container item ${index + 1}:`, itemDiv.substring(0, 200) + '...');
+      const titleLinks = compatContent.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/g);
+      console.log('🔗 Compatible item title links found (method 1):', titleLinks ? titleLinks.length : 0);
+      
+      // Also try alternative pattern with class first
+      const titleLinksAlt = compatContent.match(/<a[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g);
+      console.log('🔗 Compatible item title links found (method 2):', titleLinksAlt ? titleLinksAlt.length : 0);
+      
+      // Use whichever method found links
+      const finalTitleLinks = titleLinks || titleLinksAlt || simpleTitleLinks;
+      console.log('🔗 Using title links from:', titleLinks ? 'method 1' : titleLinksAlt ? 'method 2' : simpleTitleLinks ? 'simple method' : 'none');
+      
+      if (finalTitleLinks && finalTitleLinks.length > 0) {
+        finalTitleLinks.forEach((link, index) => {
+          console.log(`🔗 Processing title link ${index + 1}:`, link);
           
-          // Extract image
-          const imgMatch = itemDiv.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
+          const hrefMatch = link.match(/href="([^"]*)"/);
+          const titleMatch = link.match(/>([^<]*)</);
           
-          // Extract title and URL from the link
-          const linkMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/);
-          
-          // Extract description from the type div
-          const typeMatch = itemDiv.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
-          
-          console.log('🔗 Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
-          console.log('🔗 Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
-          console.log('🔗 Type match:', typeMatch ? 'FOUND' : 'NOT FOUND');
-          
-          if (linkMatch) {
+          if (hrefMatch && titleMatch) {
+            const url = hrefMatch[1];
+            const title = titleMatch[1].trim();
+            
+            // Find the image that appears before this link in the HTML
+            const linkPosition = compatContent.indexOf(link);
+            const beforeLink = compatContent.substring(Math.max(0, linkPosition - 400), linkPosition);
+            const imgMatch = beforeLink.match(/<img[^>]*src="([^"]*)"[^>]*alt="[^"]*"[^>]*>/);
+            
+            // Find description that appears after this link
+            const afterLink = compatContent.substring(linkPosition, linkPosition + 300);
+            const typeMatch = afterLink.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*([^<]*)<\/div>/);
+            
             const item = {
-              title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
-              url: linkMatch[1],
+              title: title,
+              url: url,
               image: imgMatch ? imgMatch[1] : '',
               description: typeMatch ? typeMatch[1].trim() : ''
             };
+            
             console.log('🔗 Extracted container item:', item.title);
+            console.log('🔗 Item URL:', item.url);
+            console.log('🔗 Item image:', item.image ? 'FOUND' : 'NOT FOUND');
+            console.log('🔗 Item description:', item.description ? 'FOUND' : 'NOT FOUND');
+            
             containerItems.push(item);
           } else {
-            console.log('🔗 No title match found for item', index + 1);
+            console.log('🔗 Failed to extract URL or title from link:', link);
           }
         });
+      }
+      
+      // Fallback: if no title links found, try the old method
+      if (containerItems.length === 0) {
+        console.log('🔗 No title links found, trying fallback extraction...');
+        let itemMatches = compatContent.match(/<div[^>]*class="compatible-item"[^>]*>[\s\S]*?<span[^>]*class="compatible-item-arrow"[^>]*>.*?<\/span>\s*<\/div>/g);
+        console.log('🔗 Compatible items found with span-ending pattern:', itemMatches ? itemMatches.length : 0);
+        
+        if (itemMatches && itemMatches.length > 0) {
+          itemMatches.forEach((itemDiv, index) => {
+            console.log(`🔗 Fallback processing container item ${index + 1}:`, itemDiv.substring(0, 200) + '...');
+            
+            // Extract image
+            const imgMatch = itemDiv.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
+            
+            // Extract title and URL from the link
+            const linkMatch = itemDiv.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/);
+            
+            // Extract description from the type div
+            const typeMatch = itemDiv.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
+            
+            console.log('🔗 Fallback - Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
+            console.log('🔗 Fallback - Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
+            console.log('🔗 Fallback - Type match:', typeMatch ? 'FOUND' : 'NOT FOUND');
+            
+            if (linkMatch) {
+              const item = {
+                title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
+                url: linkMatch[1],
+                image: imgMatch ? imgMatch[1] : '',
+                description: typeMatch ? typeMatch[1].trim() : ''
+              };
+              console.log('🔗 Fallback extracted container item:', item.title);
+              containerItems.push(item);
+            } else {
+              console.log('🔗 Fallback - No title match found for item', index + 1);
+            }
+          });
+        }
       }
       
       console.log('🔗 Final compatible container items:', containerItems.length);
