@@ -13,9 +13,10 @@ interface ContentFormsProps {
   contentData: any;
   onContentChange: (data: any) => void;
   productId?: string;
+  onDraftStatusChange?: (hasDraft: boolean) => void;
 }
 
-export default function ContentForms({ selectedTabs, contentData, onContentChange, productId }: ContentFormsProps) {
+export default function ContentForms({ selectedTabs, contentData, onContentChange, productId, onDraftStatusChange }: ContentFormsProps) {
   const updateContent = (tabType: string, field: string, value: any) => {
     const updated = {
       ...contentData,
@@ -364,6 +365,11 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   // Enhanced updateContent function that auto-saves drafts
   const updateContentWithDraftSave = (tabType: string, field: string, value: any) => {
     updateContent(tabType, field, value);
+    
+    // Mark as having draft content
+    if (onDraftStatusChange) {
+      onDraftStatusChange(true);
+    }
     
     // Auto-save to draft storage after a short delay
     setTimeout(() => {

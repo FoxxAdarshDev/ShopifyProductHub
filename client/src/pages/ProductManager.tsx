@@ -17,6 +17,7 @@ export default function ProductManager() {
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
   const [contentData, setContentData] = useState<any>({});
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+  const [hasDraftContent, setHasDraftContent] = useState(false);
   const { toast } = useToast();
   const params = useParams();
   const productId = params.productId;
@@ -159,6 +160,9 @@ export default function ProductManager() {
     
     setSelectedTabs(finalSelectedTabs);
     setContentData(finalContentMap);
+    
+    // Check if we have draft content or content data
+    setHasDraftContent(Object.keys(finalContentMap).length > 0);
   };
 
 
@@ -169,9 +173,10 @@ export default function ProductManager() {
     // Update Shopify first
     updateShopifyMutation.mutate(selectedProduct.id, {
       onSuccess: async () => {
-        // After successful Shopify update, delete draft content
+        // After successful Shopify update, delete draft content and clear draft status
         try {
           await apiRequest("DELETE", `/api/draft-content/${selectedProduct.id}`);
+          setHasDraftContent(false);
           console.log('Draft content cleaned up after successful Shopify update');
         } catch (error) {
           console.error('Failed to clean up draft content:', error);
@@ -218,9 +223,11 @@ export default function ProductManager() {
                     <Package className="w-5 h-5" />
                     Product Information
                     <div className="flex items-center gap-2 ml-auto">
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                        Draft Mode
-                      </Badge>
+                      {hasDraftContent && selectedTabs.length > 0 && (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                          Draft Mode
+                        </Badge>
+                      )}
                       <Badge variant="outline">
                         Product ID: {selectedProduct.id}
                       </Badge>
@@ -361,6 +368,7 @@ export default function ProductManager() {
                 contentData={contentData}
                 onContentChange={setContentData}
                 productId={selectedProduct?.id}
+                onDraftStatusChange={setHasDraftContent}
               />
               
               <PreviewPanel

@@ -4,7 +4,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Eye, Upload, AlertTriangle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, Upload, AlertTriangle, Code, Layers } from "lucide-react";
+import VisualPreview from "./VisualPreview";
 
 interface PreviewPanelProps {
   contentData: any;
@@ -55,20 +57,19 @@ export default function PreviewPanel({
         <CardTitle>Preview & Actions</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex space-x-4">
-            <Button
-              variant="outline"
-              onClick={handlePreview}
-              disabled={previewMutation.isPending}
-              data-testid="button-preview"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              {previewMutation.isPending ? "Generating..." : "Preview HTML"}
-            </Button>
-
-          </div>
-          <div className="flex space-x-4">
+        <Tabs defaultValue="visual" className="w-full">
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="visual" className="flex items-center gap-2">
+                <Layers className="w-4 h-4" />
+                Visual Preview
+              </TabsTrigger>
+              <TabsTrigger value="html" className="flex items-center gap-2">
+                <Code className="w-4 h-4" />
+                HTML Code
+              </TabsTrigger>
+            </TabsList>
+            <div className="flex space-x-4">
             <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
               <DialogTrigger asChild>
                 <Button
@@ -109,17 +110,41 @@ export default function PreviewPanel({
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
-        </div>
-
-        {showPreview && (
-          <div className="preview-html">
-            <h4 className="text-sm font-medium text-slate-700 mb-3">Generated HTML Preview</h4>
-            <pre className="preview-html">
-              <code data-testid="text-html-preview">{previewHtml}</code>
-            </pre>
-          </div>
-        )}
+          
+          <TabsContent value="visual" className="mt-6">
+            <VisualPreview 
+              contentData={contentData}
+              selectedTabs={selectedTabs}
+              productSku={productSku}
+            />
+          </TabsContent>
+          
+          <TabsContent value="html" className="mt-6">
+            <div className="space-y-4">
+              <Button
+                variant="outline"
+                onClick={handlePreview}
+                disabled={previewMutation.isPending}
+                data-testid="button-preview"
+                className="w-full"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {previewMutation.isPending ? "Generating..." : "Generate HTML Code"}
+              </Button>
+              
+              {showPreview && (
+                <div className="preview-html">
+                  <h4 className="text-sm font-medium text-slate-700 mb-3">Generated HTML Code</h4>
+                  <pre className="preview-html">
+                    <code data-testid="text-html-preview">{previewHtml}</code>
+                  </pre>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
