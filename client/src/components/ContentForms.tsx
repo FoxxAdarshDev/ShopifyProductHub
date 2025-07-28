@@ -370,6 +370,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       const updatedItems = [...currentItems, newItem];
       console.log('Updated items:', updatedItems);
       updateContent("compatible-container", "compatibleItems", updatedItems);
+      console.log('Called updateContent with:', "compatible-container", "compatibleItems", updatedItems);
       
       // Also update the primary fields for backward compatibility
       if (currentItems.length === 0) {
@@ -1106,6 +1107,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               onPaste={async (e) => {
                 setTimeout(async () => {
                   const input = e.target as HTMLInputElement;
+                  console.log('Paste event triggered, input value:', input.value);
                   if (input.value.trim()) {
                     await handleUrlInput(input.value);
                     input.value = "";
@@ -1115,11 +1117,15 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               onKeyDown={async (e) => {
                 if (e.key === 'Enter') {
                   const input = e.target as HTMLInputElement;
+                  console.log('Enter key pressed, input value:', input.value);
                   if (input.value.trim()) {
                     await handleUrlInput(input.value);
                     input.value = "";
                   }
                 }
+              }}
+              onChange={(e) => {
+                console.log('Input changed:', e.target.value);
               }}
               data-testid="input-url-import"
             />
