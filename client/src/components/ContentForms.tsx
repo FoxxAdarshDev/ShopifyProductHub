@@ -367,7 +367,8 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       // Also update the primary fields for backward compatibility
       if (currentItems.length === 0) {
         updateContent("compatible-container", "collectionHandle", urlData.handle);
-        updateContent("compatible-container", "title", shopifyData.title);
+        // Ensure the section title is always "Compatible Container"
+        updateContent("compatible-container", "title", "Compatible Container");
       }
       
       // Clear the input
@@ -386,6 +387,9 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
       const currentItems = contentData['compatible-container']?.compatibleItems || [];
       updateContent("compatible-container", "compatibleItems", [...currentItems, newItem]);
+      
+      // Ensure the section title is always "Compatible Container"
+      updateContent("compatible-container", "title", "Compatible Container");
       
       // Clear the input
       const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
