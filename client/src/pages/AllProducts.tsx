@@ -45,6 +45,7 @@ interface ShopifyProduct {
 interface ContentStatus {
   hasShopifyContent: boolean;
   hasNewLayout: boolean;
+  hasDraftContent: boolean;
   contentCount: number;
 }
 
@@ -158,7 +159,7 @@ export default function AllProducts() {
         case 'new-layout':
           return status.hasNewLayout;
         case 'draft-mode':
-          return status.hasNewLayout; // Draft mode = has new layout content
+          return status.hasDraftContent; // Draft mode = has draft content in database
         case 'none':
           return !status.hasShopifyContent && !status.hasNewLayout;
         default:
@@ -176,7 +177,7 @@ export default function AllProducts() {
   const totalProducts = baseProducts.length;
   const shopifyContentCount = baseProducts.filter(p => contentStatus[p.id]?.hasShopifyContent).length;
   const newLayoutCount = baseProducts.filter(p => contentStatus[p.id]?.hasNewLayout).length;
-  const draftModeCount = baseProducts.filter(p => contentStatus[p.id]?.hasNewLayout).length; // Same as new layout since draft = new layout
+  const draftModeCount = baseProducts.filter(p => contentStatus[p.id]?.hasDraftContent).length;
   const noContentCount = baseProducts.filter(p => {
     const status = contentStatus[p.id];
     return !status?.hasShopifyContent && !status?.hasNewLayout;
@@ -359,7 +360,7 @@ export default function AllProducts() {
                           New Layout ({contentStatus[product.id]?.contentCount || 0})
                         </Badge>
                       )}
-                      {contentStatus[product.id]?.hasNewLayout && (
+                      {contentStatus[product.id]?.hasDraftContent && (
                         <Badge variant="default" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
                           Draft Mode
                         </Badge>

@@ -271,6 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentStatus: Record<string, {
         hasShopifyContent: boolean;
         hasNewLayout: boolean;
+        hasDraftContent: boolean;
         contentCount: number;
       }> = {};
       
@@ -280,20 +281,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const shopifyProduct = await shopifyService.getProductById(productId.toString());
           const hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
           
-          // Check local database for new layout content
+          // Check local database for new layout content and draft content
           const localProduct = await storage.getProductByShopifyId(productId.toString());
           let hasNewLayout = false;
+          let hasDraftContent = false;
           let contentCount = 0;
           
           if (localProduct) {
             const content = await storage.getProductContent(localProduct.id);
             hasNewLayout = content.length > 0;
             contentCount = content.length;
+            
+            // Check for draft content
+            const draftContent = await storage.getDraftContentByProduct(productId.toString());
+            hasDraftContent = draftContent.length > 0;
           }
 
           contentStatus[productId] = {
             hasShopifyContent,
             hasNewLayout,
+            hasDraftContent,
             contentCount
           };
         } catch (error) {
@@ -301,6 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           contentStatus[productId] = {
             hasShopifyContent: false,
             hasNewLayout: false,
+            hasDraftContent: false,
             contentCount: 0
           };
         }
