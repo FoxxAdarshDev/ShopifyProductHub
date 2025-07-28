@@ -190,7 +190,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const content = await storage.getProductContent(productId);
-      const generatedHtml = htmlGenerator.generateProductHtml(content);
+      
+      // Get all variant SKUs for enhanced data attributes
+      let allVariantSkus: string[] = [];
+      try {
+        const shopifyProduct = await shopifyService.getProductById(product.shopifyId);
+        if (shopifyProduct && shopifyProduct.variants) {
+          allVariantSkus = shopifyProduct.variants
+            .map((v: any) => v.sku)
+            .filter((sku: string) => sku && sku.trim() !== '');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch variant SKUs for update:', error);
+      }
+      
+      const generatedHtml = htmlGenerator.generateProductHtml(content, product.sku, allVariantSkus);
 
       // Update Shopify product description
       await shopifyService.updateProductDescription(product.shopifyId, generatedHtml);
@@ -375,12 +389,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Preview HTML generation
   app.post("/api/preview", async (req, res) => {
     try {
-      const { content, productSku } = req.body;
-      const html = htmlGenerator.generateProductHtml(content, productSku);
+      const { content, productSku, shopifyProductId } = req.body;
+      
+      // Get all variant SKUs if shopifyProductId is provided
+      let allVariantSkus: string[] = [];
+      if (shopifyProductId) {
+        try {
+          const shopifyProduct = await shopifyService.getProductById(shopifyProductId.toString());
+          if (shopifyProduct && shopifyProduct.variants) {
+            allVariantSkus = shopifyProduct.variants
+              .map((v: any) => v.sku)
+              .filter((sku: string) => sku && sku.trim() !== '');
+          }
+        } catch (error) {
+          console.warn('Failed to fetch variant SKUs:', error);
+        }
+      }
+      
+      const html = htmlGenerator.generateProductHtml(content, productSku, allVariantSkus);
       res.json({ html });
     } catch (error) {
       console.error("Preview generation error:", error);
       res.status(500).json({ message: "Failed to generate preview" });
+    }
+  });
+
+  // Extract content from existing HTML (reverse engineering)
+  app.post("/api/extract-content", async (req, res) => {
+    try {
+      const { html, shopifyProductId } = req.body;
+      
+      if (!html) {
+        return res.status(400).json({ message: "HTML content is required" });
+      }
+      
+      // Extract structured content from HTML
+      const extractedContent = extractContentFromHtml(html);
+      
+      // If shopifyProductId is provided, save as draft content
+      if (shopifyProductId && Object.keys(extractedContent).length > 0) {
+        try {
+          for (const [tabType, content] of Object.entries(extractedContent)) {
+            if (content && typeof content === 'object') {
+              // Save each tab as draft content
+              await storage.saveDraftContent({
+                shopifyProductId: shopifyProductId.toString(),
+                tabType,
+                content
+              });
+            }
+          }
+          console.log(`✅ Saved extracted content as drafts for product ${shopifyProductId}`);
+        } catch (draftError) {
+          console.warn('Failed to save extracted content as drafts:', draftError);
+        }
+      }
+      
+      res.json({ 
+        extractedContent,
+        foundSections: Object.keys(extractedContent),
+        message: Object.keys(extractedContent).length > 0 
+          ? `Successfully extracted ${Object.keys(extractedContent).length} content sections`
+          : "No matching content structure found in the provided HTML"
+      });
+    } catch (error) {
+      console.error("Content extraction error:", error);
+      res.status(500).json({ message: "Failed to extract content from HTML" });
     }
   });
 

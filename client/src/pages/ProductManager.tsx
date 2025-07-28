@@ -7,7 +7,7 @@ import ProductLookup from "@/components/ProductLookup";
 import TabSelector from "@/components/TabSelector";
 import ContentForms from "@/components/ContentForms";
 import PreviewPanel from "@/components/PreviewPanel";
-import { Store, User, FileText, Eye, Code, ExternalLink, Package, Link as LinkIcon } from "lucide-react";
+import { Store, User, FileText, Eye, Code, ExternalLink, Package, Link as LinkIcon, Download, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export default function ProductManager() {
   const [contentData, setContentData] = useState<any>({});
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [hasDraftContent, setHasDraftContent] = useState(false);
+  const [showExtractButton, setShowExtractButton] = useState(false);
   const { toast } = useToast();
   const params = useParams();
   const productId = params.productId;
@@ -215,9 +216,61 @@ export default function ProductManager() {
     },
   });
 
+  // HTML Content Extraction Mutation
+  const extractContentMutation = useMutation({
+    mutationFn: async ({ html, shopifyProductId }: { html: string; shopifyProductId: string }) => {
+      const response = await apiRequest("POST", "/api/extract-content", { html, shopifyProductId });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.extractedContent && Object.keys(data.extractedContent).length > 0) {
+        // Update content data with extracted content
+        setContentData(data.extractedContent);
+        // Select tabs that were extracted
+        const extractedTabs = Object.keys(data.extractedContent);
+        setSelectedTabs(orderTabs(extractedTabs));
+        setHasDraftContent(true);
+        setShowExtractButton(false);
+        
+        toast({
+          title: "Content Extracted Successfully",
+          description: `Found and loaded ${extractedTabs.length} content sections: ${extractedTabs.join(', ')}`,
+        });
+      } else {
+        toast({
+          title: "No Content Found",
+          description: "The existing HTML doesn't match our template structure.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Extraction Failed",
+        description: "Failed to extract content from the existing HTML",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProductFound = async (product: any, content: any[]) => {
     setSelectedProduct(product);
     await loadDraftContent(product);
+    
+    // Check if we should show the extract button
+    if (product.description && product.description.trim() !== '' && 
+        !Object.keys(contentData).length && !hasDraftContent) {
+      setShowExtractButton(true);
+    }
+  };
+
+  const handleExtractContent = () => {
+    if (selectedProduct && selectedProduct.description) {
+      extractContentMutation.mutate({
+        html: selectedProduct.description,
+        shopifyProductId: selectedProduct.id.toString()
+      });
+    }
   };
 
 
@@ -390,9 +443,46 @@ export default function ProductManager() {
                       <Code className="w-4 h-4 mr-1" />
                       HTML
                     </Button>
+                    {showExtractButton && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleExtractContent}
+                        disabled={extractContentMutation.isPending}
+                        className="ml-auto bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                        data-testid="button-extract-content"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        {extractContentMutation.isPending ? "Extracting..." : "Extract Content to Tabs"}
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {showExtractButton && (
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Sparkles className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-green-800 mb-1">Content Extraction Available</h4>
+                          <p className="text-sm text-green-700 mb-3">
+                            I found existing HTML content that matches our template structure. 
+                            I can automatically extract this content into editable tabs to save you time.
+                          </p>
+                          <Button
+                            onClick={handleExtractContent}
+                            disabled={extractContentMutation.isPending}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            {extractContentMutation.isPending ? "Extracting..." : "Extract Content Now"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="mb-4">
                     <h3 className="font-semibold text-lg mb-2">{selectedProduct.title}</h3>
                     {showHtmlPreview ? (
@@ -432,6 +522,7 @@ export default function ProductManager() {
                 onUpdateShopify={handleUpdateShopify}
                 isLoading={updateContentMutation.isPending || updateShopifyMutation.isPending}
                 productSku={selectedProduct.sku}
+                shopifyProductId={selectedProduct.id?.toString()}
               />
             </>
           )}

@@ -49,9 +49,13 @@ const orderTabs = (content: ProductContent[]): ProductContent[] => {
 };
 
 class HtmlGenerator {
-  generateProductHtml(content: ProductContent[], productSku?: string): string {
-    const sku = productSku || 'unknown-sku';
-    let html = `<div class="container" data-sku="${sku}">\n`;
+  generateProductHtml(content: ProductContent[], productSku?: string, allVariantSkus?: string[]): string {
+    // Create comma-separated SKU list for data attributes
+    const skuAttribute = allVariantSkus && allVariantSkus.length > 0 
+      ? allVariantSkus.join(', ') 
+      : (productSku || 'unknown-sku');
+    
+    let html = `<div class="container" data-sku="${skuAttribute}">\n`;
     
     // Order content according to fixed groups before processing
     const orderedContent = orderTabs(content);
@@ -59,7 +63,7 @@ class HtmlGenerator {
     // Get the product title from description content if available
     const descriptionContent = orderedContent.find(c => c.tabType === 'description');
     if (descriptionContent && (descriptionContent.content as any)?.title) {
-      html += `    <h2 data-sku="${sku}">${(descriptionContent.content as any).title}</h2>\n`;
+      html += `    <h2 data-sku="${skuAttribute}">${(descriptionContent.content as any).title}</h2>\n`;
     }
 
     // Generate tabs based on ordered content
@@ -67,34 +71,34 @@ class HtmlGenerator {
 
       switch (item.tabType) {
         case 'description':
-          html += this.generateDescriptionTab(item.content, sku);
+          html += this.generateDescriptionTab(item.content, skuAttribute);
           break;
         case 'features':
-          html += this.generateFeaturesTab(item.content, sku);
+          html += this.generateFeaturesTab(item.content, skuAttribute);
           break;
         case 'applications':
-          html += this.generateApplicationsTab(item.content, sku);
+          html += this.generateApplicationsTab(item.content, skuAttribute);
           break;
         case 'specifications':
-          html += this.generateSpecificationsTab(item.content, sku);
+          html += this.generateSpecificationsTab(item.content, skuAttribute);
           break;
         case 'videos':
-          html += this.generateVideosTab(item.content, sku);
+          html += this.generateVideosTab(item.content, skuAttribute);
           break;
         case 'documentation':
-          html += this.generateDocumentationTab(item.content, sku);
+          html += this.generateDocumentationTab(item.content, skuAttribute);
           break;
         case 'safety-guidelines':
-          html += this.generateSafetyTab(item.content, sku);
+          html += this.generateSafetyTab(item.content, skuAttribute);
           break;
         case 'sku-nomenclature':
-          html += this.generateSKUNomenclatureTab(item.content, sku);
+          html += this.generateSKUNomenclatureTab(item.content, skuAttribute);
           break;
         case 'compatible-container':
-          html += this.generateCompatibleContainerTab(item.content, sku);
+          html += this.generateCompatibleContainerTab(item.content, skuAttribute);
           break;
         case 'sterilization-method':
-          html += this.generateSterilizationMethodTab(item.content, sku);
+          html += this.generateSterilizationMethodTab(item.content, skuAttribute);
           break;
       }
     });
