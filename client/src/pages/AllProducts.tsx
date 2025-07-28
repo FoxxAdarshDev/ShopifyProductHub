@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Package, ChevronRight, Loader2 } from "lucide-react";
+import { Search, Package, ChevronRight, Loader2, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 
 // Debounce hook for search
@@ -41,6 +42,12 @@ interface ShopifyProduct {
   variants: ShopifyVariant[];
 }
 
+interface ContentStatus {
+  hasShopifyContent: boolean;
+  hasNewLayout: boolean;
+  contentCount: number;
+}
+
 export default function AllProducts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,7 +57,8 @@ export default function AllProducts() {
   const [hasMore, setHasMore] = useState(true);
   const [totalFetched, setTotalFetched] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
-  const [contentStatus, setContentStatus] = useState<Record<string, boolean>>({});
+  const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
+  const [contentFilter, setContentFilter] = useState<'all' | 'shopify' | 'new-layout' | 'none'>('all');
   const { toast } = useToast();
 
   const productsPerPage = 20;
@@ -131,9 +139,40 @@ export default function AllProducts() {
     }
   };
 
+  // Filter products based on content status
+  const filterProducts = (products: ShopifyProduct[]) => {
+    if (contentFilter === 'all') return products;
+    
+    return products.filter(product => {
+      const status = contentStatus[product.id];
+      if (!status) return contentFilter === 'none';
+      
+      switch (contentFilter) {
+        case 'shopify':
+          return status.hasShopifyContent;
+        case 'new-layout':
+          return status.hasNewLayout;
+        case 'none':
+          return !status.hasShopifyContent && !status.hasNewLayout;
+        default:
+          return true;
+      }
+    });
+  };
+
   // Determine which products to display
-  const displayProducts = searchTerm.length >= 2 ? searchResults : allProducts;
+  const baseProducts = searchTerm.length >= 2 ? searchResults : allProducts;
+  const displayProducts = filterProducts(baseProducts);
   const isShowingSearchResults = searchTerm.length >= 2;
+
+  // Calculate counts for filter display
+  const totalProducts = baseProducts.length;
+  const shopifyContentCount = baseProducts.filter(p => contentStatus[p.id]?.hasShopifyContent).length;
+  const newLayoutCount = baseProducts.filter(p => contentStatus[p.id]?.hasNewLayout).length;
+  const noContentCount = baseProducts.filter(p => {
+    const status = contentStatus[p.id];
+    return !status?.hasShopifyContent && !status?.hasNewLayout;
+  }).length;
 
   // Check content status for products
   const checkContentStatus = async (productIds: number[]) => {
@@ -174,10 +213,26 @@ export default function AllProducts() {
                 </>
               ) : (
                 <>
-                  Total products loaded: <span className="font-semibold" data-testid="text-product-count">{totalFetched}</span>
+                  Showing <span className="font-semibold" data-testid="text-filtered-count">{displayProducts.length}</span> of <span className="font-semibold" data-testid="text-total-count">{totalProducts}</span> products
                 </>
               )}
             </p>
+            
+            {/* Content Statistics */}
+            <div className="flex items-center gap-4 mt-2 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>Shopify Content: {shopifyContentCount}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>New Layout: {newLayoutCount}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span>No Content: {noContentCount}</span>
+              </div>
+            </div>
           </div>
           <Badge variant="outline" className="text-sm">
             <Package className="w-4 h-4 mr-1" />
@@ -185,25 +240,43 @@ export default function AllProducts() {
           </Badge>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-          {isSearching && (
-            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 animate-spin" />
-          )}
-          <Input
-            type="text"
-            placeholder="Search by product title, SKU, or product ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-10"
-            data-testid="input-product-search"
-          />
-          {searchTerm.length >= 2 && (
-            <div className="text-xs text-slate-500 mt-1">
-              Searching across all products in your store...
-            </div>
-          )}
+        {/* Search and Filters */}
+        <div className="space-y-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 animate-spin" />
+            )}
+            <Input
+              type="text"
+              placeholder="Search by product title, SKU, or product ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-10"
+              data-testid="input-product-search"
+            />
+            {searchTerm.length >= 2 && (
+              <div className="text-xs text-slate-500 mt-1">
+                Searching across all products in your store...
+              </div>
+            )}
+          </div>
+
+          {/* Content Filter */}
+          <div className="flex items-center gap-3">
+            <Filter className="w-4 h-4 text-slate-500" />
+            <Select value={contentFilter} onValueChange={(value: 'all' | 'shopify' | 'new-layout' | 'none') => setContentFilter(value)}>
+              <SelectTrigger className="w-48" data-testid="select-content-filter">
+                <SelectValue placeholder="Filter by content" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Products ({totalProducts})</SelectItem>
+                <SelectItem value="shopify">Shopify Content ({shopifyContentCount})</SelectItem>
+                <SelectItem value="new-layout">New Layout ({newLayoutCount})</SelectItem>
+                <SelectItem value="none">No Content ({noContentCount})</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -259,14 +332,21 @@ export default function AllProducts() {
                       </div>
                     </div>
 
-                    {/* Content Status Badge */}
-                    <div className="mb-3">
-                      {contentStatus[product.id] ? (
+                    {/* Content Status Badges */}
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {contentStatus[product.id]?.hasShopifyContent && (
                         <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
                           <Package className="w-3 h-3 mr-1" />
                           Shopify Content
                         </Badge>
-                      ) : (
+                      )}
+                      {contentStatus[product.id]?.hasNewLayout && (
+                        <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-200">
+                          <Package className="w-3 h-3 mr-1" />
+                          New Layout ({contentStatus[product.id]?.contentCount || 0})
+                        </Badge>
+                      )}
+                      {!contentStatus[product.id]?.hasShopifyContent && !contentStatus[product.id]?.hasNewLayout && (
                         <Badge variant="outline" className="text-xs">
                           <Package className="w-3 h-3 mr-1" />
                           Content: Not Added

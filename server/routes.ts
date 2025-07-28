@@ -259,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check product content status for multiple products
+  // Check product content status for multiple products with detailed info
   app.post("/api/products/content-status", async (req, res) => {
     try {
       const { productIds } = req.body;
@@ -267,15 +267,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "productIds must be an array" });
       }
 
-      const contentStatus: Record<string, boolean> = {};
+      const contentStatus: Record<string, {
+        hasShopifyContent: boolean;
+        hasNewLayout: boolean;
+        contentCount: number;
+      }> = {};
       
       for (const productId of productIds) {
-        const localProduct = await storage.getProductByShopifyId(productId.toString());
-        if (localProduct) {
-          const content = await storage.getProductContent(localProduct.id);
-          contentStatus[productId] = content.length > 0;
-        } else {
-          contentStatus[productId] = false;
+        try {
+          // Check Shopify for existing content
+          const shopifyProduct = await shopifyService.getProductById(productId.toString());
+          const hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
+          
+          // Check local database for new layout content
+          const localProduct = await storage.getProductByShopifyId(productId.toString());
+          let hasNewLayout = false;
+          let contentCount = 0;
+          
+          if (localProduct) {
+            const content = await storage.getProductContent(localProduct.id);
+            hasNewLayout = content.length > 0;
+            contentCount = content.length;
+          }
+
+          contentStatus[productId] = {
+            hasShopifyContent,
+            hasNewLayout,
+            contentCount
+          };
+        } catch (error) {
+          console.error(`Error checking status for product ${productId}:`, error);
+          contentStatus[productId] = {
+            hasShopifyContent: false,
+            hasNewLayout: false,
+            contentCount: 0
+          };
         }
       }
 

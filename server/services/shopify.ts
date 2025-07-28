@@ -61,6 +61,29 @@ class ShopifyService {
     return response.json();
   }
 
+  async getProductById(productId: string): Promise<any> {
+    try {
+      const response = await fetch(`https://${this.store}/admin/api/2024-10/products/${productId}.json`, {
+        headers: {
+          'X-Shopify-Access-Token': this.accessToken,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.product;
+    } catch (error) {
+      console.error('Error fetching product by ID:', error);
+      throw error;
+    }
+  }
+
   async getProductBySku(sku: string): Promise<ShopifyProduct | null> {
     try {
       console.log(`Searching Shopify for SKU: ${sku}`);
@@ -172,15 +195,7 @@ class ShopifyService {
     }
   }
 
-  async getProductById(productId: string): Promise<ShopifyProduct | null> {
-    try {
-      const response = await this.makeRequest(`/products/${productId}.json`);
-      return response.product as ShopifyProduct;
-    } catch (error) {
-      console.error(`Error fetching product ${productId}:`, error);
-      return null;
-    }
-  }
+
 
   async searchAllProducts(query: string): Promise<ShopifyProduct[]> {
     try {
