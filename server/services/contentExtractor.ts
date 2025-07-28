@@ -89,15 +89,24 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       
       // Extract logo grid images from the logo-grid div
       const logoGridMatch = descDiv[1].match(/<div[^>]*class="logo-grid"[^>]*>([\s\S]*?)<\/div>/);
+      console.log('📄 Logo grid div found:', logoGridMatch ? 'YES' : 'NO');
+      if (logoGridMatch) {
+        console.log('📄 Logo grid content:', logoGridMatch[1]);
+      }
+      
       const logos = logoGridMatch ? logoGridMatch[1].match(/<img[^>]*src="([^"]*)"[^>]*>/g)?.map(img => {
         const srcMatch = img.match(/src="([^"]*)"/);
         const altMatch = img.match(/alt="([^"]*)"/);
+        console.log('📄 Processing logo image:', srcMatch ? srcMatch[1] : 'NO SRC');
         return {
           url: srcMatch ? srcMatch[1] : '',
           alt: altMatch ? altMatch[1] : ''
         };
       }) || [] : [];
       console.log('📄 Logo images found:', logos.length);
+      if (logos.length > 0) {
+        console.log('📄 Logo details:', logos);
+      }
       
       if (textContent || title || logos.length > 0) {
         extractedContent.description = {
