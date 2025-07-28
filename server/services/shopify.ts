@@ -44,12 +44,21 @@ class ShopifyService {
       
       try {
         const errorJson = JSON.parse(errorText);
+        console.log('Shopify API error details:', JSON.stringify(errorJson, null, 2));
         if (errorJson.errors) {
-          errorMessage += ` - ${errorJson.errors}`;
-          // Check for specific permission errors
-          if (errorText.includes('merchant approval') || errorText.includes('read_products')) {
-            errorMessage += '\n\nPlease ensure your Shopify private app has the "read_products" and "write_products" permissions enabled and approved by the store owner.';
+          if (typeof errorJson.errors === 'object') {
+            errorMessage += ` - ${JSON.stringify(errorJson.errors)}`;
+          } else {
+            errorMessage += ` - ${errorJson.errors}`;
           }
+        } else if (errorJson.error) {
+          errorMessage += ` - ${errorJson.error}`;
+        } else {
+          errorMessage += ` - ${JSON.stringify(errorJson)}`;
+        }
+        // Check for specific permission errors
+        if (errorText.includes('merchant approval') || errorText.includes('read_products')) {
+          errorMessage += '\n\nPlease ensure your Shopify private app has the "read_products" and "write_products" permissions enabled and approved by the store owner.';
         }
       } catch {
         errorMessage += ` - ${errorText}`;
@@ -618,7 +627,7 @@ class ShopifyService {
       }
       
       // Fallback: list all collections to find by handle
-      const allCollectionsResponse = await this.makeRequest('/collections.json?fields=id,title,handle,image&limit=250');
+      const allCollectionsResponse = await this.makeRequest('/collections.json?fields=id,title,handle,image,products&limit=250');
       const allCollections = allCollectionsResponse.collections || [];
       console.log(`Found ${allCollections.length} total collections`);
       
@@ -653,9 +662,45 @@ class ShopifyService {
   async getProductByHandle(handle: string): Promise<any> {
     try {
       console.log(`Fetching product by handle: ${handle}`);
-      const response = await this.makeRequest(`/products/${handle}.json`);
-      console.log(`Product response for ${handle}:`, response.product ? 'Found' : 'Not found');
-      return response.product || null;
+      
+      // Try different approaches to find the product
+      const attempts = [
+        `/products/${handle}.json`,
+        `/products/${handle}.json?fields=id,title,handle,body_html,images,variants`,
+        `/products.json?handle=${handle}&fields=id,title,handle,body_html,images,variants&limit=1`
+      ];
+      
+      for (const endpoint of attempts) {
+        try {
+          console.log(`Trying endpoint: ${endpoint}`);
+          const response = await this.makeRequest(endpoint);
+          
+          if (response.product) {
+            console.log(`Product found via ${endpoint}:`, response.product.title);
+            console.log(`Product ${handle} has ${response.product.images?.length || 0} images`);
+            if (response.product.images && response.product.images.length > 0) {
+              console.log(`First image URL: ${response.product.images[0].src}`);
+            }
+            return response.product;
+          } else if (response.products && response.products.length > 0) {
+            const product = response.products[0];
+            console.log(`Product found via products array:`, product.title);
+            console.log(`Product ${handle} has ${product.images?.length || 0} images`);
+            if (product.images && product.images.length > 0) {
+              console.log(`First image URL: ${product.images[0].src}`);
+            }
+            return product;
+          }
+          
+          console.log(`No product found via ${endpoint}`);
+        } catch (endpointError) {
+          console.log(`Endpoint ${endpoint} failed:`, endpointError.message);
+          continue;
+        }
+      }
+      
+      console.log(`All attempts failed for product handle: ${handle}`);
+      return null;
     } catch (error) {
       console.error('Error fetching product by handle:', handle, error);
       return null;
