@@ -61,6 +61,12 @@ const TAB_ORDER_GROUPS = {
 
 // Function to order tabs according to the fixed groups
 const orderTabs = (content: ProductContent[]): ProductContent[] => {
+  // Ensure content is an array
+  if (!Array.isArray(content)) {
+    console.error('orderTabs received non-array content:', content);
+    return [];
+  }
+  
   const orderedContent: ProductContent[] = [];
   
   // Add Group 1 tabs in order (if available)
@@ -102,11 +108,7 @@ class HtmlGenerator {
     // Order content according to fixed groups before processing
     const orderedContent = orderTabs(content);
     
-    // Get the product title from description content if available
-    const descriptionContent = orderedContent.find(c => c.tabType === 'description');
-    if (descriptionContent && (descriptionContent.content as any)?.title) {
-      html += `    <h2 data-sku="${skuAttribute}">${(descriptionContent.content as any).title}</h2>\n`;
-    }
+    // Don't generate title here as it should be handled in the description tab itself
 
     // Generate tabs based on ordered content
     orderedContent.forEach(item => {
@@ -154,9 +156,9 @@ class HtmlGenerator {
   private generateDescriptionTab(content: any, sku: string): string {
     let html = `    <div class="tab-content active" id="description" data-sku="${sku}">\n`;
     
-    // Add H2 title if present (this was missing!)
+    // Add H2 title if present
     if (content.title) {
-      html += `    <h2 data-sku="${sku}">${content.title}</h2>\n`;
+      html += `    <h2>${content.title}</h2>\n`;
     }
     
     if (content.description) {
@@ -239,11 +241,40 @@ class HtmlGenerator {
   private generateVideosTab(content: any, sku: string): string {
     let html = `    <div id="videos" class="tab-content" data-sku="${sku}">\n`;
     
-    // Always show "Video coming soon" if no specific video URL is provided
-    if (!content.videoUrl) {
-      html += `    <p>Video coming soon</p>\n`;
+    let videoUrl = null;
+    
+    // Handle different video content formats
+    console.log('Video content structure:', JSON.stringify(content, null, 2));
+    if (content.videoUrl && content.videoUrl.trim()) {
+      // Direct videoUrl format
+      videoUrl = content.videoUrl.trim();
+      console.log('Using direct videoUrl:', videoUrl);
+    } else if (content.videos && Array.isArray(content.videos) && content.videos.length > 0) {
+      // Array format from extraction
+      videoUrl = content.videos[0].url;
+      console.log('Using videos array URL:', videoUrl);
     } else {
-      html += `        <iframe width="560" height="315" src="${content.videoUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>\n`;
+      console.log('No video URL found in content');
+    }
+    
+    // Handle custom video content if provided
+    if (videoUrl && videoUrl.trim()) {
+      // Clean the video URL and ensure it's properly formatted
+      videoUrl = videoUrl.trim();
+      
+      // If it's already an iframe, extract the src URL
+      if (videoUrl.includes('<iframe')) {
+        const srcMatch = videoUrl.match(/src="([^"]+)"/);
+        if (srcMatch) {
+          videoUrl = srcMatch[1];
+        }
+      }
+      
+      // Generate proper iframe with clean URL
+      html += `        <iframe width="560" height="315" src="${videoUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>\n`;
+    } else {
+      // Default "Video coming soon" message
+      html += `        <p>Video coming soon</p>\n`;
     }
 
     // Always include YouTube channel link (default or custom)

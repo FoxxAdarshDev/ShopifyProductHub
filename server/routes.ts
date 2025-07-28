@@ -460,7 +460,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Preview HTML generation
   app.post("/api/preview", async (req, res) => {
     try {
-      const { content, productSku, shopifyProductId } = req.body;
+      let { content, productSku, shopifyProductId, productId } = req.body;
+      
+      // If content is not provided directly, load from draft content
+      if (!content && productId) {
+        console.log('Loading draft content for preview generation:', productId);
+        const draftResult = await storage.getDraftContentByProduct(productId.toString());
+        if (draftResult && draftResult.length > 0) {
+          // Transform draft content to the expected format
+          content = draftResult.map((draft: any) => ({
+            tabType: draft.tabType,
+            content: draft.content,
+            isActive: true
+          }));
+          console.log('Transformed draft content:', content.length, 'items');
+        }
+      }
+      
+      // Ensure content is an array
+      if (!Array.isArray(content)) {
+        console.error('Content is not an array:', typeof content, content);
+        return res.status(400).json({ message: "Content must be an array" });
+      }
       
       // Get all variant SKUs if shopifyProductId is provided
       let allVariantSkus: string[] = [];
