@@ -175,34 +175,40 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
         <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
       )}
       {data?.compatibleItems?.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {data.compatibleItems.map((item: any, index: number) => (
-            <div key={index} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              {item.image && (
-                <div className="mb-3">
+            <div key={index} className="flex flex-col p-3 bg-white border border-slate-200 rounded-md shadow-sm hover:shadow-md hover:border-blue-300 transition-all min-h-[140px]">
+              <div className="flex items-start gap-3 flex-1">
+                {item.image && (
                   <img 
                     src={item.image} 
                     alt={item.title}
-                    className="w-full h-32 object-cover rounded"
+                    className="w-12 h-12 object-contain rounded border border-slate-200 bg-slate-50 flex-shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-slate-800 text-sm leading-tight mb-1 line-clamp-2">{item.title}</h4>
+                  {(item.description || item.handle) && (
+                    <p className="text-xs text-slate-500 mb-2">
+                      Product: {item.description || item.handle}
+                    </p>
+                  )}
                 </div>
-              )}
-              <h4 className="font-medium text-slate-800 mb-2">{item.title}</h4>
-              <p className="text-sm text-slate-500 mb-2">
-                {item.type === 'collection' ? 'Collection' : 'Product'}: {item.handle}
-              </p>
-              {item.sourceUrl && (
-                <a 
-                  href={convertToAbsoluteUrl(item.sourceUrl)} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  View Product →
-                </a>
+              </div>
+              {(item.url || item.sourceUrl) && (
+                <div className="mt-2 pt-2 border-t border-slate-100">
+                  <a 
+                    href={item.url || item.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium block"
+                  >
+                    View Product →
+                  </a>
+                </div>
               )}
             </div>
           ))}
