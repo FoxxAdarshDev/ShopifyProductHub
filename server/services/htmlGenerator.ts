@@ -192,12 +192,47 @@ class HtmlGenerator {
     if (content.title) {
       html += `        <h3>${content.title}</h3>\n`;
     }
+
+    // Main SKU nomenclature image
+    if (content.mainImage) {
+      html += `        <div class="sku-main-image">\n`;
+      html += `            <img src="${content.mainImage}" alt="SKU Nomenclature" class="sku-nomenclature-image" />\n`;
+      html += '        </div>\n';
+    }
+
+    // Additional images gallery
+    if (content.additionalImages && Array.isArray(content.additionalImages) && content.additionalImages.length > 0) {
+      html += '        <div class="sku-additional-images">\n';
+      html += '            <h4>Additional Images</h4>\n';
+      html += '            <div class="image-gallery">\n';
+      content.additionalImages.forEach((imageUrl: string) => {
+        if (imageUrl) {
+          html += `                <img src="${imageUrl}" alt="SKU Additional Image" class="gallery-image" />\n`;
+        }
+      });
+      html += '            </div>\n';
+      html += '        </div>\n';
+    }
     
     if (content.components && Array.isArray(content.components)) {
       html += '        <div class="sku-breakdown">\n';
-      content.components.forEach((component: { code: string; description: string }) => {
+      content.components.forEach((component: { code: string; description: string; images?: string[] }) => {
         if (component.code && component.description) {
-          html += `            <p><strong>${component.code}</strong> = ${component.description}</p>\n`;
+          html += '            <div class="sku-component">\n';
+          html += `                <p><strong>${component.code}</strong> = ${component.description}</p>\n`;
+          
+          // Component images
+          if (component.images && Array.isArray(component.images) && component.images.length > 0) {
+            html += '                <div class="component-images">\n';
+            component.images.forEach((imageUrl: string) => {
+              if (imageUrl) {
+                html += `                    <img src="${imageUrl}" alt="${component.code} Image" class="component-image" />\n`;
+              }
+            });
+            html += '                </div>\n';
+          }
+          
+          html += '            </div>\n';
         }
       });
       html += '        </div>\n';

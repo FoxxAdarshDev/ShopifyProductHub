@@ -359,7 +359,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         </CardTitle>
       </CardHeader>
       <CardContent className="form-section-content">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">SKU Breakdown Title</Label>
             <Input
@@ -369,11 +369,60 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
               data-testid="input-sku-title"
             />
           </div>
+
+          {/* Main SKU Nomenclature Image */}
+          <div>
+            <FileUpload
+              label="Main SKU Nomenclature Image (Optional)"
+              value={contentData['sku-nomenclature']?.mainImage || ""}
+              onChange={(url) => updateContent("sku-nomenclature", "mainImage", url)}
+              placeholder="Upload or enter URL for main SKU nomenclature image"
+            />
+          </div>
+
+          {/* Additional Images Gallery */}
+          <div>
+            <Label className="block text-sm font-medium text-slate-700 mb-3">Additional Images</Label>
+            <div className="space-y-3">
+              {(contentData['sku-nomenclature']?.additionalImages || []).map((imageUrl: string, index: number) => (
+                <div key={index} className="flex items-center space-x-3 p-3 border rounded">
+                  <div className="flex-1">
+                    <FileUpload
+                      label={`Image ${index + 1}`}
+                      value={imageUrl}
+                      onChange={(url) => updateArrayItem("sku-nomenclature", "additionalImages", index, url)}
+                      placeholder="Upload or enter image URL"
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeArrayItem("sku-nomenclature", "additionalImages", index)}
+                    className="text-red-500 hover:text-red-700 mt-6"
+                    data-testid={`button-remove-additional-image-${index}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => addArrayItem("sku-nomenclature", "additionalImages", "")}
+              className="mt-3 text-primary hover:text-primary/80"
+              data-testid="button-add-additional-image"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Another Image
+            </Button>
+          </div>
+
+          {/* SKU Components */}
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">SKU Components</Label>
             <div className="space-y-3">
-              {(contentData['sku-nomenclature']?.components || []).map((component: { code: string; description: string; image?: string }, index: number) => (
-                <div key={index} className="space-y-3 p-3 border rounded">
+              {(contentData['sku-nomenclature']?.components || []).map((component: { code: string; description: string; images?: string[] }, index: number) => (
+                <div key={index} className="space-y-3 p-4 border rounded-lg bg-slate-50">
                   <div className="flex items-center space-x-3">
                     <Input
                       placeholder="Code (e.g., TS)"
@@ -401,19 +450,59 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
                     </Button>
                   </div>
                   
-                  {/* Image/Banner Upload for SKU Component */}
-                  <FileUpload
-                    label="Component Image/Banner (Optional)"
-                    value={component.image || ""}
-                    onChange={(url) => updateArrayItem("sku-nomenclature", "components", index, { ...component, image: url })}
-                    placeholder="Enter image URL or upload banner for this SKU component"
-                  />
+                  {/* Component Images */}
+                  <div className="ml-8">
+                    <Label className="block text-sm font-medium text-slate-600 mb-2">Component Images</Label>
+                    <div className="space-y-2">
+                      {(component.images || []).map((imageUrl: string, imgIndex: number) => (
+                        <div key={imgIndex} className="flex items-center space-x-2">
+                          <div className="flex-1">
+                            <FileUpload
+                              label={`Image ${imgIndex + 1}`}
+                              value={imageUrl}
+                              onChange={(url) => {
+                                const updatedImages = [...(component.images || [])];
+                                updatedImages[imgIndex] = url;
+                                updateArrayItem("sku-nomenclature", "components", index, { ...component, images: updatedImages });
+                              }}
+                              placeholder="Upload component image"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updatedImages = (component.images || []).filter((_, i) => i !== imgIndex);
+                              updateArrayItem("sku-nomenclature", "components", index, { ...component, images: updatedImages });
+                            }}
+                            className="text-red-500 hover:text-red-700 mt-6"
+                            data-testid={`button-remove-component-image-${index}-${imgIndex}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const updatedImages = [...(component.images || []), ""];
+                        updateArrayItem("sku-nomenclature", "components", index, { ...component, images: updatedImages });
+                      }}
+                      className="mt-2 text-sm"
+                      data-testid={`button-add-component-image-${index}`}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Image
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
             <Button
               variant="ghost"
-              onClick={() => addArrayItem("sku-nomenclature", "components", { code: "", description: "", image: "" })}
+              onClick={() => addArrayItem("sku-nomenclature", "components", { code: "", description: "", images: [] })}
               className="mt-4 text-primary hover:text-primary/80"
               data-testid="button-add-sku-component"
             >
