@@ -80,6 +80,7 @@ export default function ProductManager() {
   const [hasDraftContent, setHasDraftContent] = useState(false);
   const [showExtractButton, setShowExtractButton] = useState(false);
   const [hasShopifyTemplate, setHasShopifyTemplate] = useState(false);
+  const [contentStatus, setContentStatus] = useState<any>(null);
   const { toast } = useToast();
   const params = useParams();
   const productId = params.productId;
@@ -94,6 +95,18 @@ export default function ProductManager() {
     },
     enabled: !!productId
   });
+
+  // Check content status for a product
+  const checkContentStatus = async (productId: string) => {
+    try {
+      const response = await apiRequest("POST", "/api/products/content-status", { productIds: [parseInt(productId)] });
+      const statusData = await response.json();
+      setContentStatus(statusData[productId] || null);
+    } catch (error) {
+      console.error("Error checking content status:", error);
+      setContentStatus(null);
+    }
+  };
 
   // Load draft content for a product
   const loadDraftContent = async (product: any) => {
@@ -204,6 +217,8 @@ export default function ProductManager() {
       setSelectedProduct(product);
       // Load draft content for this product
       loadDraftContent(product);
+      // Check content status for badges
+      checkContentStatus(product.id.toString());
       return;
     }
 
@@ -222,6 +237,8 @@ export default function ProductManager() {
         setSelectedProduct(productData);
         // Load draft content for this product
         loadDraftContent(productData);
+        // Check content status for badges
+        checkContentStatus(productData.id.toString());
         sessionStorage.removeItem('selectedProduct'); // Clear after use
       } catch (error) {
         console.error('Error parsing selected product:', error);
@@ -343,6 +360,7 @@ export default function ProductManager() {
   const handleProductFound = async (product: any, content: any[]) => {
     setSelectedProduct(product);
     await loadDraftContent(product);
+    checkContentStatus(product.id.toString());
     
     // Check if we should show the extract button
     if (product.description && product.description.trim() !== '' && 
@@ -372,6 +390,8 @@ export default function ProductManager() {
         try {
           await apiRequest("DELETE", `/api/draft-content/${selectedProduct.id}`);
           setHasDraftContent(false);
+          // Refresh content status to update badges
+          checkContentStatus(selectedProduct.id.toString());
           console.log('Draft content cleaned up after successful Shopify update');
         } catch (error) {
           console.error('Failed to clean up draft content:', error);
@@ -418,6 +438,18 @@ export default function ProductManager() {
                     <Package className="w-5 h-5" />
                     Product Information
                     <div className="flex items-center gap-2 ml-auto">
+                      {contentStatus?.hasShopifyContent && (
+                        <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                          <Package className="w-3 h-3 mr-1" />
+                          Shopify Content
+                        </Badge>
+                      )}
+                      {contentStatus?.hasNewLayout && (
+                        <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-200">
+                          <Package className="w-3 h-3 mr-1" />
+                          New Layout: {contentStatus?.contentCount || 0}
+                        </Badge>
+                      )}
                       {hasDraftContent && selectedTabs.length > 0 && !hasShopifyTemplate && (
                         <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                           Draft Mode
