@@ -7,7 +7,7 @@ import ProductLookup from "@/components/ProductLookup";
 import TabSelector from "@/components/TabSelector";
 import ContentForms from "@/components/ContentForms";
 import PreviewPanel from "@/components/PreviewPanel";
-import { Store, User, FileText, Eye, Code } from "lucide-react";
+import { Store, User, FileText, Eye, Code, ExternalLink, Package, Link as LinkIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -171,6 +171,89 @@ export default function ProductManager() {
           
           {selectedProduct && (
             <>
+              {/* Product Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    Product Information
+                    <Badge variant="outline" className="ml-auto">
+                      Product ID: {selectedProduct.id}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Product Details */}
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-semibold text-lg mb-2">{selectedProduct.title}</h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-600">Product ID:</span>
+                            <span className="font-mono bg-slate-100 px-2 py-1 rounded">{selectedProduct.id}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-600">Live URL:</span>
+                            <a
+                              href={`https://foxxbioprocess.myshopify.com/products/${productFromUrl?.handle || selectedProduct.handle || ''}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
+                              data-testid="link-shopify-product"
+                            >
+                              View on Shopify
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Variants/SKUs */}
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-slate-700 mb-3">
+                          Product Variants ({productFromUrl?.variants?.length || 0} SKUs)
+                        </h4>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {productFromUrl?.variants?.map((variant: any, index: number) => (
+                            <div
+                              key={variant.id}
+                              className="flex items-center justify-between p-3 bg-slate-50 rounded border"
+                            >
+                              <div className="flex-1">
+                                <div className="font-mono text-sm font-medium text-slate-900">
+                                  {variant.sku}
+                                </div>
+                                {variant.title !== "Default Title" && (
+                                  <div className="text-xs text-slate-500 mt-1">{variant.title}</div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-slate-600 font-medium">${variant.price}</span>
+                                <a
+                                  href={`https://foxxbioprocess.myshopify.com/products/${productFromUrl?.handle || ''}?variant=${variant.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                                  data-testid={`link-variant-${variant.id}`}
+                                  title="View this variant on Shopify"
+                                >
+                                  <LinkIcon className="w-3 h-3" />
+                                </a>
+                              </div>
+                            </div>
+                          )) || (
+                            <div className="text-slate-500 text-sm italic">No variants available</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Current Product Description */}
               <Card>
                 <CardHeader>
