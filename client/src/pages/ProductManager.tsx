@@ -127,6 +127,17 @@ export default function ProductManager() {
           console.log('Loading extracted content from Shopify description');
           finalContentMap = extractionData.extractedContent;
           finalSelectedTabs = Object.keys(extractionData.extractedContent);
+          
+          // If this is our template structure, show success message
+          if (extractionData.isOurTemplate) {
+            console.log('🎯 Auto-detected and loaded our template structure');
+            
+            // Show success message for auto-extraction
+            toast({
+              title: "Content Auto-Loaded",
+              description: `Detected existing layout with ${finalSelectedTabs.length} sections: ${finalSelectedTabs.join(', ')}`,
+            });
+          }
         }
       } catch (error) {
         console.log('No content could be extracted from Shopify description');
@@ -160,6 +171,13 @@ export default function ProductManager() {
     
     // Check if we have draft content or content data
     setHasDraftContent(Object.keys(finalContentMap).length > 0);
+    
+    // Show extract button only if no content was found and there's a description to extract from
+    if (Object.keys(finalContentMap).length === 0 && product.description && product.description.trim() !== '') {
+      setShowExtractButton(true);
+    } else {
+      setShowExtractButton(false);
+    }
   };
 
   // Load product from URL or session storage

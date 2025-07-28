@@ -331,6 +331,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const shopifyProduct = await shopifyService.getProductById(productId.toString());
           const hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
           
+          // Check if Shopify content matches our template structure (for New Layout detection)
+          let isOurTemplateStructure = false;
+          if (hasShopifyContent && shopifyProduct?.body_html) {
+            // Check for our template structure markers
+            const html = shopifyProduct.body_html;
+            const hasContainerClass = html.includes('class="container"');
+            const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
+            const hasDataSkuAttributes = html.includes('data-sku=');
+            
+            isOurTemplateStructure = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
+          }
+          
           // Check local database for new layout content and draft content
           const localProduct = await storage.getProductByShopifyId(productId.toString());
           let hasNewLayout = false;
@@ -345,6 +357,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Check for draft content
             const draftContent = await storage.getDraftContentByProduct(productId.toString());
             hasDraftContent = draftContent.length > 0;
+          }
+          
+          // If we detected our template structure in Shopify but no local content, mark it as New Layout
+          if (isOurTemplateStructure && !hasNewLayout) {
+            hasNewLayout = true;
+            // Estimate content count from Shopify HTML structure
+            const html = shopifyProduct?.body_html || '';
+            let estimatedCount = 0;
+            if (html.includes('id="description"')) estimatedCount++;
+            if (html.includes('id="features"')) estimatedCount++;
+            if (html.includes('id="applications"')) estimatedCount++;
+            if (html.includes('id="specifications"')) estimatedCount++;
+            if (html.includes('data-section="documentation"')) estimatedCount++;
+            if (html.includes('data-section="videos"')) estimatedCount++;
+            if (html.includes('data-section="safety-guidelines"')) estimatedCount++;
+            if (html.includes('data-section="sterilization-method"')) estimatedCount++;
+            if (html.includes('data-section="compatible-container"')) estimatedCount++;
+            contentCount = Math.max(contentCount, estimatedCount);
           }
 
           contentStatus[productId] = {
@@ -617,9 +647,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ extractedContent: {} });
       }
 
-      // Basic content extraction from HTML description
-      const extractedContent = extractContentFromHtml(shopifyProduct.body_html);
-      res.json({ extractedContent });
+      // Check if this is our template structure
+      const html = shopifyProduct.body_html;
+      const hasContainerClass = html.includes('class="container"');
+      const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
+      const hasDataSkuAttributes = html.includes('data-sku=');
+      
+      const isOurTemplateStructure = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
+      
+      if (isOurTemplateStructure) {
+        console.log(`🎯 Detected our template structure for product ${shopifyProductId}, extracting content...`);
+        // Enhanced content extraction from HTML description
+        const extractedContent = extractContentFromHtml(shopifyProduct.body_html);
+        
+        // Auto-save as draft content if extraction was successful
+        if (Object.keys(extractedContent).length > 0) {
+          console.log(`💾 Auto-saving extracted content as drafts for product ${shopifyProductId}`);
+          try {
+            for (const [tabType, content] of Object.entries(extractedContent)) {
+              if (content && typeof content === 'object') {
+                // Save each tab as draft content
+                await storage.saveDraftContent({
+                  shopifyProductId: shopifyProductId.toString(),
+                  tabType,
+                  content
+                });
+              }
+            }
+          } catch (draftError) {
+            console.warn('Failed to auto-save extracted content as drafts:', draftError);
+          }
+        }
+        
+        res.json({ 
+          extractedContent,
+          isOurTemplate: true,
+          foundSections: Object.keys(extractedContent)
+        });
+      } else {
+        // Basic content extraction from HTML description for non-template content
+        const extractedContent = extractContentFromHtml(shopifyProduct.body_html);
+        res.json({ 
+          extractedContent,
+          isOurTemplate: false
+        });
+      }
     } catch (error) {
       console.error("Content extraction error:", error);
       res.status(500).json({ message: "Failed to extract content" });
