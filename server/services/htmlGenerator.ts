@@ -33,6 +33,25 @@ const convertToAbsoluteUrl = (url: string): string => {
   return url;
 };
 
+// Helper function to convert all URLs in HTML content to absolute URLs
+const convertHtmlUrlsToAbsolute = (html: string): string => {
+  if (!html) return html;
+  
+  // Replace href attributes with relative URLs
+  html = html.replace(/href="(\/[^"]*)"/g, (match, url) => {
+    const absoluteUrl = convertToAbsoluteUrl(url);
+    return `href="${absoluteUrl}"`;
+  });
+  
+  // Replace src attributes with relative URLs  
+  html = html.replace(/src="(\/[^"]*)"/g, (match, url) => {
+    const absoluteUrl = convertToAbsoluteUrl(url);
+    return `src="${absoluteUrl}"`;
+  });
+  
+  return html;
+};
+
 // Define the fixed tab ordering groups
 const TAB_ORDER_GROUPS = {
   GROUP_1: ['description', 'features', 'applications'],
@@ -127,7 +146,9 @@ class HtmlGenerator {
     });
 
     html += '</div>';
-    return html;
+    
+    // Convert all relative URLs to absolute URLs before returning
+    return convertHtmlUrlsToAbsolute(html);
   }
 
   private generateDescriptionTab(content: any, sku: string): string {
