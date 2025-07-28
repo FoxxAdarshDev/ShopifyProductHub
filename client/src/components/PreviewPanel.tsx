@@ -26,7 +26,7 @@ export default function PreviewPanel({
   const [previewHtml, setPreviewHtml] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [autoGenerate, setAutoGenerate] = useState(false);
+  const [autoGenerate, setAutoGenerate] = useState(true);
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -62,7 +62,7 @@ export default function PreviewPanel({
         // Debounce auto-generation
         const timeoutId = setTimeout(() => {
           previewMutation.mutate();
-        }, 2000); // 2-second delay after content changes
+        }, 1000); // 1-second delay after content changes
         
         return () => clearTimeout(timeoutId);
       }

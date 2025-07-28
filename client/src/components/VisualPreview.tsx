@@ -41,32 +41,48 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
     return titles[tabType] || tabType;
   };
 
-  const renderDescriptionPreview = (data: any) => (
-    <div className="space-y-4">
-      {data?.title && (
-        <h3 className="text-lg font-semibold text-slate-800">{data.title}</h3>
-      )}
-      {data?.paragraphs?.length > 0 && (
-        <div className="space-y-3">
-          {data.paragraphs.map((paragraph: string, index: number) => (
-            <p key={index} className="text-slate-600 leading-relaxed">{paragraph}</p>
-          ))}
-        </div>
-      )}
-      {data?.logoGrid?.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-sm font-medium text-slate-700 mb-3">Partner Logos</h4>
-          <div className="grid grid-cols-4 gap-4">
-            {data.logoGrid.map((logo: any, index: number) => (
-              <div key={index} className="flex items-center justify-center p-2 border border-slate-200 rounded">
-                <img src={logo.url} alt={logo.altText} className="max-h-8 max-w-full object-contain" />
-              </div>
+  const renderDescriptionPreview = (data: any) => {
+    // Handle both form data structure and extracted content structure
+    const title = data?.h2Heading || data?.title;
+    const description = data?.description;
+    const paragraphs = data?.paragraphs;
+    const logos = data?.logos || data?.logoGrid;
+
+    return (
+      <div className="space-y-4">
+        {title && (
+          <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
+        )}
+        {description && (
+          <div className="space-y-3">
+            {/* Split description by line breaks to create paragraphs */}
+            {description.split('\n').filter((para: string) => para.trim()).map((paragraph: string, index: number) => (
+              <p key={index} className="text-slate-600 leading-relaxed">{paragraph.trim()}</p>
             ))}
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+        {paragraphs?.length > 0 && (
+          <div className="space-y-3">
+            {paragraphs.map((paragraph: string, index: number) => (
+              <p key={index} className="text-slate-600 leading-relaxed">{paragraph}</p>
+            ))}
+          </div>
+        )}
+        {logos?.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Partner Logos</h4>
+            <div className="grid grid-cols-4 gap-4">
+              {logos.map((logo: any, index: number) => (
+                <div key={index} className="flex items-center justify-center p-2 border border-slate-200 rounded">
+                  <img src={logo.url || logo.logoUrl} alt={logo.altText || logo.name} className="max-h-8 max-w-full object-contain" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderFeaturesPreview = (data: any) => (
     <div className="space-y-4">
