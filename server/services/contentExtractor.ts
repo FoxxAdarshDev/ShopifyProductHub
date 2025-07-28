@@ -394,10 +394,15 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       
       // Always create documentation section - include default link when no custom datasheets
       extractedContent.documentation = {
-        datasheets: datasheets
+        datasheets: datasheets,
+        // For backward compatibility with forms, also set single fields from first datasheet
+        datasheetTitle: datasheets.length > 0 ? datasheets[0].title : '',
+        datasheetUrl: datasheets.length > 0 ? datasheets[0].url : ''
       };
       if (datasheets.length > 0) {
-        console.log('✅ Documentation extracted with custom datasheets');
+        console.log('✅ Documentation extracted with custom datasheets:', datasheets.length);
+        console.log('📚 First datasheet title:', datasheets[0].title);
+        console.log('📚 First datasheet URL:', datasheets[0].url.substring(0, 50) + '...');
       } else {
         console.log('✅ Documentation section extracted (default content only)');
       }
