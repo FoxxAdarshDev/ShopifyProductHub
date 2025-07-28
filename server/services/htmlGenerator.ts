@@ -368,11 +368,17 @@ class HtmlGenerator {
         }
         
         html += '                <div class="compatible-item-content">\n';
-        const absoluteUrl = convertToAbsoluteUrl(item.sourceUrl);
-        html += `                    <a href="${absoluteUrl}" target="_blank" class="compatible-item-title">${item.title}</a>\n`;
-        html += `                    <div class="compatible-item-type">${item.type === 'collection' ? 'Collection' : 'Product'}: ${item.handle}</div>\n`;
+        html += `                    <h4 class="compatible-item-title">${item.title}</h4>\n`;
+        if (item.description || item.handle) {
+          html += `                    <p class="compatible-item-description">Product: ${item.description || item.handle}</p>\n`;
+        }
+        const itemUrl = item.url || item.sourceUrl;
+        if (itemUrl) {
+          const absoluteUrl = convertToAbsoluteUrl(itemUrl);
+          html += `                    <a href="${absoluteUrl}" target="_blank" class="compatible-item-link">View Product →</a>\n`;
+        }
         html += '                </div>\n';
-        html += '                <span class="compatible-item-arrow">→</span>\n';
+
         html += '            </div>\n';
       });
       html += '        </div>\n';
