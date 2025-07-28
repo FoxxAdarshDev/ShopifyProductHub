@@ -393,11 +393,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Save draft content for a specific tab type
   app.post("/api/draft-content", async (req, res) => {
     try {
-      const validatedData = insertDraftContentSchema.parse(req.body);
-      const draftContent = await storage.saveDraftContent(validatedData);
-      res.json({ draftContent });
+      // Ensure the product exists in our database first
+      const { shopifyProductId, tabType, content } = req.body;
+      
+      // Validate required fields
+      if (!shopifyProductId || !tabType || !content) {
+        return res.status(400).json({ message: "Missing required fields: shopifyProductId, tabType, content" });
+      }
+
+      // Check if product exists in our database, if not create it
+      let localProduct = await storage.getProductByShopifyId(shopifyProductId.toString());
+      
+      if (!localProduct) {
+        // Fetch product from Shopify and save it locally
+        try {
+          const shopifyProduct = await shopifyService.getProductById(shopifyProductId.toString());
+          if (shopifyProduct) {
+            const productData = {
+              shopifyId: shopifyProductId.toString(),
+              sku: shopifyProduct.handle || `product-${shopifyProductId}`,
+              title: shopifyProduct.title || 'Unknown Product',
+              description: shopifyProduct.body_html || null
+            };
+            localProduct = await storage.createProduct(productData);
+            console.log(`Created local product record for Shopify ID: ${shopifyProductId}`);
+          }
+        } catch (shopifyError) {
+          console.error('Failed to fetch product from Shopify:', shopifyError);
+          // Create minimal product record for draft storage
+          const productData = {
+            shopifyId: shopifyProductId.toString(),
+            sku: `product-${shopifyProductId}`,
+            title: 'Product (Draft)',
+            description: null
+          };
+          localProduct = await storage.createProduct(productData);
+          console.log(`Created minimal local product record for Shopify ID: ${shopifyProductId}`);
+        }
+      }
+
+      const draftData = {
+        shopifyProductId: shopifyProductId.toString(),
+        tabType,
+        content
+      };
+      
+      // Check if draft already exists for this product and tab type
+      const existing = await storage.getDraftContentByProductAndType(draftData.shopifyProductId, draftData.tabType);
+      
+      let result;
+      if (existing) {
+        result = await storage.updateDraftContent(existing.id, draftData);
+        console.log(`Updated draft content for ${shopifyProductId} - ${tabType}`);
+      } else {
+        result = await storage.saveDraftContent(draftData);
+        console.log(`Created draft content for ${shopifyProductId} - ${tabType}`);
+      }
+      
+      res.json(result);
     } catch (error) {
-      console.error("Draft content save error:", error);
+      console.error("Failed to save draft content:", error);
       res.status(500).json({ message: "Failed to save draft content" });
     }
   });
@@ -425,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ extractedContent: {} });
       }
 
-      // Extract content from HTML description
+      // Basic content extraction from HTML description
       const extractedContent = extractContentFromHtml(shopifyProduct.body_html);
       res.json({ extractedContent });
     } catch (error) {
@@ -433,6 +488,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to extract content" });
     }
   });
+
+  // Simple content extraction function
+  function extractContentFromHtml(html: string): Record<string, any> {
+    const extracted: Record<string, any> = {};
+    
+    try {
+      // Look for our custom tab sections
+      const sections = [
+        'compatible-container',
+        'description', 
+        'features',
+        'applications',
+        'specifications',
+        'videos',
+        'documentation',
+        'safety-guidelines'
+      ];
+      
+      sections.forEach(section => {
+        const regex = new RegExp(`<div[^>]*data-tab="${section}"[^>]*>([\\s\\S]*?)</div>`, 'gi');
+        const match = regex.exec(html);
+        
+        if (match) {
+          // Basic extraction - could be enhanced with more sophisticated parsing
+          extracted[section] = {
+            title: section.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            rawHtml: match[1]
+          };
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error parsing HTML:', error);
+    }
+    
+    return extracted;
+  }
 
   const httpServer = createServer(app);
   return httpServer;

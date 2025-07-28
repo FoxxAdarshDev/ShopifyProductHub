@@ -45,6 +45,14 @@ export interface IStorage {
   getLogos(): Promise<Logo[]>;
   createLogo(logo: InsertLogo): Promise<Logo>;
   deleteLogo(id: string): Promise<void>;
+
+  // Draft Content Management
+  getDraftContentByProduct(shopifyProductId: string): Promise<DraftContent[]>;
+  getDraftContentByProductAndType(shopifyProductId: string, tabType: string): Promise<DraftContent | undefined>;
+  saveDraftContent(content: InsertDraftContent): Promise<DraftContent>;
+  updateDraftContent(id: string, content: Partial<InsertDraftContent>): Promise<DraftContent>;
+  deleteDraftContentByProduct(shopifyProductId: string): Promise<void>;
+  deleteDraftContentByProductAndType(shopifyProductId: string, tabType: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

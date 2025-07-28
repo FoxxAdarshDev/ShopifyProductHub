@@ -419,23 +419,38 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     console.log('🆕 New item:', newItem);
     console.log('📋 Updated items array:', updatedItems);
     
-    // Force a fresh update to trigger re-render
-    updateContent("compatible-container", "compatibleItems", updatedItems);
+    // Force a fresh update to trigger re-render with proper state update
+    onContentChange({
+      ...contentData,
+      'compatible-container': {
+        ...contentData['compatible-container'],
+        compatibleItems: updatedItems,
+        title: "Compatible Container"
+      }
+    });
     
     // Also update the primary fields for backward compatibility
     if (currentItems.length === 0) {
-      updateContent("compatible-container", "collectionHandle", urlData.handle);
+      // Set collection handle for first item
+      onContentChange({
+        ...contentData,
+        'compatible-container': {
+          ...contentData['compatible-container'],
+          compatibleItems: updatedItems,
+          title: "Compatible Container",
+          collectionHandle: urlData.handle
+        }
+      });
     }
     
-    // Always ensure the section title
-    updateContent("compatible-container", "title", "Compatible Container");
-    
     // Auto-save the updated compatible container data
-    saveDraftContent("compatible-container", {
-      title: "Compatible Container",
-      compatibleItems: updatedItems,
-      collectionHandle: urlData.handle
-    });
+    setTimeout(() => {
+      saveDraftContent("compatible-container", {
+        title: "Compatible Container",
+        compatibleItems: updatedItems,
+        collectionHandle: urlData.handle
+      });
+    }, 100);
     
     console.log('✅ Compatible container item added successfully');
   };
