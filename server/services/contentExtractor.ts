@@ -9,80 +9,78 @@ interface ExtractedContent {
 export function extractContentFromHtml(html: string): ExtractedContent {
   const extractedContent: ExtractedContent = {};
 
-  if (!html) return extractedContent;
+  if (!html) {
+    return extractedContent;
+  }
 
   try {
-    // Remove extra whitespace and normalize the HTML
-    const cleanHtml = html.replace(/\s+/g, ' ').trim();
-
-    // Extract Description content - handle both old data-section and new id formats
-    const descriptionMatch = cleanHtml.match(/<div[^>]*(?:data-section="description"|id="description")[^>]*>([\s\S]*?)<\/div>/) ||
-                            cleanHtml.match(/<div[^>]*class="tab-content[^"]*"[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
-    if (descriptionMatch) {
-      const descContent = descriptionMatch[1];
+    console.log('🔍 Starting extraction with HTML length:', html.length);
+    
+    // Extract description content - look for description div and extract paragraphs
+    const descDiv = html.match(/<div[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
+    console.log('📄 Description div match result:', descDiv ? 'FOUND' : 'NOT FOUND');
+    
+    if (descDiv && descDiv[1]) {
+      console.log('📝 Description div content:', descDiv[1].substring(0, 100) + '...');
+      const paragraphs = descDiv[1].match(/<p[^>]*>(.*?)<\/p>/g);
+      console.log('📄 Paragraphs found:', paragraphs ? paragraphs.length : 0);
       
-      // Extract title
-      const titleMatch = descContent.match(/<h2[^>]*>(.*?)<\/h2>/);
-      const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : '';
-      
-      // Extract paragraphs
-      const paragraphMatches = descContent.match(/<p[^>]*>(.*?)<\/p>/g);
-      const paragraphs = paragraphMatches ? paragraphMatches.map(p => p.replace(/<[^>]*>/g, '').trim()).filter(p => p) : [];
-      
-      // Join paragraphs with double newlines for description field
-      const description = paragraphs.join('\n\n');
-      
-      // Extract logo grid
-      const logoGridMatch = descContent.match(/<div[^>]*class="logo-grid"[^>]*>([\s\S]*?)<\/div>/);
-      const logos: Array<{url: string, altText: string}> = [];
-      
-      if (logoGridMatch) {
-        const logoMatches = logoGridMatch[1].match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/g);
-        if (logoMatches) {
-          logoMatches.forEach(img => {
-            const srcMatch = img.match(/src="([^"]*)"/);
-            const altMatch = img.match(/alt="([^"]*)"/);
-            if (srcMatch && altMatch) {
-              logos.push({
-                url: srcMatch[1],
-                altText: altMatch[1]
-              });
-            }
-          });
-        }
+      if (paragraphs && paragraphs.length > 0) {
+        const textContent = paragraphs.map(p => p.replace(/<[^>]*>/g, '').trim()).join('\n\n');
+        console.log('✅ Extracted description text:', textContent.substring(0, 100) + '...');
+        extractedContent.description = {
+          title: '',
+          description: textContent,
+          logos: []
+        };
       }
-      
-      extractedContent.description = {
-        title,
-        description,
-        logos
-      };
     }
 
-    // Extract Features content - handle both old data-section and new id formats
-    const featuresMatch = cleanHtml.match(/<div[^>]*(?:data-section="features"|id="features")[^>]*>([\s\S]*?)<\/div>/) ||
-                         cleanHtml.match(/<div[^>]*class="tab-content[^"]*"[^>]*id="features"[^>]*>([\s\S]*?)<\/div>/);
-    if (featuresMatch) {
-      const featuresContent = featuresMatch[1];
-      
-      // Extract bullet points from ul/li or any list structure
-      const listMatches = featuresContent.match(/<li[^>]*>(.*?)<\/li>/g);
-      const features = listMatches ? listMatches.map(li => {
-        // Clean up the content and extract text from nested spans
-        const cleanText = li.replace(/<span[^>]*style="[^"]*"[^>]*>([^<]*)<\/span>/g, '$1')
-                           .replace(/<[^>]*>/g, '').trim();
-        return cleanText;
-      }).filter(f => f) : [];
-      
-      extractedContent.features = {
-        features
-      };
+    // Extract features content - look for features div and extract list items
+    const featDiv = html.match(/<div[^>]*id="features"[^>]*>([\s\S]*?)<\/div>/);
+    if (featDiv && featDiv[1]) {
+      const listItems = featDiv[1].match(/<li[^>]*>(.*?)<\/li>/g);
+      if (listItems && listItems.length > 0) {
+        const features = listItems.map(li => {
+          // Clean up nested spans and HTML tags
+          return li.replace(/<span[^>]*style="[^"]*"[^>]*>/g, '')
+                   .replace(/<\/span>/g, '')
+                   .replace(/<[^>]*>/g, '')
+                   .trim();
+        }).filter(f => f);
+        
+        extractedContent.features = {
+          features
+        };
+      }
     }
+
+    // Extract applications content
+    const appDiv = html.match(/<div[^>]*id="applications"[^>]*>([\s\S]*?)<\/div>/);
+    if (appDiv && appDiv[1]) {
+      const listItems = appDiv[1].match(/<li[^>]*>(.*?)<\/li>/g);
+      if (listItems && listItems.length > 0) {
+        const applications = listItems.map(li => li.replace(/<[^>]*>/g, '').trim()).filter(a => a);
+        extractedContent.applications = {
+          applications
+        };
+      }
+    }
+
+    return extractedContent;
+  } catch (error) {
+    console.error('Content extraction error:', error);
+    return extractedContent;
+  }
+}
 
     // Extract Applications content
-    const applicationsMatch = cleanHtml.match(/<div[^>]*(?:data-section="applications"|id="applications")[^>]*>([\s\S]*?)<\/div>/) ||
-                             cleanHtml.match(/<div[^>]*class="tab-content[^"]*"[^>]*id="applications"[^>]*>([\s\S]*?)<\/div>/);
+    const applicationsMatch = cleanHtml.match(/<div[^>]*id="applications"[^>]*>(.*?)<\/div>/s) ||
+                             cleanHtml.match(/<div[^>]*class="tab-content[^"]*"[^>]*id="applications"[^>]*>(.*?)<\/div>/s) ||
+                             cleanHtml.match(/<div[^>]*data-section="applications"[^>]*>(.*?)<\/div>/s);
+    
     if (applicationsMatch) {
+      console.log('Found applications section:', applicationsMatch[1].substring(0, 100) + '...');
       const appContent = applicationsMatch[1];
       
       const listMatches = appContent.match(/<li[^>]*>(.*?)<\/li>/g);
@@ -97,10 +95,13 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       };
     }
 
-    // Extract Specifications content
-    const specificationsMatch = cleanHtml.match(/<div[^>]*(?:data-section="specifications"|id="specification")[^>]*>([\s\S]*?)<\/div>/) ||
-                               cleanHtml.match(/<div[^>]*class="tab-content[^"]*"[^>]*id="specification"[^>]*>([\s\S]*?)<\/div>/);
+    // Extract Specifications content  
+    const specificationsMatch = cleanHtml.match(/<div[^>]*id="specification"[^>]*>(.*?)<\/div>/s) ||
+                               cleanHtml.match(/<div[^>]*class="tab-content[^"]*"[^>]*id="specification"[^>]*>(.*?)<\/div>/s) ||
+                               cleanHtml.match(/<div[^>]*data-section="specifications"[^>]*>(.*?)<\/div>/s);
+    
     if (specificationsMatch) {
+      console.log('Found specifications section:', specificationsMatch[1].substring(0, 100) + '...');
       const specContent = specificationsMatch[1];
       
       // Extract table data

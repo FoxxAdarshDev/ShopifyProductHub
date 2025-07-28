@@ -417,14 +417,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Extract content from existing HTML (reverse engineering)
   app.post("/api/extract-content", async (req, res) => {
     try {
+      console.log('🔍 Extract content route called');
       const { html, shopifyProductId } = req.body;
+      console.log('Request body:', { htmlLength: html?.length, shopifyProductId });
       
       if (!html) {
+        console.log('❌ No HTML provided');
         return res.status(400).json({ message: "HTML content is required" });
       }
       
+      console.log('🚀 Calling extractContentFromHtml function...');
+      console.log('📋 HTML input check:', { 
+        hasDescription: html.includes('id="description"'), 
+        hasFeatures: html.includes('id="features"'),
+        hasPTag: html.includes('<p>'),
+        hasLiTag: html.includes('<li>')
+      });
+      
       // Extract structured content from HTML
       const extractedContent = extractContentFromHtml(html);
+      console.log('✅ Extraction result:', { contentKeys: Object.keys(extractedContent), fullResult: extractedContent });
+      
+      // Test simple regex patterns
+      console.log('🧪 Regex test:');
+      const testP = html.match(/<p[^>]*>(.*?)<\/p>/g);
+      console.log('- Paragraph matches:', testP ? testP.length : 0);
+      const testLi = html.match(/<li[^>]*>(.*?)<\/li>/g);
+      console.log('- List item matches:', testLi ? testLi.length : 0);
       
       // If shopifyProductId is provided, save as draft content
       if (shopifyProductId && Object.keys(extractedContent).length > 0) {
