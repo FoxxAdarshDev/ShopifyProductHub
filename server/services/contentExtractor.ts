@@ -323,24 +323,28 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         // Extract image
         const imgMatch = itemHtml.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/);
         
-        // Extract title and URL from the link
-        const linkMatch = itemHtml.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/a>/);
+        // Extract title from h4 tag
+        const titleMatch = itemHtml.match(/<h4[^>]*class="[^"]*compatible-item-title[^"]*"[^>]*>(.*?)<\/h4>/);
         
-        // Extract description from the type div
-        const typeMatch = itemHtml.match(/<div[^>]*class="[^"]*compatible-item-type[^"]*"[^>]*>Product:\s*(.*?)<\/div>/);
+        // Extract description from p tag
+        const descMatch = itemHtml.match(/<p[^>]*class="[^"]*compatible-item-description[^"]*"[^>]*>Product:\s*(.*?)<\/p>/);
+        
+        // Extract URL from the link
+        const linkMatch = itemHtml.match(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*compatible-item-link[^"]*"[^>]*>/);
         
         console.log('🔗 Image match:', imgMatch ? 'FOUND' : 'NOT FOUND');
+        console.log('🔗 Title match:', titleMatch ? 'FOUND' : 'NOT FOUND');
+        console.log('🔗 Description match:', descMatch ? 'FOUND' : 'NOT FOUND');
         console.log('🔗 Link match:', linkMatch ? 'FOUND' : 'NOT FOUND');
-        console.log('🔗 Type match:', typeMatch ? 'FOUND' : 'NOT FOUND');
         
-        if (linkMatch) {
+        if (titleMatch) {
           const item = {
-            title: linkMatch[2].replace(/<[^>]*>/g, '').trim(),
-            url: linkMatch[1],
+            title: titleMatch[1].replace(/<[^>]*>/g, '').trim(),
+            url: linkMatch ? linkMatch[1] : '',
             image: imgMatch ? imgMatch[1] : '',
-            description: typeMatch ? typeMatch[1].trim() : '',
-            sourceUrl: linkMatch[1],
-            handle: typeMatch ? typeMatch[1].trim() : '',
+            description: descMatch ? descMatch[1].trim() : '',
+            sourceUrl: linkMatch ? linkMatch[1] : '',
+            handle: descMatch ? descMatch[1].trim() : '',
             type: 'product'
           };
           

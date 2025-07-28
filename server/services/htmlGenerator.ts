@@ -154,6 +154,11 @@ class HtmlGenerator {
   private generateDescriptionTab(content: any, sku: string): string {
     let html = `    <div class="tab-content active" id="description" data-sku="${sku}">\n`;
     
+    // Add H2 title if present (this was missing!)
+    if (content.title) {
+      html += `    <h2 data-sku="${sku}">${content.title}</h2>\n`;
+    }
+    
     if (content.description) {
       // Split description into paragraphs
       const paragraphs = content.description.split('\n\n');
