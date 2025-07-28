@@ -1117,33 +1117,71 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <p className="text-sm text-blue-700 mb-3">
               Paste a Shopify collection or product URL to automatically fetch title and image data.
             </p>
-            <Input
-              placeholder="https://foxxbioprocess.myshopify.com/collections/compatible-bottles or /products/product-name"
-              onPaste={async (e) => {
-                console.log('🎯 Paste event detected');
-                setTimeout(async () => {
-                  const input = e.target as HTMLInputElement;
-                  console.log('📋 Input value after paste:', input.value);
-                  if (input.value.trim()) {
-                    console.log('✅ Calling handleUrlInput with:', input.value);
-                    await handleUrlInput(input.value);
-                    input.value = "";
+            <div className="flex gap-2">
+              <Input
+                id="url-input"
+                placeholder="https://foxxbioprocess.myshopify.com/collections/compatible-bottles or /products/product-name"
+                onPaste={(e) => {
+                  console.log('🎯 Paste event detected', e);
+                  // Use setTimeout to let the paste value settle
+                  setTimeout(async () => {
+                    const input = e.target as HTMLInputElement;
+                    console.log('📋 Input value after paste:', input.value);
+                    if (input.value.trim()) {
+                      console.log('✅ Calling handleUrlInput with:', input.value);
+                      try {
+                        await handleUrlInput(input.value);
+                        input.value = "";
+                      } catch (error) {
+                        console.error('💥 Error in handleUrlInput:', error);
+                      }
+                    } else {
+                      console.log('❌ No input value to process');
+                    }
+                  }, 100);
+                }}
+                onKeyDown={(e) => {
+                  console.log('⌨️ Key pressed:', e.key);
+                  if (e.key === 'Enter') {
+                    const input = e.target as HTMLInputElement;
+                    console.log('🔑 Enter pressed with value:', input.value);
+                    if (input.value.trim()) {
+                      handleUrlInput(input.value).then(() => {
+                        input.value = "";
+                      }).catch(error => {
+                        console.error('💥 Error on Enter:', error);
+                      });
+                    }
+                  }
+                }}
+                onChange={(e) => {
+                  console.log('📝 Input changed:', e.target.value);
+                }}
+                className="flex-1"
+                data-testid="input-url-import"
+              />
+              <Button
+                onClick={async () => {
+                  console.log('🔴 Add button clicked');
+                  const input = document.getElementById('url-input') as HTMLInputElement;
+                  if (input && input.value.trim()) {
+                    console.log('🔴 Adding URL:', input.value);
+                    try {
+                      await handleUrlInput(input.value);
+                      input.value = "";
+                      console.log('🔴 URL added successfully');
+                    } catch (error) {
+                      console.error('💥 Error adding URL:', error);
+                    }
                   } else {
-                    console.log('❌ No input value to process');
+                    console.log('❌ No URL to add');
                   }
-                }, 10);
-              }}
-              onKeyDown={async (e) => {
-                if (e.key === 'Enter') {
-                  const input = e.target as HTMLInputElement;
-                  if (input.value.trim()) {
-                    await handleUrlInput(input.value);
-                    input.value = "";
-                  }
-                }
-              }}
-              data-testid="input-url-import"
-            />
+                }}
+                className="px-4"
+              >
+                Add
+              </Button>
+            </div>
             <p className="text-xs text-blue-600 mt-2">
               Supports: Collection URLs, Product URLs, or just the handle name
             </p>
@@ -1157,14 +1195,26 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <div>Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}</div>
             <button 
               onClick={() => {
-                console.log('Force initialize clicked');
+                console.log('🟦 Force initialize clicked');
                 updateContent("compatible-container", "title", "Compatible Container");
                 updateContent("compatible-container", "compatibleItems", []);
-                console.log('Force initialization done');
+                console.log('🟦 Force initialization done');
               }}
               className="bg-blue-500 text-white px-2 py-1 rounded ml-2"
             >
               Force Initialize
+            </button>
+            <button 
+              onClick={async () => {
+                console.log('🟢 Manual test clicked');
+                const testUrl = "/products/ezbio-over-molded-silicone-cap-system-versacap-38-430-for-500ml-bottle-4cs";
+                console.log('🟢 Testing with URL:', testUrl);
+                await handleUrlInput(testUrl);
+                console.log('🟢 Manual test completed');
+              }}
+              className="bg-green-500 text-white px-2 py-1 rounded ml-2"
+            >
+              Manual Test
             </button>
           </div>
           
