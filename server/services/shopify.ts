@@ -604,10 +604,34 @@ class ShopifyService {
 
   async getCollectionByHandle(handle: string): Promise<any> {
     try {
-      const response = await this.makeRequest(`/collections.json?handle=${handle}&fields=id,title,handle,image`);
-      if (response.collections && response.collections.length > 0) {
-        return response.collections[0];
+      console.log(`Looking for collection with handle: "${handle}"`);
+      
+      // First, let's list all collections to see what's available
+      const allCollectionsResponse = await this.makeRequest('/collections.json?fields=id,title,handle,image&limit=250');
+      const allCollections = allCollectionsResponse.collections || [];
+      console.log(`Found ${allCollections.length} total collections`);
+      
+      // Log the first few handles for debugging
+      const handles = allCollections.map((c: any) => c.handle).slice(0, 10);
+      console.log('Sample collection handles:', handles);
+      
+      // Try to find exact match
+      let collection = allCollections.find((c: any) => c.handle === handle);
+      
+      if (!collection) {
+        console.log(`No exact match for "${handle}", trying fuzzy search...`);
+        // Try fuzzy matching
+        collection = allCollections.find((c: any) => 
+          c.handle && c.handle.includes(handle.toLowerCase())
+        );
       }
+      
+      if (collection) {
+        console.log(`Found collection: "${collection.title}" with handle: "${collection.handle}"`);
+        return collection;
+      }
+      
+      console.log(`No collection found for handle: "${handle}"`);
       return null;
     } catch (error) {
       console.error('Error fetching collection by handle:', error);

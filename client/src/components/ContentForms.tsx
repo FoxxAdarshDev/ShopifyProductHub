@@ -277,11 +277,24 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
     const shopifyData = await fetchShopifyData(urlData);
     if (shopifyData) {
-      // Update the form with fetched data
-      updateContent("compatible-container", "collectionHandle", urlData.handle);
-      updateContent("compatible-container", "title", shopifyData.title);
-      updateContent("compatible-container", "fetchedImage", shopifyData.image);
-      updateContent("compatible-container", "sourceUrl", url);
+      // Create a new compatible item
+      const newItem = {
+        handle: urlData.handle,
+        title: shopifyData.title,
+        image: shopifyData.image,
+        sourceUrl: url,
+        type: urlData.type
+      };
+
+      // Add to the compatible items array
+      const currentItems = contentData['compatible-container']?.compatibleItems || [];
+      updateContent("compatible-container", "compatibleItems", [...currentItems, newItem]);
+      
+      // Also update the primary fields for backward compatibility
+      if (currentItems.length === 0) {
+        updateContent("compatible-container", "collectionHandle", urlData.handle);
+        updateContent("compatible-container", "title", shopifyData.title);
+      }
     }
   };
 
@@ -1009,22 +1022,53 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             </p>
           </div>
 
-          {/* Display fetched image if available */}
-          {contentData['compatible-container']?.fetchedImage && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                <img 
-                  src={contentData['compatible-container'].fetchedImage} 
-                  alt="Fetched from Shopify"
-                  className="w-16 h-16 object-cover rounded border"
-                />
-                <div>
-                  <p className="font-medium text-green-900">Image fetched successfully!</p>
-                  <p className="text-sm text-green-700">
-                    Source: {contentData['compatible-container']?.sourceUrl}
-                  </p>
+          {/* Display compatible items as cards */}
+          {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
+            <div className="space-y-3">
+              <Label className="block text-sm font-medium text-slate-700">Compatible Items</Label>
+              {contentData['compatible-container'].compatibleItems.map((item: any, index: number) => (
+                <div key={index} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {item.image && (
+                        <img 
+                          src={item.image} 
+                          alt={item.title}
+                          className="w-16 h-16 object-cover rounded border"
+                        />
+                      )}
+                      <div>
+                        <h3 className="font-medium text-blue-600 hover:text-blue-800">
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {item.type === 'collection' ? 'Collection' : 'Product'}: {item.handle}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {item.sourceUrl}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          const currentItems = contentData['compatible-container']?.compatibleItems || [];
+                          const updatedItems = currentItems.filter((_: any, i: number) => i !== index);
+                          updateContent("compatible-container", "compatibleItems", updatedItems);
+                        }}
+                        className="text-red-400 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
 
