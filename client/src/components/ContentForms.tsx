@@ -210,31 +210,65 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     if (!url.trim()) return null;
 
     const cleanUrl = url.trim();
+    console.log('Parsing URL:', cleanUrl);
     
-    // Extract collection handle from URL patterns:
-    // https://foxxbioprocess.myshopify.com/collections/compatible-bottles
-    // /collections/compatible-bottles
-    // compatible-bottles
-    const collectionMatch = cleanUrl.match(/(?:\/collections\/|^)([a-z0-9-]+)(?:\?|$|\/)/);
-    if (collectionMatch) {
-      return {
-        type: 'collection',
-        handle: collectionMatch[1],
-        url: cleanUrl
-      };
-    }
+    try {
+      const urlObj = new URL(cleanUrl);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      console.log('URL parts:', pathParts);
+      
+      // Handle /collections/handle/products/product-handle format
+      if (pathParts[0] === 'collections' && pathParts[2] === 'products' && pathParts[3]) {
+        console.log('Found product in collection:', pathParts[3]);
+        return {
+          type: 'product',
+          handle: pathParts[3],
+          url: cleanUrl
+        };
+      }
+      
+      // Handle /collections/handle format
+      if (pathParts[0] === 'collections' && pathParts[1]) {
+        console.log('Found collection:', pathParts[1]);
+        return {
+          type: 'collection',
+          handle: pathParts[1],
+          url: cleanUrl
+        };
+      }
+      
+      // Handle /products/handle format
+      if (pathParts[0] === 'products' && pathParts[1]) {
+        console.log('Found product:', pathParts[1]);
+        return {
+          type: 'product',
+          handle: pathParts[1],
+          url: cleanUrl
+        };
+      }
+    } catch (error) {
+      // If URL parsing fails, try regex patterns for partial URLs
+      console.log('URL parsing failed, trying regex patterns');
+      
+      // Extract collection handle from URL patterns
+      const collectionMatch = cleanUrl.match(/\/collections\/([a-z0-9-]+)/);
+      if (collectionMatch) {
+        return {
+          type: 'collection',
+          handle: collectionMatch[1],
+          url: cleanUrl
+        };
+      }
 
-    // Extract product handle from URL patterns:
-    // https://foxxbioprocess.myshopify.com/products/product-name
-    // /products/product-name
-    // product-name
-    const productMatch = cleanUrl.match(/(?:\/products\/|^)([a-z0-9-]+)(?:\?|$|\/)/);
-    if (productMatch) {
-      return {
-        type: 'product',
-        handle: productMatch[1],
-        url: cleanUrl
-      };
+      // Extract product handle from URL patterns
+      const productMatch = cleanUrl.match(/\/products\/([a-z0-9-]+)/);
+      if (productMatch) {
+        return {
+          type: 'product',
+          handle: productMatch[1],
+          url: cleanUrl
+        };
+      }
     }
 
     return null;
@@ -273,9 +307,14 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
   const handleUrlInput = async (url: string) => {
     const urlData = parseShopifyUrl(url);
-    if (!urlData) return;
+    if (!urlData) {
+      console.log('Could not parse URL:', url);
+      return;
+    }
 
+    console.log('Attempting to fetch data for:', urlData);
     const shopifyData = await fetchShopifyData(urlData);
+    
     if (shopifyData) {
       // Create a new compatible item
       const newItem = {
@@ -295,6 +334,27 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         updateContent("compatible-container", "collectionHandle", urlData.handle);
         updateContent("compatible-container", "title", shopifyData.title);
       }
+      
+      // Clear the input
+      const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
+      if (urlInput) urlInput.value = '';
+    } else {
+      // If Shopify API fails, create a manual entry with the URL info
+      console.log('Shopify API failed, creating manual entry');
+      const newItem = {
+        handle: urlData.handle,
+        title: urlData.handle.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        image: null,
+        sourceUrl: url,
+        type: urlData.type
+      };
+
+      const currentItems = contentData['compatible-container']?.compatibleItems || [];
+      updateContent("compatible-container", "compatibleItems", [...currentItems, newItem]);
+      
+      // Clear the input
+      const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
+      if (urlInput) urlInput.value = '';
     }
   };
 
@@ -1038,13 +1098,18 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                         />
                       )}
                       <div>
-                        <h3 className="font-medium text-blue-600 hover:text-blue-800">
+                        <a 
+                          href={item.sourceUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        >
                           {item.title}
-                        </h3>
+                        </a>
                         <p className="text-sm text-gray-500 mt-1">
                           {item.type === 'collection' ? 'Collection' : 'Product'}: {item.handle}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-400 truncate max-w-xs">
                           {item.sourceUrl}
                         </p>
                       </div>
@@ -1071,6 +1136,23 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               ))}
             </div>
           )}
+
+          {/* Add another item button */}
+          <div className="flex justify-center py-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                // Clear the URL input for next item
+                const urlInput = document.querySelector('input[placeholder*="foxxbioprocess"]') as HTMLInputElement;
+                if (urlInput) urlInput.value = '';
+              }}
+              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Another Compatible Item
+            </Button>
+          </div>
 
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">Collection Handle</Label>
