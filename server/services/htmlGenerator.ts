@@ -156,9 +156,10 @@ class HtmlGenerator {
   private generateDescriptionTab(content: any, sku: string): string {
     let html = `    <div class="tab-content active" id="description" data-sku="${sku}">\n`;
     
-    // Add H2 title if present
-    if (content.title) {
-      html += `    <h2>${content.title}</h2>\n`;
+    // Add H2 title if present (check both title and h2Heading fields)
+    const h2Title = content.title || content.h2Heading;
+    if (h2Title && h2Title.trim()) {
+      html += `    <h2>${h2Title}</h2>\n`;
     }
     
     if (content.description) {
@@ -244,17 +245,12 @@ class HtmlGenerator {
     let videoUrl = null;
     
     // Handle different video content formats
-    console.log('Video content structure:', JSON.stringify(content, null, 2));
     if (content.videoUrl && content.videoUrl.trim()) {
       // Direct videoUrl format
       videoUrl = content.videoUrl.trim();
-      console.log('Using direct videoUrl:', videoUrl);
     } else if (content.videos && Array.isArray(content.videos) && content.videos.length > 0) {
       // Array format from extraction
       videoUrl = content.videos[0].url;
-      console.log('Using videos array URL:', videoUrl);
-    } else {
-      console.log('No video URL found in content');
     }
     
     // Handle custom video content if provided

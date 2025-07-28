@@ -215,6 +215,23 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     }
   };
 
+  // Helper function to get video URL from either format
+  const getVideoUrl = (videoData: any): string => {
+    if (!videoData) return "";
+    
+    // Handle direct videoUrl format
+    if (videoData.videoUrl) {
+      return videoData.videoUrl;
+    }
+    
+    // Handle videos array format (from extraction)
+    if (videoData.videos && Array.isArray(videoData.videos) && videoData.videos.length > 0) {
+      return videoData.videos[0].url || "";
+    }
+    
+    return "";
+  };
+
   // Smart text processing for features and applications
   const parseListText = (text: string): string[] => {
     if (!text.trim()) return [];
@@ -939,7 +956,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             <Label className="block text-sm font-medium text-slate-700 mb-2">Video URL (YouTube Embed - Optional)</Label>
             <Input
               placeholder="https://www.youtube.com/embed/..."
-              value={contentData.videos?.videoUrl || ""}
+              value={getVideoUrl(contentData.videos)}
               onChange={(e) => updateContent("videos", "videoUrl", e.target.value)}
               data-testid="input-video-url"
             />
