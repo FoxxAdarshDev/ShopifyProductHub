@@ -147,11 +147,17 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
       {data?.specifications?.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-slate-300">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-r border-slate-300">Item</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">Value</th>
+              </tr>
+            </thead>
             <tbody>
               {data.specifications.map((spec: any, index: number) => (
                 <tr key={index} className="border-b border-slate-200">
                   <td className="px-4 py-2 bg-slate-50 font-medium text-slate-700 border-r border-slate-200">
-                    {spec.parameter}
+                    {spec.parameter || spec.item}
                   </td>
                   <td className="px-4 py-2 text-slate-600">{spec.value}</td>
                 </tr>

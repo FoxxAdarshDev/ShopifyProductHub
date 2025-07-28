@@ -183,13 +183,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/products/:productId/update-shopify", async (req, res) => {
     try {
       const { productId } = req.params;
+      console.log(`🔄 Update Shopify request for product: ${productId}`);
       
-      const product = await storage.getProduct(productId);
+      // First try to find product by database ID, then by Shopify ID
+      let product = await storage.getProduct(productId);
+      console.log(`📝 Product lookup by database ID: ${product ? 'FOUND' : 'NOT FOUND'}`);
+      
       if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+        // Try to find by Shopify ID (in case frontend passes Shopify ID)
+        console.log(`🔍 Product not found by database ID, trying Shopify ID: ${productId}`);
+        product = await storage.getProductByShopifyId(productId);
+        console.log(`📝 Product lookup by Shopify ID: ${product ? 'FOUND' : 'NOT FOUND'}`);
+        if (!product) {
+          console.log(`❌ Product not found by either ID: ${productId}`);
+          return res.status(404).json({ message: "Product not found" });
+        }
+        console.log(`✅ Found product by Shopify ID: ${product.title} (DB ID: ${product.id})`);
       }
 
-      const content = await storage.getProductContent(productId);
+      // Get both stored content and draft content for the product
+      let content = await storage.getProductContent(product.id);
+      
+      // If no stored content, try to get draft content by Shopify ID
+      if (!content || content.length === 0) {
+        console.log('No stored content found, checking draft content...');
+        const draftContent = await storage.getDraftContentByProduct(productId);
+        if (draftContent && draftContent.length > 0) {
+          console.log(`Found ${draftContent.length} draft content items, converting to content format`);
+          // Convert draft content to the format expected by HTML generator
+          content = draftContent.map((draft: any) => ({
+            id: draft.id,
+            productId: product.id,
+            tabType: draft.tabType,
+            content: draft.content,
+            isActive: true,
+            createdAt: draft.createdAt || new Date(),
+            updatedAt: draft.updatedAt || new Date()
+          }));
+        }
+      }
+      
+      if (!content || content.length === 0) {
+        return res.status(400).json({ message: "No content found to update" });
+      }
       
       // Get all variant SKUs for enhanced data attributes
       let allVariantSkus: string[] = [];
@@ -210,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await shopifyService.updateProductDescription(product.shopifyId, generatedHtml);
 
       // Update local product record
-      await storage.updateProduct(productId, { description: generatedHtml });
+      await storage.updateProduct(product.id, { description: generatedHtml });
 
       res.json({ message: "Product updated successfully" });
     } catch (error) {
