@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -341,16 +342,13 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   };
 
   const handleUrlInput = async (url: string) => {
-    console.log('handleUrlInput called with:', url);
     const urlData = parseShopifyUrl(url);
     if (!urlData) {
       console.log('Could not parse URL:', url);
       return;
     }
 
-    console.log('Attempting to fetch data for:', urlData);
     const shopifyData = await fetchShopifyData(urlData);
-    console.log('Received shopifyData:', shopifyData);
     
     if (shopifyData) {
       // Create a new compatible item
@@ -361,16 +359,11 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         sourceUrl: url,
         type: urlData.type
       };
-
-      console.log('Creating new item:', newItem);
       
       // Add to the compatible items array
       const currentItems = contentData['compatible-container']?.compatibleItems || [];
-      console.log('Current items before update:', currentItems);
       const updatedItems = [...currentItems, newItem];
-      console.log('Updated items:', updatedItems);
       updateContent("compatible-container", "compatibleItems", updatedItems);
-      console.log('Called updateContent with:', "compatible-container", "compatibleItems", updatedItems);
       
       // Also update the primary fields for backward compatibility
       if (currentItems.length === 0) {
@@ -1083,7 +1076,16 @@ Pressure Range,Up to 60 psi 4.1 bar`}
     </Card>
   );
 
-  const renderCompatibleContainerForm = () => (
+  const renderCompatibleContainerForm = () => {
+    // Initialize Compatible Container state if it doesn't exist
+    React.useEffect(() => {
+      if (!contentData['compatible-container']) {
+        updateContent("compatible-container", "title", "Compatible Container");
+        updateContent("compatible-container", "compatibleItems", []);
+      }
+    }, []);
+
+    return (
     <Card key="compatible-container" className="content-form">
       <CardHeader className="form-section-header">
         <CardTitle className="flex items-center">
@@ -1107,7 +1109,6 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               onPaste={async (e) => {
                 setTimeout(async () => {
                   const input = e.target as HTMLInputElement;
-                  console.log('Paste event triggered, input value:', input.value);
                   if (input.value.trim()) {
                     await handleUrlInput(input.value);
                     input.value = "";
@@ -1117,15 +1118,11 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               onKeyDown={async (e) => {
                 if (e.key === 'Enter') {
                   const input = e.target as HTMLInputElement;
-                  console.log('Enter key pressed, input value:', input.value);
                   if (input.value.trim()) {
                     await handleUrlInput(input.value);
                     input.value = "";
                   }
                 }
-              }}
-              onChange={(e) => {
-                console.log('Input changed:', e.target.value);
               }}
               data-testid="input-url-import"
             />
@@ -1134,32 +1131,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             </p>
           </div>
 
-          {/* Debug: Show current content data */}
-          <div className="p-2 bg-gray-100 rounded text-xs space-y-2">
-            <div><strong>Debug:</strong> Items count: {contentData['compatible-container']?.compatibleItems?.length || 0}</div>
-            {contentData['compatible-container']?.compatibleItems?.length > 0 && (
-              <div>First item: {JSON.stringify(contentData['compatible-container'].compatibleItems[0])}</div>
-            )}
-            <button 
-              onClick={() => {
-                console.log('Test button clicked');
-                const testItem = {
-                  handle: 'test-handle',
-                  title: 'Test Product',
-                  image: 'https://example.com/test.jpg',
-                  sourceUrl: 'https://test.com',
-                  type: 'product'
-                };
-                console.log('Adding test item:', testItem);
-                const currentItems = contentData['compatible-container']?.compatibleItems || [];
-                updateContent("compatible-container", "compatibleItems", [...currentItems, testItem]);
-                console.log('Test item added');
-              }}
-              className="bg-green-500 text-white px-2 py-1 rounded text-xs"
-            >
-              Test Add Item
-            </button>
-          </div>
+
           
           {/* Display compatible items as cards */}
           {contentData['compatible-container']?.compatibleItems && contentData['compatible-container'].compatibleItems.length > 0 && (
@@ -1277,7 +1249,8 @@ Pressure Range,Up to 60 psi 4.1 bar`}
         </div>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   const formRenderers: { [key: string]: () => JSX.Element } = {
     description: renderDescriptionForm,
