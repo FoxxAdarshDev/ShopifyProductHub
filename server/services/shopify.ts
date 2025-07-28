@@ -477,20 +477,15 @@ class ShopifyService {
           fileUrl = file.image.url;
           console.log('Got image URL immediately:', fileUrl);
         } else {
-          // File might need processing time, try to get URL via file query
+          // File needs processing time, poll for the URL
           console.log('File uploaded but URL not immediately available. File status:', file.fileStatus);
           console.log('File ID:', file.id);
           
           if (file.id) {
-            // Query the file by ID to get the CDN URL
-            try {
-              const fileQueryResult = await this.getFileById(file.id);
-              if (fileQueryResult?.url) {
-                fileUrl = fileQueryResult.url;
-                console.log('Got file URL from query:', fileUrl);
-              }
-            } catch (queryError) {
-              console.log('Error querying file by ID:', queryError);
+            // Poll for the file URL (Shopify needs time to process)
+            fileUrl = await this.pollForFileUrl(file.id, 10); // Poll for up to 10 seconds
+            if (fileUrl) {
+              console.log('Got file URL after polling:', fileUrl);
             }
           }
         }
@@ -566,6 +561,30 @@ class ShopifyService {
       console.error('Error querying file by ID:', error);
       return null;
     }
+  }
+
+  async pollForFileUrl(fileId: string, maxWaitSeconds: number = 10): Promise<string | null> {
+    const startTime = Date.now();
+    const maxWaitMs = maxWaitSeconds * 1000;
+    
+    while (Date.now() - startTime < maxWaitMs) {
+      try {
+        const result = await this.getFileById(fileId);
+        if (result?.url) {
+          return result.url;
+        }
+        
+        // Wait 1 second before next attempt
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.log('Error during polling:', error);
+        // Continue polling even if individual requests fail
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    console.log(`File URL not available after ${maxWaitSeconds} seconds of polling`);
+    return null;
   }
 }
 
