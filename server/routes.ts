@@ -342,9 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "productIds must be an array" });
       }
 
-      // Limit to 20 products per request to avoid rate limiting
-      const limitedProductIds = productIds.slice(0, 20);
-      console.log(`Processing content status for ${limitedProductIds.length} products (limited from ${productIds.length})`);
+      console.log(`Processing content status for ${productIds.length} products with intelligent rate limiting`);
 
       const contentStatus: Record<string, {
         hasShopifyContent: boolean;
@@ -356,101 +354,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Helper function to add delay between requests
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
-      for (let i = 0; i < limitedProductIds.length; i++) {
-        const productId = limitedProductIds[i];
+      // Process in smaller batches internally to manage rate limits
+      const batchSize = 10;
+      const batches = [];
+      for (let i = 0; i < productIds.length; i += batchSize) {
+        batches.push(productIds.slice(i, i + batchSize));
+      }
+      
+      console.log(`Processing ${productIds.length} products in ${batches.length} batches of ${batchSize}`);
+      
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} products`);
         
-        try {
-          // Add delay between requests to respect rate limits
-          if (i > 0) {
-            await delay(100); // 100ms delay between requests
-          }
+        // Add delay between batches
+        if (batchIndex > 0) {
+          await delay(1000); // 1 second delay between batches
+        }
+        
+        for (let i = 0; i < batch.length; i++) {
+          const productId = batch[i];
           
-          // Check local database first (fast and doesn't hit API)
-          const localProduct = await storage.getProductByShopifyId(productId.toString());
-          let hasNewLayout = false;
-          let hasDraftContent = false;
-          let contentCount = 0;
+          try {
+            // Add smaller delay between individual requests within batch
+            if (i > 0) {
+              await delay(200); // 200ms delay between individual requests
+            }
           
-          if (localProduct) {
-            const content = await storage.getProductContent(localProduct.id);
-            hasNewLayout = content.length > 0;
-            contentCount = content.length;
+            // Check local database first (fast and doesn't hit API)
+            const localProduct = await storage.getProductByShopifyId(productId.toString());
+            let hasNewLayout = false;
+            let hasDraftContent = false;
+            let contentCount = 0;
             
-            // Check for draft content
-            const draftContent = await storage.getDraftContentByProduct(productId.toString());
-            hasDraftContent = draftContent.length > 0;
-          }
-          
-          // Only check Shopify if we need to (no local data or need to verify template structure)
-          let hasShopifyContent = false;
-          let isOurTemplateStructure = false;
-          
-          if (!hasNewLayout || hasDraftContent) {
-            try {
-              // Check Shopify for existing content
-              const shopifyProduct = await shopifyService.getProductById(productId.toString());
-              hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
+            if (localProduct) {
+              const content = await storage.getProductContent(localProduct.id);
+              hasNewLayout = content.length > 0;
+              contentCount = content.length;
               
-              // Check if Shopify content matches our template structure (for New Layout detection)
-              if (hasShopifyContent && shopifyProduct?.body_html) {
-                // Check for our template structure markers
-                const html = shopifyProduct.body_html;
-                const hasContainerClass = html.includes('class="container"');
-                const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
-                const hasDataSkuAttributes = html.includes('data-sku=');
+              // Check for draft content
+              const draftContent = await storage.getDraftContentByProduct(productId.toString());
+              hasDraftContent = draftContent.length > 0;
+            }
+            
+            // For most products, use only local data to avoid API calls
+            let hasShopifyContent = false;
+            let isOurTemplateStructure = false;
+            
+            // Only check Shopify for products that ACTUALLY need verification (very limited)
+            const needsShopifyCheck = !hasNewLayout && !hasDraftContent;
+            
+            if (needsShopifyCheck) {
+              try {
+                // Check Shopify for existing content
+                const shopifyProduct = await shopifyService.getProductById(productId.toString());
+                hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
                 
-                isOurTemplateStructure = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
-              }
-              
-              // If content is already saved to Shopify (detected our template), don't show draft mode
-              if (isOurTemplateStructure) {
-                hasDraftContent = false; // Hide draft mode when content is published to Shopify
-              }
-              
-              // If we detected our template structure in Shopify but no local content, mark it as New Layout
-              if (isOurTemplateStructure && !hasNewLayout) {
-                hasNewLayout = true;
-                // Estimate content count from Shopify HTML structure
-                const html = shopifyProduct?.body_html || '';
-                let estimatedCount = 0;
-                if (html.includes('id="description"')) estimatedCount++;
-                if (html.includes('id="features"')) estimatedCount++;
-                if (html.includes('id="applications"')) estimatedCount++;
-                if (html.includes('id="specifications"')) estimatedCount++;
-                if (html.includes('data-section="documentation"')) estimatedCount++;
-                if (html.includes('data-section="videos"')) estimatedCount++;
-                if (html.includes('data-section="safety-guidelines"')) estimatedCount++;
-                if (html.includes('data-section="sterilization-method"')) estimatedCount++;
-                if (html.includes('data-section="compatible-container"')) estimatedCount++;
-                contentCount = Math.max(contentCount, estimatedCount);
-              }
-            } catch (shopifyError: any) {
-              // Handle rate limiting gracefully
-              if (shopifyError.message.includes('429')) {
-                console.warn(`Rate limited for product ${productId}, skipping Shopify check`);
-                // Use local data only for rate-limited products
-                hasShopifyContent = false;
-              } else {
-                console.error(`Error checking Shopify for product ${productId}:`, shopifyError);
-                hasShopifyContent = false;
+                // Check if Shopify content matches our template structure (for New Layout detection)
+                if (hasShopifyContent && shopifyProduct?.body_html) {
+                  // Check for our template structure markers
+                  const html = shopifyProduct.body_html;
+                  const hasContainerClass = html.includes('class="container"');
+                  const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
+                  const hasDataSkuAttributes = html.includes('data-sku=');
+                  
+                  isOurTemplateStructure = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
+                }
+                
+                // If content is already saved to Shopify (detected our template), don't show draft mode
+                if (isOurTemplateStructure) {
+                  hasDraftContent = false; // Hide draft mode when content is published to Shopify
+                }
+                
+                // If we detected our template structure in Shopify but no local content, mark it as New Layout
+                if (isOurTemplateStructure && !hasNewLayout) {
+                  hasNewLayout = true;
+                  // Estimate content count from Shopify HTML structure
+                  const html = shopifyProduct?.body_html || '';
+                  let estimatedCount = 0;
+                  if (html.includes('id="description"')) estimatedCount++;
+                  if (html.includes('id="features"')) estimatedCount++;
+                  if (html.includes('id="applications"')) estimatedCount++;
+                  if (html.includes('id="specifications"')) estimatedCount++;
+                  if (html.includes('data-section="documentation"')) estimatedCount++;
+                  if (html.includes('data-section="videos"')) estimatedCount++;
+                  if (html.includes('data-section="safety-guidelines"')) estimatedCount++;
+                  if (html.includes('data-section="sterilization-method"')) estimatedCount++;
+                  if (html.includes('data-section="compatible-container"')) estimatedCount++;
+                  contentCount = Math.max(contentCount, estimatedCount);
+                }
+              } catch (shopifyError: any) {
+                // Handle rate limiting gracefully
+                if (shopifyError.message.includes('429')) {
+                  console.warn(`Rate limited for product ${productId}, skipping Shopify check`);
+                  // Use local data only for rate-limited products
+                  hasShopifyContent = false;
+                } else {
+                  console.error(`Error checking Shopify for product ${productId}:`, shopifyError);
+                  hasShopifyContent = false;
+                }
               }
             }
-          }
 
-          contentStatus[productId] = {
-            hasShopifyContent,
-            hasNewLayout,
-            hasDraftContent,
-            contentCount
-          };
-        } catch (error) {
-          console.error(`Error checking status for product ${productId}:`, error);
-          contentStatus[productId] = {
-            hasShopifyContent: false,
-            hasNewLayout: false,
-            hasDraftContent: false,
-            contentCount: 0
-          };
+            contentStatus[productId] = {
+              hasShopifyContent,
+              hasNewLayout,
+              hasDraftContent,
+              contentCount
+            };
+          } catch (error) {
+            console.error(`Error checking status for product ${productId}:`, error);
+            contentStatus[productId] = {
+              hasShopifyContent: false,
+              hasNewLayout: false,
+              hasDraftContent: false,
+              contentCount: 0
+            };
+          }
         }
       }
 

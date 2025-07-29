@@ -102,20 +102,14 @@ export default function AllProducts() {
     }
   }, [data, currentPage]);
 
-  // Check content status for ALL products when comprehensive data loads (in batches)
+  // Check content status for ALL products when comprehensive data loads (single request)
   useEffect(() => {
     if (comprehensiveData && comprehensiveData.products) {
       const allProductIds = comprehensiveData.products.map((p: ShopifyProduct) => p.id);
-      console.log(`Checking content status for ${allProductIds.length} total products in store (batched)`);
+      console.log(`Checking content status for ${allProductIds.length} total products in store (single backend request)`);
       
-      // Process in batches of 20 to avoid overwhelming the API
-      const batchSize = 20;
-      for (let i = 0; i < allProductIds.length; i += batchSize) {
-        const batch = allProductIds.slice(i, i + batchSize);
-        setTimeout(() => {
-          checkContentStatus(batch);
-        }, i * 200); // 200ms delay between batches
-      }
+      // Send ALL product IDs in one request - backend will handle batching and rate limiting
+      checkContentStatus(allProductIds);
     }
   }, [comprehensiveData]);
 
