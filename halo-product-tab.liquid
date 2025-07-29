@@ -199,37 +199,40 @@
   color: #374151;
 }
 
-/* Fixed: Enhanced Logo Grid Styling */
+/* Fixed: Enhanced Logo Grid Styling - Single Logo Small Box */
 .halo-tab-content .logo-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-  gap: 20px !important; /* Fixed: Added proper gaps */
+  display: flex !important; /* Changed to flex for better single logo handling */
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important; /* Fixed: Start alignment instead of full width */
+  gap: 20px !important;
   margin: 32px 0 !important;
-  padding: 24px !important; /* Fixed: Added padding */
+  padding: 24px !important;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border-radius: 12px !important;
-  border: 2px solid #e2e8f0 !important; /* Fixed: Added border */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  border: 2px solid #e2e8f0 !important;
+  /* Fixed: Removed box shadow as requested */
 }
 
 .halo-tab-content .logo-grid img {
   max-height: 80px !important;
-  width: 100% !important;
+  width: auto !important; /* Fixed: Auto width for proper aspect ratio */
+  max-width: 150px !important; /* Fixed: Maximum width to prevent full screen */
+  min-width: 120px !important; /* Fixed: Minimum width for consistency */
   object-fit: contain !important;
   background: white !important;
-  border: 2px solid #cbd5e1 !important; /* Fixed: Individual image borders */
+  border: 2px solid #cbd5e1 !important;
   border-radius: 8px !important;
-  padding: 12px !important; /* Fixed: Added padding inside images */
+  padding: 12px !important;
   display: block !important;
-  margin: 0 auto !important; /* Fixed: Center aligned images */
+  flex-shrink: 0 !important; /* Fixed: Prevent shrinking */
   transition: all 0.3s ease !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+  /* Fixed: Removed box shadow as requested */
 }
 
 .halo-tab-content .logo-grid img:hover {
   transform: scale(1.05) !important;
   border-color: #3b82f6 !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+  /* Fixed: Removed box shadow on hover as requested */
 }
 
 /* Compatible Container Styling */
@@ -401,15 +404,16 @@
   line-height: 1.4;
 }
 
-/* Fixed: Enhanced Video Styling - Full Width with Border Radius */
+/* Fixed: Enhanced Video Styling - 100% Width and Full Height */
 .halo-tab-content iframe {
   width: 100% !important; /* Fixed: Full width */
   max-width: 100% !important;
-  height: 350px !important; /* Fixed height for better appearance */
+  height: 450px !important; /* Fixed: Increased height for full appearance */
+  min-height: 400px !important; /* Fixed: Minimum height for consistency */
   aspect-ratio: 16/9 !important;
-  border-radius: 16px !important; /* Fixed: Added border radius */
-  border: 3px solid #e2e8f0 !important; /* Added stylish border */
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* Enhanced shadow */
+  border-radius: 16px !important;
+  border: 3px solid #e2e8f0 !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
   margin: 20px 0 !important;
   display: block !important;
   transition: all 0.3s ease !important;
@@ -421,14 +425,22 @@
   border-color: #3b82f6 !important;
 }
 
-/* Enhanced Video Container */
+/* Enhanced Video Container - Full Width */
 .halo-tab-content #videos {
   width: 100% !important;
-  padding: 0 !important; /* Remove padding for full width effect */
+  padding: 0 !important;
+  margin: 0 !important; /* Fixed: Remove all margins */
 }
 
 .halo-tab-content #videos > div {
   width: 100% !important;
+  margin: 0 !important; /* Fixed: Remove margins from inner divs */
+}
+
+/* Fixed: Ensure video container takes full width */
+.halo-tab-content #videos iframe {
+  width: 100% !important;
+  height: 450px !important; /* Fixed: Full height for videos */
 }
 
 /* Mobile responsive */
@@ -488,9 +500,14 @@
   }
   
   .halo-tab-content .logo-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+    justify-content: center !important; /* Fixed: Center logos on mobile */
     gap: 16px !important;
     padding: 20px !important;
+  }
+  
+  .halo-tab-content .logo-grid img {
+    max-width: 120px !important; /* Fixed: Smaller max width on mobile */
+    min-width: 100px !important;
   }
   
   .youtube-brand-header {
@@ -505,85 +522,94 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Fixed: Enhanced YouTube Section Styling */
+/* Fixed: Compact YouTube Section - Small Box Layout */
 .youtube-channel-section {
-  margin-top: 32px !important;
-  padding: 28px !important;
+  margin-top: 24px !important;
+  padding: 20px !important; /* Fixed: Reduced padding for compact look */
   border: 2px solid #e2e8f0 !important;
-  border-radius: 16px !important;
+  border-radius: 12px !important; /* Fixed: Smaller border radius */
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important; /* Fixed: Subtle shadow */
   width: 100% !important;
+  max-width: 600px !important; /* Fixed: Maximum width for compact appearance */
 }
 
 .youtube-brand-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  margin-bottom: 20px !important;
-  flex-wrap: wrap !important;
-  gap: 16px !important;
+  margin-bottom: 16px !important; /* Fixed: Reduced margin */
+  flex-wrap: nowrap !important; /* Fixed: Prevent wrapping for compact layout */
+  gap: 12px !important; /* Fixed: Smaller gap */
 }
 
 .youtube-logo-container {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 8px !important; /* Fixed: Smaller gap */
 }
 
 .youtube-icon {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 12px !important;
-  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
+  width: 32px !important; /* Fixed: Smaller icon size */
+  height: 32px !important;
+  border-radius: 6px !important; /* Fixed: Smaller border radius */
+  background: #ff0000 !important; /* Fixed: Solid red background */
   color: #ffffff !important;
-  font-size: 24px !important;
+  font-size: 16px !important; /* Fixed: Smaller font size */
   font-weight: bold !important;
-  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.3) !important;
+  box-shadow: 0 2px 4px rgba(255, 0, 0, 0.2) !important; /* Fixed: Subtle shadow */
 }
 
 .brand-name {
-  font-weight: 700 !important;
-  font-size: 20px !important;
+  font-weight: 600 !important; /* Fixed: Less bold */
+  font-size: 16px !important; /* Fixed: Smaller font size */
   color: #1f2937 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  white-space: nowrap !important; /* Fixed: Prevent text wrapping */
 }
 
-/* Fixed: Subscribe Button Container - Made Visible and Styled */
+/* Fixed: Compact Subscribe Button - Properly Styled */
 .subscribe-button-container {
-  display: block !important; /* Fixed: Ensure visibility */
+  display: inline-block !important; /* Fixed: Inline block for compact layout */
   visibility: visible !important;
   opacity: 1 !important;
-  min-height: 40px !important;
-  min-width: 120px !important;
+  min-height: 30px !important; /* Fixed: Smaller height */
+  min-width: 90px !important; /* Fixed: Smaller width */
   z-index: 1000 !important;
+  flex-shrink: 0 !important; /* Fixed: Prevent shrinking */
 }
 
 .g-ytsubscribe {
-  display: block !important; /* Fixed: Make subscribe button visible */
+  display: inline-block !important; /* Fixed: Inline block */
   visibility: visible !important;
   opacity: 1 !important;
-  transform: scale(1.2) !important; /* Make it larger */
+  transform: scale(0.9) !important; /* Fixed: Smaller scale for compact look */
+  height: 24px !important; /* Fixed: Specific height */
+  overflow: hidden !important; /* Fixed: Hide overflow text */
+}
+
+/* Fixed: Hide "click this" text in YouTube button */
+.g-ytsubscribe div[style*="color"] {
+  display: none !important; /* Fixed: Hide the "click this" text */
 }
 
 .youtube-description {
-  font-size: 16px !important;
+  font-size: 14px !important; /* Fixed: Smaller font size */
   color: #4b5563 !important;
-  line-height: 1.6 !important;
+  line-height: 1.4 !important; /* Fixed: Tighter line height */
   margin: 0 !important;
   text-align: center !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important; /* Fixed: Normal font weight */
 }
 
 .youtube-description a {
   color: #2563eb !important;
   text-decoration: none !important;
-  font-weight: 700 !important;
-  border-bottom: 2px solid transparent !important;
-  transition: all 0.3s ease !important;
+  font-weight: 600 !important; /* Fixed: Semi-bold for links */
+  border-bottom: 1px solid transparent !important; /* Fixed: Thinner border */
+  transition: all 0.2s ease !important; /* Fixed: Faster transition */
 }
 
 .youtube-description a:hover {
