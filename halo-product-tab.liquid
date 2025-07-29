@@ -422,6 +422,11 @@
   width: 80% !important;
   display: flex !important;
   flex-direction: column !important;
+  min-width: 0 !important; /* Allow shrinking */
+}
+
+.video-content-wrapper > * {
+  width: 100% !important; /* Ensure all children take full width */
 }
 
 .video-subscribe-wrapper {
@@ -438,14 +443,16 @@
 
 .halo-tab-content #videos iframe {
   width: 100% !important;
-  height: 450px !important; /* Increased height for better appearance */
+  max-width: 100% !important; /* Ensure it doesn't exceed container */
+  height: 450px !important;
   aspect-ratio: 16/9 !important;
-  border-radius: 12px !important; /* Reduced border radius */
-  border: 2px solid #d1d5db !important; /* Light border */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important; /* Light shadow only */
+  border-radius: 12px !important;
+  border: 2px solid #d1d5db !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   margin: 0 !important;
   display: block !important;
   transition: all 0.2s ease !important;
+  box-sizing: border-box !important; /* Include borders in width calculation */
 }
 
 .halo-tab-content #videos iframe:hover {
@@ -822,7 +829,7 @@
             <div class="brand-name">Foxx Life Sciences</div>
           </div>
           <div class="subscribe-button-container">
-            <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
+            <div class="g-ytsubscribe"></div>
           </div>
           <div class="subscribe-description">Stay updated with our latest product videos and tutorials!</div>
         </div>
@@ -916,18 +923,17 @@
           firstContent.classList.add('active');
         }
 
-        // Reinitialize YouTube subscribe buttons after content is loaded
+        // Initialize YouTube subscribe buttons after content is loaded
         if (typeof gapi !== 'undefined' && gapi.load) {
           gapi.load('ytsubscribe', function() {
-            // Force re-render of YouTube subscribe buttons
-            var subscribeButtons = document.querySelectorAll('.g-ytsubscribe');
+            // Initialize YouTube subscribe buttons (only once)
+            var subscribeButtons = document.querySelectorAll('.g-ytsubscribe:not([data-initialized])');
             subscribeButtons.forEach(function(button) {
-              // Remove any existing rendered content
-              button.innerHTML = '';
-              // Set attributes again to trigger re-render
+              // Set attributes only once
               button.setAttribute('data-channelid', 'UCfTcuV6zESARyzKfG2T6YFg');
               button.setAttribute('data-layout', 'full');
               button.setAttribute('data-count', 'hidden');
+              button.setAttribute('data-initialized', 'true'); // Mark as initialized
             });
           });
         }
