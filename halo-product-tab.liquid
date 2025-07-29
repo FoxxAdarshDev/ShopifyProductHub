@@ -603,14 +603,67 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Fixed: Subscribe Button in Side Panel */
+/* Full-Width YouTube Channel Card */
+.youtube-channel-card {
+  width: 100% !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+  margin: 0 !important;
+}
+
+.youtube-channel-card:hover {
+  border-color: #d1d5db !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.youtube-channel-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+}
+
+.youtube-channel-card .youtube-icon {
+  width: 24px !important;
+  height: 24px !important;
+  background: #ff0000 !important;
+  color: white !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  flex-shrink: 0 !important;
+}
+
+.youtube-channel-info {
+  flex: 1 !important;
+}
+
+.youtube-channel-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  margin-bottom: 4px !important;
+}
+
+.youtube-channel-subtitle {
+  font-size: 14px !important;
+  color: #6b7280 !important;
+  line-height: 1.4 !important;
+}
+
 .subscribe-button-container {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
   width: 100% !important;
   z-index: 1000 !important;
-  margin-bottom: 16px !important;
 }
 
 .g-ytsubscribe {
@@ -618,42 +671,6 @@
   visibility: visible !important;
   opacity: 1 !important;
   width: 100% !important;
-  transform: scale(1.1) !important;
-}
-
-.subscribe-section-title {
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  color: #1f2937 !important;
-  margin-bottom: 16px !important;
-  text-align: center !important;
-}
-
-.subscribe-description {
-  font-size: 14px !important;
-  color: #6b7280 !important;
-  text-align: center !important;
-  line-height: 1.5 !important;
-  margin-top: 16px !important;
-}
-
-/* Enhanced YouTube branding in sidebar */
-.video-subscribe-wrapper .youtube-logo-container {
-  margin-bottom: 16px !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-.video-subscribe-wrapper .youtube-icon {
-  width: 32px !important;
-  height: 32px !important;
-  font-size: 16px !important;
-  margin-right: 8px !important;
-}
-
-.video-subscribe-wrapper .brand-name {
-  font-size: 14px !important;
-  font-weight: 600 !important;
 }
 
 .youtube-description {
@@ -836,15 +853,18 @@
           ${cleanContent}
         </div>
         <div class="video-subscribe-wrapper">
-          <div class="subscribe-section-title">Subscribe to Our Channel</div>
-          <div class="youtube-logo-container">
-            <div class="youtube-icon">▶</div>
-            <div class="brand-name">Foxx Life Sciences</div>
+          <div class="youtube-channel-card">
+            <div class="youtube-channel-header">
+              <div class="youtube-icon">▶</div>
+              <div class="youtube-channel-info">
+                <div class="youtube-channel-title">YouTube Channel</div>
+                <div class="youtube-channel-subtitle">Check out all of our videos on our YouTube Channel!</div>
+              </div>
+            </div>
+            <div class="subscribe-button-container">
+              <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
+            </div>
           </div>
-          <div class="subscribe-button-container">
-            <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
-          </div>
-          <div class="subscribe-description">Stay updated with our latest product videos and tutorials!</div>
         </div>
       `;
       return videoWrapper;
