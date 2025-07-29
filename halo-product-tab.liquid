@@ -45,30 +45,39 @@
 .halo-tab-navigation {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
+  gap: 2px;
   margin-bottom: 20px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
   padding-bottom: 0;
+  background: #f8fafc;
+  border-radius: 8px 8px 0 0;
+  padding: 4px;
 }
 
 .halo-tab-button {
   background: none;
   border: none;
-  padding: 12px 20px;
+  padding: 12px 16px;
   cursor: pointer;
-  border-radius: 6px 6px 0 0;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   color: #6b7280;
   text-transform: capitalize;
   transition: all 0.2s ease;
   position: relative;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
 }
 
 .halo-tab-button:hover {
   color: #374151;
-  background-color: #f9fafb;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .halo-tab-button.active {
@@ -76,6 +85,16 @@
   background-color: #ffffff;
   border-bottom-color: #3b82f6;
   font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.halo-tab-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.halo-tab-button.active .halo-tab-icon {
+  opacity: 1;
 }
 
 .halo-tab-content {
@@ -368,10 +387,10 @@
     flex-direction: column;
     position: sticky;
     top: 0;
-    background: white;
+    background: #f8fafc;
     z-index: 10;
     margin-bottom: 10px;
-    padding: 10px 0;
+    padding: 8px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
@@ -381,13 +400,15 @@
     border-radius: 6px;
     border-bottom: none;
     border-left: 3px solid transparent;
-    margin: 2px 8px;
+    margin: 2px 0;
+    justify-content: flex-start;
   }
 
   .halo-tab-button.active {
     border-left-color: #3b82f6;
     border-bottom: none;
-    background: #eff6ff;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
 
   .halo-tab-content {
@@ -512,6 +533,18 @@
         }
       });
 
+      // Define tab icons
+      const tabIcons = {
+        'description': '📝',
+        'features': '⭐', 
+        'applications': '🔧',
+        'specification': '📊',
+        'sterilization-method': '🧪',
+        'compatible-container': '📦',
+        'documentation': '📚',
+        'videos': '🎬'
+      };
+
       // Dynamically create tab navigation
       const tabNavigation = document.querySelector('.halo-tab-navigation');
       if (tabNavigation && availableTabs.length > 0) {
@@ -522,7 +555,18 @@
           button.className = 'halo-tab-button' + (index === 0 ? ' active' : '');
           button.setAttribute('onclick', `haloSwitchTab(event, '${tabId}')`);
           button.setAttribute('data-tab', tabId);
-          button.textContent = tabTitles[tabId];
+
+          // Add icon
+          const iconSpan = document.createElement('span');
+          iconSpan.className = 'halo-tab-icon';
+          iconSpan.textContent = tabIcons[tabId] || '📄';
+
+          // Add text
+          const textSpan = document.createElement('span');
+          textSpan.textContent = tabTitles[tabId];
+
+          button.appendChild(iconSpan);
+          button.appendChild(textSpan);
           tabNavigation.appendChild(button);
         });
       }
