@@ -278,8 +278,8 @@
         }
       </style>
 
-      {% comment %} Tab Navigation - Only show if more than one tab {% endcomment %}
-      {% if tab_array.size > 1 %}
+      {% comment %} Tab Navigation - Always show when tabs exist {% endcomment %}
+      {% if tab_array.size > 0 %}
         <div class="halo-tab-navigation">
           {% for tab in tab_array %}
             {% assign tab_index = forloop.index0 %}
@@ -384,6 +384,24 @@
             clickedButton.classList.add('active');
           }
         }
+
+        // Alternative function name for compatibility
+        function haloSwitchTab(event, tabId) {
+          var targetId = 'halo-' + tabId;
+          haloShowTab(targetId, event.target);
+        }
+
+        // Initialize tabs on page load
+        document.addEventListener('DOMContentLoaded', function() {
+          // Ensure first tab is active by default
+          var firstButton = document.querySelector('.halo-tab-button');
+          var firstContent = document.querySelector('.halo-tab-content');
+          
+          if (firstButton && firstContent) {
+            firstButton.classList.add('active');
+            firstContent.classList.add('active');
+          }
+        });
       </script>
     </div>
 
