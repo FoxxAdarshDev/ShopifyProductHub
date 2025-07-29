@@ -1396,15 +1396,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
             </Button>
           </div>
 
-          <div>
-            <Label className="block text-sm font-medium text-slate-700 mb-2">Section Title</Label>
-            <Input
-              placeholder="Compatible Container"
-              value={contentData['compatible-container']?.title || "Compatible Container"}
-              onChange={(e) => updateContent("compatible-container", "title", e.target.value)}
-              data-testid="input-compatible-title"
-            />
-          </div>
+          {/* Section Title field is hidden for Compatible Container as it's always "Compatible Container" */}
           {/* Description field is hidden for Compatible Container as it defaults to no description */}
         </div>
       </CardContent>
