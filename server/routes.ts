@@ -73,18 +73,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
+      const comprehensive = req.query.comprehensive === 'true';
       
-      console.log(`Fetching products page ${page} with limit ${limit}`);
+      console.log(`Fetching products page ${page} with limit ${limit}, comprehensive: ${comprehensive}`);
       
-      const products = await shopifyService.getAllProducts(page, limit);
-      const hasMore = products.length === limit;
-      
-      res.json({
-        products,
-        hasMore,
-        page,
-        totalFetched: products.length
-      });
+      if (comprehensive) {
+        // Fetch ALL products in the store for comprehensive search and filtering
+        const allProducts = await shopifyService.getAllProductsComprehensive();
+        
+        // Apply pagination to the comprehensive results
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedProducts = allProducts.slice(startIndex, endIndex);
+        const hasMore = endIndex < allProducts.length;
+        
+        console.log(`Comprehensive fetch: ${allProducts.length} total products, showing ${paginatedProducts.length} for page ${page}`);
+        
+        res.json({
+          products: paginatedProducts,
+          hasMore,
+          page,
+          totalFetched: paginatedProducts.length,
+          totalAvailable: allProducts.length,
+          comprehensive: true
+        });
+      } else {
+        // Standard pagination
+        const products = await shopifyService.getAllProducts(page, limit);
+        const hasMore = products.length === limit;
+        
+        res.json({
+          products,
+          hasMore,
+          page,
+          totalFetched: products.length
+        });
+      }
     } catch (error) {
       console.error("Error fetching all products:", error);
       res.status(500).json({ message: "Failed to fetch products" });

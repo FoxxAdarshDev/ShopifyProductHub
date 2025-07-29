@@ -204,6 +204,52 @@ class ShopifyService {
     }
   }
 
+  async getAllProductsComprehensive(): Promise<ShopifyProduct[]> {
+    try {
+      console.log('Starting comprehensive fetch of ALL products in store');
+      
+      const results: ShopifyProduct[] = [];
+      let hasNextPage = true;
+      let since_id = '';
+      let totalFetched = 0;
+      let pageCount = 0;
+      const maxPages = 50; // Safety limit (50 pages * 250 products = 12,500 products max)
+      
+      while (hasNextPage && pageCount < maxPages) {
+        try {
+          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+          const response = await this.makeRequest(url);
+          const products = response.products as ShopifyProduct[];
+          
+          if (products.length === 0) {
+            hasNextPage = false;
+            break;
+          }
+          
+          pageCount++;
+          totalFetched += products.length;
+          console.log(`Page ${pageCount}: Fetched ${products.length} products (total: ${totalFetched})`);
+          
+          results.push(...products);
+          
+          // Set up for next page
+          since_id = products[products.length - 1].id.toString();
+          hasNextPage = products.length === 250; // Continue if we got a full batch
+          
+        } catch (fetchError) {
+          console.error(`Error fetching page ${pageCount + 1}:`, fetchError);
+          break;
+        }
+      }
+
+      console.log(`Comprehensive fetch completed: ${totalFetched} total products fetched across ${pageCount} pages`);
+      return results;
+    } catch (error) {
+      console.error('Error in comprehensive product fetch:', error);
+      return [];
+    }
+  }
+
 
 
   async searchAllProducts(query: string): Promise<ShopifyProduct[]> {

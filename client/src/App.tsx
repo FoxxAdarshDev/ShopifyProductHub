@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ProductManager from "@/pages/ProductManager";
 import AllProducts from "@/pages/AllProducts";
+import DraftModeProducts from "@/pages/DraftModeProducts";
+import NewLayoutProducts from "@/pages/NewLayoutProducts";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 
@@ -16,8 +18,10 @@ function Router() {
         <Switch>
           <Route path="/" component={ProductManager} />
           <Route path="/product-manager" component={ProductManager} />
-          <Route path="/product-manager/:productId" component={ProductManager} />
+          <Route path="/products/:productId" component={ProductManager} />
           <Route path="/all-products" component={AllProducts} />
+          <Route path="/draft-mode" component={DraftModeProducts} />
+          <Route path="/new-layout" component={NewLayoutProducts} />
           <Route component={NotFound} />
         </Switch>
       </main>

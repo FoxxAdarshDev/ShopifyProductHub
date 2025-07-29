@@ -68,7 +68,8 @@ export default function AllProducts() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/products/all", currentPage],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
+      // Use comprehensive search for better coverage
+      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}&comprehensive=true`);
       return response.json();
     }
   });
