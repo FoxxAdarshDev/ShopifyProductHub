@@ -6,6 +6,7 @@ import { htmlGenerator } from "./services/htmlGenerator";
 import { extractContentFromHtml } from "./services/contentExtractor";
 import { insertProductSchema, insertProductContentSchema, insertContentTemplateSchema, insertLogoSchema, insertDraftContentSchema } from "@shared/schema";
 import { z } from "zod";
+import { refreshSuspectProducts } from "./routes/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Product lookup by SKU
@@ -699,7 +700,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
+  // Admin routes
+  app.post("/api/admin/refresh-suspect-products", refreshSuspectProducts);
 
   const httpServer = createServer(app);
   return httpServer;

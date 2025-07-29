@@ -295,6 +295,22 @@ export class DatabaseStorage implements IStorage {
   async getAllProductStatuses(): Promise<ProductStatus[]> {
     return await db.select().from(productStatus);
   }
+
+  async getAllProductsWithDraftContent(): Promise<{ shopifyProductId: string }[]> {
+    const results = await db
+      .select({ shopifyProductId: productStatus.shopifyProductId })
+      .from(productStatus)
+      .where(eq(productStatus.hasDraftContent, true));
+    return results;
+  }
+
+  async invalidateProductStatusCache(shopifyProductId: string): Promise<void> {
+    // Force refresh by setting last check to old date
+    await db
+      .update(productStatus)
+      .set({ lastShopifyCheck: new Date('2020-01-01') })
+      .where(eq(productStatus.shopifyProductId, shopifyProductId));
+  }
 }
 
 export const storage = new DatabaseStorage();
