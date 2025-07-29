@@ -104,17 +104,19 @@
         }
         
         .halo-tabs {
-          display: flex;
-          border-bottom: 1px solid #e2e8f0;
-          margin-bottom: 32px;
+          display: flex !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          margin-bottom: 32px !important;
           overflow-x: auto;
           scrollbar-width: none;
           -ms-overflow-style: none;
           position: sticky;
           top: 0;
-          background: white;
+          background: white !important;
           z-index: 100;
-          padding: 8px 0;
+          padding: 8px 0 !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
         
         .halo-tabs::-webkit-scrollbar {
@@ -122,29 +124,32 @@
         }
         
         .halo-tab {
-          background: none;
-          border: none;
-          padding: 16px 24px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          color: #64748b;
-          white-space: nowrap;
-          border-bottom: 2px solid transparent;
-          transition: all 0.2s ease;
-          min-width: fit-content;
-          text-decoration: none;
+          background: none !important;
+          border: none !important;
+          padding: 16px 24px !important;
+          cursor: pointer !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          color: #64748b !important;
+          white-space: nowrap !important;
+          border-bottom: 2px solid transparent !important;
+          transition: all 0.2s ease !important;
+          min-width: fit-content !important;
+          text-decoration: none !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
         
         .halo-tab:hover {
-          color: #1e293b;
-          background-color: #f8fafc;
+          color: #1e293b !important;
+          background-color: #f8fafc !important;
         }
         
         .halo-tab.active {
-          color: #2563eb;
-          border-bottom-color: #2563eb;
-          background-color: #eff6ff;
+          color: #2563eb !important;
+          border-bottom-color: #2563eb !important;
+          background-color: #eff6ff !important;
         }
         
         .halo-tab-content {
@@ -306,6 +311,19 @@
         /* Remove any conflicting fadeIn animation */
         .halo-tab-content {
           animation: none !important;
+        }
+
+        /* Force tab navigation to be visible - debug styles */
+        .halo-product-container .halo-tabs {
+          border: 2px solid red !important; /* Temporary debug border */
+          min-height: 60px !important;
+          width: 100% !important;
+        }
+
+        .halo-product-container .halo-tab {
+          border: 1px solid blue !important; /* Temporary debug border */
+          margin: 2px !important;
+          background-color: #f0f0f0 !important;
         }
       </style>
 
