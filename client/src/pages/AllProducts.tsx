@@ -399,7 +399,7 @@ export default function AllProducts() {
                       )}
                       {contentStatus[product.id]?.hasDraftContent && (
                         <Badge variant="default" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
-                          Draft Mode
+                          Draft Mode: {contentStatus[product.id]?.contentCount || 0}
                         </Badge>
                       )}
                       {!contentStatus[product.id]?.hasShopifyContent && !contentStatus[product.id]?.hasNewLayout && (

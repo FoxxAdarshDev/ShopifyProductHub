@@ -247,22 +247,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProductStatus(shopifyProductId: string, updateData: Partial<InsertProductStatus>): Promise<ProductStatus> {
-    // First try to update existing status
-    const existing = await this.getProductStatus(shopifyProductId);
-    
-    if (existing) {
+    try {
+      // Use upsert to handle both insert and update cases
       const [status] = await db
-        .update(productStatus)
-        .set({ ...updateData, lastUpdated: new Date() })
-        .where(eq(productStatus.shopifyProductId, shopifyProductId))
+        .insert(productStatus)
+        .values({
+          shopifyProductId,
+          hasNewLayout: false,
+          hasDraftContent: false,
+          hasShopifyContent: false,
+          contentCount: '0',  
+          isOurTemplateStructure: false,
+          lastShopifyCheck: new Date(),
+          ...updateData,
+          lastUpdated: new Date()
+        })
+        .onConflictDoUpdate({
+          target: productStatus.shopifyProductId,
+          set: {
+            ...updateData,
+            lastUpdated: new Date()
+          }
+        })
         .returning();
+      
       return status;
-    } else {
-      // Create new status if it doesn't exist
-      return await this.createProductStatus({
-        shopifyProductId,
-        ...updateData
-      } as InsertProductStatus);
+    } catch (error) {
+      console.error(`Error updating product status for ${shopifyProductId}:`, error);
+      // If insert fails, try direct update
+      const existing = await this.getProductStatus(shopifyProductId);
+      if (existing) {
+        const [status] = await db
+          .update(productStatus)
+          .set({ ...updateData, lastUpdated: new Date() })
+          .where(eq(productStatus.shopifyProductId, shopifyProductId))
+          .returning();
+        return status;
+      }
+      throw error;
     }
   }
 

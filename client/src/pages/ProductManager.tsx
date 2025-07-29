@@ -476,7 +476,7 @@ export default function ProductManager() {
                       )}
                       {hasDraftContent && selectedTabs.length > 0 && !hasShopifyTemplate && (
                         <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                          Draft Mode
+                          Draft Mode: {contentStatus?.contentCount || selectedTabs.length}
                         </Badge>
                       )}
                       <Badge variant="outline">

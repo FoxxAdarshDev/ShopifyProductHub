@@ -243,7 +243,7 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                               )}
                               {contentStatus[product.id]?.hasDraftContent && (
                                 <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                                  Draft Mode
+                                  Draft Mode: {contentStatus[product.id]?.contentCount || 0}
                                 </Badge>
                               )}
                               {!contentStatus[product.id]?.hasShopifyContent && 

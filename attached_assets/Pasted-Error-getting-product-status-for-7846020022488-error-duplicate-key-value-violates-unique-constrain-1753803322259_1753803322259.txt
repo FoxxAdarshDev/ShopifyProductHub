@@ -1,0 +1,58 @@
+Error getting product status for 7846020022488: error: duplicate key value violates unique constraint "product_status_shopify_product_id_key"
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.createProductStatus (/home/runner/workspace/server/storage.ts:242:22)
+    at async DatabaseStorage.updateProductStatus (/home/runner/workspace/server/storage.ts:262:14)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:150:7)
+    at async <anonymous> (/home/runner/workspace/server/services/productStatusService.ts:218:24)
+    at async Promise.all (index 0)
+    at async ProductStatusService.getBatchProductStatus (/home/runner/workspace/server/services/productStatusService.ts:222:7)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:358:29) {
+  length: 271,
+  severity: 'ERROR',
+  code: '23505',
+  detail: 'Key (shopify_product_id)=(7846020022488) already exists.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'product_status',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'product_status_shopify_product_id_key',
+  file: 'nbtinsert.c',
+  line: '666',
+  routine: '_bt_check_unique'
+}
+Processing status batch 4/112 with 3 products
+Error getting product status for 7846019858648: error: duplicate key value violates unique constraint "product_status_shopify_product_id_key"
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.createProductStatus (/home/runner/workspace/server/storage.ts:242:22)
+    at async DatabaseStorage.updateProductStatus (/home/runner/workspace/server/storage.ts:262:14)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:150:7)
+    at async <anonymous> (/home/runner/workspace/server/services/productStatusService.ts:218:24)
+    at async Promise.all (index 2)
+    at async ProductStatusService.getBatchProductStatus (/home/runner/workspace/server/services/productStatusService.ts:222:7)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:358:29) {
+  length: 271,
+  severity: 'ERROR',
+  code: '23505',
+  detail: 'Key (shopify_product_id)=(7846019858648) already exists.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'product_status',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'product_status_shopify_product_id_key',
+  file: 'nbtinsert.c',
+  line: '666',
+  routine: '_bt_check_uniqu

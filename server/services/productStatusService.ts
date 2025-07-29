@@ -97,6 +97,7 @@ class ProductStatusService {
       // 4. Check for draft content
       const draftContent = await storage.getDraftContentByProduct(productId);
       let hasDraftContent = draftContent.length > 0;
+      const draftContentCount = draftContent.length;
 
       // 5. Smart Shopify checking with rate limit protection
       let hasShopifyContent = false;
@@ -131,7 +132,16 @@ class ProductStatusService {
 
       // 6. Determine final status with proper logic
       const hasNewLayout = hasLocalContent || isOurTemplateStructure;
-      const contentCount = Math.max(localContentCount, shopifyContentCount);
+      
+      // Content count priority: local content > shopify content > draft content
+      let contentCount = 0;
+      if (hasLocalContent) {
+        contentCount = localContentCount;
+      } else if (isOurTemplateStructure) {
+        contentCount = shopifyContentCount;
+      } else if (hasDraftContent) {
+        contentCount = draftContentCount;
+      }
       
       // Clear draft mode if content is published to Shopify with our template
       if (isOurTemplateStructure && hasDraftContent) {
@@ -146,15 +156,19 @@ class ProductStatusService {
         isOurTemplateStructure
       };
 
-      // 7. Update database status cache
-      await storage.updateProductStatus(productId, {
-        hasNewLayout,
-        hasDraftContent,
-        hasShopifyContent,
-        contentCount: contentCount.toString(),
-        isOurTemplateStructure,
-        lastShopifyCheck: new Date()
-      });
+      // 7. Update database status cache (safely)
+      try {
+        await storage.updateProductStatus(productId, {
+          hasNewLayout,
+          hasDraftContent,
+          hasShopifyContent,
+          contentCount: contentCount.toString(),
+          isOurTemplateStructure,
+          lastShopifyCheck: new Date()
+        });
+      } catch (dbError) {
+        console.warn(`Failed to update database status for product ${productId}:`, dbError);
+      }
 
       // 8. Update memory cache
       contentStatusCache.set(productId, {
