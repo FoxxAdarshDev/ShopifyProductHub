@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, CheckCircle, Plus, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, CheckCircle, Plus, Loader2, Package } from "lucide-react";
+import { useLocation } from "wouter";
 
 // Debounce hook for search
 const useDebounce = (value: string, delay: number) => {
@@ -41,6 +43,7 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
     description: "",
     shopifyId: ""
   });
+  const [contentStatus, setContentStatus] = useState<any>({});
   const { toast } = useToast();
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -57,6 +60,17 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
     enabled: debouncedSearchTerm.length >= 2
   });
 
+  // Check content status for products
+  const checkContentStatus = async (productIds: number[]) => {
+    try {
+      const response = await apiRequest("POST", "/api/products/content-status", { productIds });
+      const statusData = await response.json();
+      setContentStatus(statusData);
+    } catch (error) {
+      console.error("Error checking content status:", error);
+    }
+  };
+
   // Update search results when search data changes
   useEffect(() => {
     if (searchData) {
@@ -67,6 +81,12 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
         setSelectedProduct(product);
       } else {
         setSelectedProduct(null);
+      }
+      
+      // Check content status for found products
+      if (searchData.products && searchData.products.length > 0) {
+        const productIds = searchData.products.map((p: any) => p.id);
+        checkContentStatus(productIds);
       }
     }
   }, [searchData]);
@@ -95,14 +115,14 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
     },
   });
 
+  const [, setLocation] = useLocation();
+
   const handleProductSelect = (product: any, navigate: boolean = false) => {
     setSelectedProduct(product);
     
     if (navigate) {
       // Navigate to product manager with product ID
-      import('wouter').then(({ navigate }) => {
-        navigate(`/product-manager/${product.id}`);
-      });
+      setLocation(`/product-manager/${product.id}`);
     } else {
       onProductFound({
         id: product.id,
@@ -207,7 +227,32 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                           </div>
                           
                           <div className="space-y-2">
-                            <p className="text-xs text-slate-500">Content: Not Added</p>
+                            {/* Content Status Badges */}
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {contentStatus[product.id]?.hasShopifyContent && (
+                                <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                  <Package className="w-3 h-3 mr-1" />
+                                  Shopify Content
+                                </Badge>
+                              )}
+                              {contentStatus[product.id]?.hasNewLayout && (
+                                <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-200">
+                                  <Package className="w-3 h-3 mr-1" />
+                                  New Layout: {contentStatus[product.id]?.contentCount || 0}
+                                </Badge>
+                              )}
+                              {contentStatus[product.id]?.hasDraftContent && (
+                                <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                                  Draft Mode
+                                </Badge>
+                              )}
+                              {!contentStatus[product.id]?.hasShopifyContent && 
+                               !contentStatus[product.id]?.hasNewLayout && 
+                               !contentStatus[product.id]?.hasDraftContent && (
+                                <p className="text-xs text-slate-500">Content: Not Added</p>
+                              )}
+                            </div>
+                            
                             <Button 
                               onClick={() => handleProductSelect(product, true)}
                               className="w-full"

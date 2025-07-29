@@ -416,8 +416,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let hasShopifyContent = false;
             let isOurTemplateStructure = false;
             
-            // Drastically reduce Shopify API calls - only check if no local data at all
-            const needsShopifyCheck = !hasNewLayout && !hasDraftContent && !localProduct;
+            // Check Shopify for template structure if no local content
+            const needsShopifyCheck = !hasNewLayout && !hasDraftContent;
             
             if (needsShopifyCheck) {
               try {
