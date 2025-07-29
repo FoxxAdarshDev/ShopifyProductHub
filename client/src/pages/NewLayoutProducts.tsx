@@ -62,9 +62,11 @@ export default function NewLayoutProducts() {
   const { data, isLoading: queryLoading, error } = useQuery({
     queryKey: ["/api/products/all/comprehensive"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/products/all?comprehensive=true&limit=250`);
+      const response = await apiRequest("GET", `/api/products/all?comprehensive=true&limit=12500`);
       return response.json();
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes (gcTime replaces cacheTime in v5)
   });
 
   useEffect(() => {
@@ -73,22 +75,29 @@ export default function NewLayoutProducts() {
 
   useEffect(() => {
     if (data && data.products) {
+      console.log(`NewLayoutProducts: Loaded ${data.products.length} products`);
       setAllProducts(data.products);
       // Check content status for all products
-      checkContentStatus(data.products.map((p: ShopifyProduct) => p.id));
+      const productIds = data.products.map((p: ShopifyProduct) => p.id);
+      console.log(`NewLayoutProducts: Checking content status for ${productIds.length} products`);
+      checkContentStatus(productIds);
     }
   }, [data]);
 
   const checkContentStatus = async (productIds: number[]) => {
+    if (!productIds || productIds.length === 0) return;
+    
     try {
+      console.log(`NewLayoutProducts: Making content status request for ${productIds.length} products`);
       const response = await apiRequest("POST", "/api/products/content-status", {
         body: JSON.stringify({ productIds }),
         headers: { "Content-Type": "application/json" }
       });
       const statusData = await response.json();
+      console.log(`NewLayoutProducts: Received status data:`, statusData);
       setContentStatus(statusData);
     } catch (error) {
-      console.error("Error checking content status:", error);
+      console.error("NewLayoutProducts: Error checking content status:", error);
     }
   };
 

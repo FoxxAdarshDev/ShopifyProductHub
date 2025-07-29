@@ -65,11 +65,20 @@ export default function AllProducts() {
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  // Query for initial products (paginated)
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/products/all", currentPage],
     queryFn: async () => {
-      // Use comprehensive search for better coverage
-      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}&comprehensive=true`);
+      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
+      return response.json();
+    }
+  });
+
+  // Query for comprehensive status data (all products)
+  const { data: comprehensiveData } = useQuery({
+    queryKey: ["/api/products/all/comprehensive-status"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/products/all?comprehensive=true&limit=12500`);
       return response.json();
     }
   });
@@ -92,6 +101,15 @@ export default function AllProducts() {
       }
     }
   }, [data, currentPage]);
+
+  // Check content status for ALL products when comprehensive data loads
+  useEffect(() => {
+    if (comprehensiveData && comprehensiveData.products) {
+      const allProductIds = comprehensiveData.products.map((p: ShopifyProduct) => p.id);
+      console.log(`Checking content status for ${allProductIds.length} total products in store`);
+      checkContentStatus(allProductIds);
+    }
+  }, [comprehensiveData]);
 
   useEffect(() => {
     if (error) {
@@ -174,20 +192,26 @@ export default function AllProducts() {
   const displayProducts = filterProducts(baseProducts);
   const isShowingSearchResults = searchTerm.length >= 2;
 
-  // Calculate counts for filter display
+  // Calculate counts for filter display using comprehensive data if available
+  const allProductsForCounting = comprehensiveData?.products || baseProducts;
   const totalProducts = baseProducts.length;
-  const shopifyContentCount = baseProducts.filter(p => contentStatus[p.id]?.hasShopifyContent).length;
-  const newLayoutCount = baseProducts.filter(p => contentStatus[p.id]?.hasNewLayout).length;
-  const draftModeCount = baseProducts.filter(p => contentStatus[p.id]?.hasDraftContent).length;
-  const noContentCount = baseProducts.filter(p => {
+  const shopifyContentCount = allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasShopifyContent).length;
+  const newLayoutCount = allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasNewLayout).length;
+  const draftModeCount = allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasDraftContent).length;
+  const noContentCount = allProductsForCounting.filter((p: ShopifyProduct) => {
     const status = contentStatus[p.id];
     return !status?.hasShopifyContent && !status?.hasNewLayout;
   }).length;
 
   // Check content status for products
   const checkContentStatus = async (productIds: number[]) => {
+    if (!productIds || productIds.length === 0) return;
+    
     try {
-      const response = await apiRequest("POST", "/api/products/content-status", { productIds });
+      const response = await apiRequest("POST", "/api/products/content-status", {
+        body: JSON.stringify({ productIds }),
+        headers: { "Content-Type": "application/json" }
+      });
       const statusData = await response.json();
       setContentStatus(prev => ({ ...prev, ...statusData }));
     } catch (error) {
