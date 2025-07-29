@@ -723,7 +723,7 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     
   } catch (error) {
     console.error('❌ Content extraction error:', error);
-    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error stack:', (error as Error).stack);
     console.log('❌ Partial extraction result before error:', Object.keys(extractedContent));
     return extractedContent;
   }
