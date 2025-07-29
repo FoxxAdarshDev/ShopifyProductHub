@@ -150,6 +150,8 @@
         .halo-tab-content {
           margin-bottom: 48px;
           scroll-margin-top: 120px;
+          display: block !important;
+          visibility: visible !important;
         }
         
         .halo-tab-header {
@@ -290,6 +292,20 @@
         
         .compatible-item-link:hover {
           text-decoration: underline;
+        }
+
+        /* Override any existing hide/show styles */
+        .halo-tab-content,
+        .halo-tab-content.active,
+        .halo-tab-content.inactive {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+
+        /* Remove any conflicting fadeIn animation */
+        .halo-tab-content {
+          animation: none !important;
         }
       </style>
 
