@@ -114,9 +114,11 @@ class ProductStatusService {
       
       console.log(`🔍 Starting Shopify content check for product ${productId}`);
 
-      // Check Shopify only if we're forcing fresh checks or have no recent data
-      // Minimize API calls by prioritizing database data
-      const needsShopifyCheck = skipCaches || (!hasLocalContent && !this.isRecentStatus(new Date()));
+      // Check Shopify only if we're forcing fresh checks or have no recent database data
+      // Get the last check time from database status
+      const dbStatus = await storage.getProductStatus(productId);
+      const lastCheckTime = dbStatus?.lastShopifyCheck || null;
+      const needsShopifyCheck = skipCaches || !this.isRecentStatus(lastCheckTime);
       
       if (needsShopifyCheck) {
         try {
@@ -127,6 +129,10 @@ class ProductStatusService {
             const layoutDetection = this.detectNewLayoutFromHTML(shopifyProduct.body_html);
             isOurTemplateStructure = layoutDetection.isNewLayout;
             shopifyContentCount = layoutDetection.contentCount;
+            
+            if (isOurTemplateStructure) {
+              console.log(`✅ New Layout detected for product ${productId} with ${shopifyContentCount} sections`);
+            }
           }
         } catch (shopifyError: any) {
           if (shopifyError.message.includes('429')) {
