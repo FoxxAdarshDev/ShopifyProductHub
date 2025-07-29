@@ -416,6 +416,7 @@
   display: flex !important;
   gap: 20px !important;
   align-items: flex-start !important;
+  box-sizing: border-box !important;
 }
 
 .video-content-wrapper {
@@ -427,6 +428,15 @@
 
 .video-content-wrapper > * {
   width: 100% !important; /* Ensure all children take full width */
+  box-sizing: border-box !important;
+}
+
+/* Force iframe to fill container properly */
+.video-content-wrapper iframe,
+.video-content-wrapper > div iframe {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
 }
 
 .video-subscribe-wrapper {
@@ -829,7 +839,7 @@
             <div class="brand-name">Foxx Life Sciences</div>
           </div>
           <div class="subscribe-button-container">
-            <div class="g-ytsubscribe"></div>
+            <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
           </div>
           <div class="subscribe-description">Stay updated with our latest product videos and tutorials!</div>
         </div>
@@ -924,19 +934,37 @@
         }
 
         // Initialize YouTube subscribe buttons after content is loaded
-        if (typeof gapi !== 'undefined' && gapi.load) {
-          gapi.load('ytsubscribe', function() {
-            // Initialize YouTube subscribe buttons (only once)
+        setTimeout(function() {
+          if (typeof gapi !== 'undefined' && gapi.load) {
+            gapi.load('ytsubscribe', function() {
+              // Initialize YouTube subscribe buttons (only once)
+              var subscribeButtons = document.querySelectorAll('.g-ytsubscribe:not([data-initialized])');
+              subscribeButtons.forEach(function(button) {
+                // Set attributes only once
+                button.setAttribute('data-channelid', 'UCfTcuV6zESARyzKfG2T6YFg');
+                button.setAttribute('data-layout', 'full');
+                button.setAttribute('data-count', 'hidden');
+                button.setAttribute('data-initialized', 'true'); // Mark as initialized
+              });
+              
+              // Force render if needed
+              if (typeof gapi.ytsubscribe !== 'undefined' && gapi.ytsubscribe.render) {
+                subscribeButtons.forEach(function(button) {
+                  gapi.ytsubscribe.render(button);
+                });
+              }
+            });
+          } else {
+            // Fallback if gapi not loaded - set attributes directly
             var subscribeButtons = document.querySelectorAll('.g-ytsubscribe:not([data-initialized])');
             subscribeButtons.forEach(function(button) {
-              // Set attributes only once
               button.setAttribute('data-channelid', 'UCfTcuV6zESARyzKfG2T6YFg');
               button.setAttribute('data-layout', 'full');
               button.setAttribute('data-count', 'hidden');
-              button.setAttribute('data-initialized', 'true'); // Mark as initialized
+              button.setAttribute('data-initialized', 'true');
             });
-          });
-        }
+          }
+        }, 1000); // Wait 1 second for scripts to load
       }, 500); // Increased timeout to allow scripts to load
     });
     </script>
