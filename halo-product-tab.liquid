@@ -15,12 +15,12 @@
   {% assign available_titles = '' %}
   
   {% comment %} Check each possible tab and only add it if it exists {% endcomment %}
-  {% if product_description contains 'id="description"' %}
+  {% if product_description contains 'id="halo-description"' %}
     {% assign available_tabs = 'description' %}
     {% assign available_titles = 'Description' %}
   {% endif %}
   
-  {% if product_description contains 'id="features"' %}
+  {% if product_description contains 'id="halo-features"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'features' %}
       {% assign available_titles = 'Features' %}
@@ -30,7 +30,7 @@
     {% endif %}
   {% endif %}
   
-  {% if product_description contains 'id="applications"' %}
+  {% if product_description contains 'id="halo-applications"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'applications' %}
       {% assign available_titles = 'Applications' %}
@@ -40,7 +40,7 @@
     {% endif %}
   {% endif %}
   
-  {% if product_description contains 'id="specification"' %}
+  {% if product_description contains 'id="halo-specification"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'specification' %}
       {% assign available_titles = 'Specifications' %}
@@ -50,7 +50,7 @@
     {% endif %}
   {% endif %}
   
-  {% if product_description contains 'id="sterilization-method"' %}
+  {% if product_description contains 'id="halo-sterilization-method"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'sterilization-method' %}
       {% assign available_titles = 'Sterilization Method' %}
@@ -60,7 +60,7 @@
     {% endif %}
   {% endif %}
   
-  {% if product_description contains 'id="compatible-container"' %}
+  {% if product_description contains 'id="halo-compatible-container"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'compatible-container' %}
       {% assign available_titles = 'Compatible Container' %}
@@ -70,7 +70,7 @@
     {% endif %}
   {% endif %}
   
-  {% if product_description contains 'id="documentation"' %}
+  {% if product_description contains 'id="halo-documentation"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'documentation' %}
       {% assign available_titles = 'Documentation' %}
@@ -80,7 +80,7 @@
     {% endif %}
   {% endif %}
   
-  {% if product_description contains 'id="videos"' %}
+  {% if product_description contains 'id="halo-videos"' %}
     {% if available_tabs == '' %}
       {% assign available_tabs = 'videos' %}
       {% assign available_titles = 'Videos' %}
@@ -339,38 +339,23 @@
           {% endunless %}
           
           <div class="halo-tab-content-inner">
-            {% comment %} Simplified content extraction {% endcomment %}
-            {% assign tab_start_marker = 'id="' | append: tab | append: '"' %}
+            {% comment %} Extract content from halo-prefixed IDs {% endcomment %}
+            {% assign halo_tab_id = 'halo-' | append: tab %}
+            {% assign tab_start_marker = 'id="' | append: halo_tab_id | append: '"' %}
             {% assign content_split = product_description | split: tab_start_marker %}
             
             {% if content_split.size > 1 %}
-              {% assign after_id_part = content_split[1] %}
-              {% assign after_tag_start = after_id_part | split: '>' %}
+              {% comment %} Find the content inside the halo-tab-content-inner div {% endcomment %}
+              {% assign after_id = content_split[1] %}
+              {% assign inner_content_start = after_id | split: '<div class="halo-tab-content-inner">' %}
               
-              {% if after_tag_start.size > 1 %}
-                {% assign content_section = after_tag_start[1] %}
+              {% if inner_content_start.size > 1 %}
+                {% assign inner_content = inner_content_start[1] %}
                 
-                {% comment %} Find content end - look for next div with id or class="tab-content" {% endcomment %}
-                {% assign end_markers = content_section | split: '<div class="tab-content"' %}
-                {% assign content_part = end_markers[0] %}
-                
-                {% if end_markers.size == 1 %}
-                  {% assign end_markers = content_section | split: '<div id="' %}
-                  {% assign content_part = end_markers[0] %}
-                {% endif %}
-                
-                {% comment %} Clean up trailing div tags {% endcomment %}
-                {% assign div_parts = content_part | split: '</div>' %}
-                {% assign final_content = '' %}
-                {% for part in div_parts %}
-                  {% unless forloop.last %}
-                    {% if final_content == '' %}
-                      {% assign final_content = part %}
-                    {% else %}
-                      {% assign final_content = final_content | append: '</div>' | append: part %}
-                    {% endif %}
-                  {% endunless %}
-                {% endfor %}
+                {% comment %} Find the end of this tab's content - look for the closing div structure {% endcomment %}
+                {% assign content_end = inner_content | split: '</div>' %}
+                {% assign content_end_2 = content_end[1] | split: '</div>' %}
+                {% assign final_content = content_end[0] %}
                 
                 {{ final_content | strip }}
               {% endif %}
