@@ -6,7 +6,13 @@ import { htmlGenerator } from "./services/htmlGenerator";
 import { extractContentFromHtml } from "./services/contentExtractor";
 import { insertProductSchema, insertProductContentSchema, insertContentTemplateSchema, insertLogoSchema, insertDraftContentSchema } from "@shared/schema";
 import { z } from "zod";
-import { refreshSuspectProducts } from "./routes/admin";
+import { 
+  refreshSuspectProducts, 
+  startBackgroundProcessing, 
+  getBackgroundProcessingStatus, 
+  stopBackgroundProcessing, 
+  forceRefreshAllProducts 
+} from "./routes/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Product lookup by SKU
@@ -702,6 +708,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin routes
   app.post("/api/admin/refresh-suspect-products", refreshSuspectProducts);
+  app.post("/api/admin/start-background-processing", startBackgroundProcessing);
+  app.get("/api/admin/background-processing-status", getBackgroundProcessingStatus);
+  app.post("/api/admin/stop-background-processing", stopBackgroundProcessing);
+  app.post("/api/admin/force-refresh-all-products", forceRefreshAllProducts);
 
   const httpServer = createServer(app);
   return httpServer;

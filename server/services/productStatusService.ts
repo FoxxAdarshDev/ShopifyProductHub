@@ -114,9 +114,9 @@ class ProductStatusService {
       
       console.log(`🔍 Starting Shopify content check for product ${productId}`);
 
-      // Check Shopify if we don't have local content OR if we're forcing fresh checks
-      // OR if we suspect there might be new layout content in Shopify
-      const needsShopifyCheck = skipCaches || (!hasLocalContent) || hasDraftContent;
+      // Check Shopify only if we're forcing fresh checks or have no recent data
+      // Minimize API calls by prioritizing database data
+      const needsShopifyCheck = skipCaches || (!hasLocalContent && !this.isRecentStatus(new Date()));
       
       if (needsShopifyCheck) {
         try {

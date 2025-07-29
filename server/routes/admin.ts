@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { productStatusService } from '../services/productStatusService';
 import { storage } from '../storage';
+import { backgroundProcessor } from '../services/backgroundProcessor';
 
 // Force refresh status for products that might have new layout content
 export async function refreshSuspectProducts(req: Request, res: Response) {
@@ -58,5 +59,61 @@ export async function refreshSuspectProducts(req: Request, res: Response) {
   } catch (error) {
     console.error('Error in refreshSuspectProducts:', error);
     res.status(500).json({ error: 'Failed to refresh product status' });
+  }
+}
+
+// Start background processing for all products
+export async function startBackgroundProcessing(req: Request, res: Response) {
+  try {
+    backgroundProcessor.startSystematicRefresh();
+    res.json({
+      message: 'Background processing started',
+      status: backgroundProcessor.getStatus()
+    });
+  } catch (error) {
+    console.error('Error starting background processing:', error);
+    res.status(500).json({ error: 'Failed to start background processing' });
+  }
+}
+
+// Get background processing status
+export async function getBackgroundProcessingStatus(req: Request, res: Response) {
+  try {
+    const status = backgroundProcessor.getStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting background processing status:', error);
+    res.status(500).json({ error: 'Failed to get processing status' });
+  }
+}
+
+// Stop background processing
+export async function stopBackgroundProcessing(req: Request, res: Response) {
+  try {
+    await backgroundProcessor.stopProcessing();
+    res.json({
+      message: 'Background processing stopped',
+      status: backgroundProcessor.getStatus()
+    });
+  } catch (error) {
+    console.error('Error stopping background processing:', error);
+    res.status(500).json({ error: 'Failed to stop background processing' });
+  }
+}
+
+// Force refresh all products by invalidating all cache
+export async function forceRefreshAllProducts(req: Request, res: Response) {
+  try {
+    console.log('🔄 Force refreshing all products by invalidating cache');
+    const updatedCount = await storage.invalidateAllProductStatusCache();
+    
+    res.json({
+      message: 'All product status cache invalidated',
+      updatedCount,
+      note: 'Products will be re-checked on next access'
+    });
+  } catch (error) {
+    console.error('Error in forceRefreshAllProducts:', error);
+    res.status(500).json({ error: 'Failed to force refresh all products' });
   }
 }

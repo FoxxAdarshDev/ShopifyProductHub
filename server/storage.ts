@@ -19,7 +19,7 @@ import {
   type InsertProductStatus
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like } from "drizzle-orm";
+import { eq, and, like, or, lt, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Products
@@ -310,6 +310,28 @@ export class DatabaseStorage implements IStorage {
       .update(productStatus)
       .set({ lastShopifyCheck: new Date('2020-01-01') })
       .where(eq(productStatus.shopifyProductId, shopifyProductId));
+  }
+
+  async getProductsWithOldStatus(): Promise<{ shopifyProductId: string }[]> {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const results = await db
+      .select({ shopifyProductId: productStatus.shopifyProductId })
+      .from(productStatus)
+      .where(
+        or(
+          lt(productStatus.lastShopifyCheck, oneDayAgo),
+          isNull(productStatus.lastShopifyCheck)
+        )
+      );
+    return results;
+  }
+
+  async invalidateAllProductStatusCache(): Promise<number> {
+    // Force refresh for all products by setting last check to old date
+    const result = await db
+      .update(productStatus)
+      .set({ lastShopifyCheck: new Date('2020-01-01') });
+    return result.rowCount || 0;
   }
 }
 
