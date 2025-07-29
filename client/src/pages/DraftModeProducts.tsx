@@ -129,6 +129,22 @@ export default function DraftModeProducts() {
     }
   };
 
+  // Load cached data immediately on component mount
+  useEffect(() => {
+    console.log('DraftModeProducts: Loading cached data immediately');
+    const cachedData: Record<string, ContentStatus> = {};
+    Object.keys(cache).forEach(productId => {
+      const status = cache[productId];
+      cachedData[productId] = {
+        hasShopifyContent: status.hasShopifyContent,
+        hasNewLayout: status.hasNewLayout,
+        hasDraftContent: status.hasDraftContent,
+        contentCount: status.contentCount
+      };
+    });
+    setContentStatus(cachedData);
+  }, [cache]);
+
   // Filter products based on search term and draft mode status
   useEffect(() => {
     if (!allProducts.length) return;

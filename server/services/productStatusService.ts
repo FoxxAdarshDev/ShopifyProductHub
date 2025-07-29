@@ -67,14 +67,20 @@ class ProductStatusService {
       if (!skipCaches) {
         const dbStatus = await storage.getProductStatus(productId);
         if (dbStatus && this.isRecentStatus(dbStatus.lastShopifyCheck)) {
-          console.log(`Using cached database status for product ${productId}`);
-          return {
-            hasShopifyContent: dbStatus.hasShopifyContent || false,
-            hasNewLayout: dbStatus.hasNewLayout || false,
-            hasDraftContent: dbStatus.hasDraftContent || false,
-            contentCount: parseInt(dbStatus.contentCount || '0'),
-            isOurTemplateStructure: dbStatus.isOurTemplateStructure || false
-          };
+          // If status shows both new layout AND draft content, this is inconsistent - force refresh
+          if (dbStatus.hasNewLayout && dbStatus.isOurTemplateStructure && dbStatus.hasDraftContent) {
+            console.log(`🔄 Inconsistent status detected for product ${productId} (has new layout but also draft) - forcing refresh`);
+            // Continue to fresh check instead of using cache
+          } else {
+            console.log(`Using cached database status for product ${productId}`);
+            return {
+              hasShopifyContent: dbStatus.hasShopifyContent || false,
+              hasNewLayout: dbStatus.hasNewLayout || false,
+              hasDraftContent: dbStatus.hasDraftContent || false,
+              contentCount: parseInt(dbStatus.contentCount || '0'),
+              isOurTemplateStructure: dbStatus.isOurTemplateStructure || false
+            };
+          }
         }
         
         // 2. Check memory cache
@@ -167,7 +173,21 @@ class ProductStatusService {
       
       // Clear draft mode if content is published to Shopify with our template
       if (isOurTemplateStructure && hasDraftContent) {
+        console.log(`🔄 Clearing draft status for product ${productId} - content is now published in Shopify`);
         hasDraftContent = false;
+        
+        // Immediately update database to ensure persistence
+        try {
+          await storage.updateProductStatus(productId, {
+            hasDraftContent: false,
+            hasShopifyContent: true,
+            isOurTemplateStructure: true,
+            lastShopifyCheck: new Date()
+          });
+          console.log(`✅ Successfully cleared draft status for product ${productId} in database`);
+        } catch (dbError) {
+          console.error(`❌ Failed to clear draft status for product ${productId}:`, dbError);
+        }
       }
 
       const result: ContentStatusResult = {
