@@ -170,46 +170,130 @@
 
 .compatible-item {
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  transition: shadow 0.2s ease;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .compatible-item:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  border-color: #d1d5db;
 }
 
 .compatible-item img {
   width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 12px;
+  height: 180px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #f9fafb;
+  padding: 10px;
+}
+
+.compatible-item-content {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .compatible-item-title {
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   color: #1f2937;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .compatible-item-description {
   font-size: 14px;
   color: #6b7280;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  flex-grow: 1;
 }
 
 .compatible-item-link {
-  display: inline-block;
-  color: #3b82f6;
+  display: inline-flex;
+  align-items: center;
+  color: #2563eb;
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
+  padding: 8px 16px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: transparent;
+  text-align: center;
+  justify-content: center;
 }
 
 .compatible-item-link:hover {
-  text-decoration: underline;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+/* Documentation Links Styling */
+.halo-tab-content #extracted-documentation {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.halo-tab-content #extracted-documentation p {
+  margin: 0;
+}
+
+.halo-tab-content #extracted-documentation a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.halo-tab-content #extracted-documentation a:hover {
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  border-color: #d1d5db;
+  background: #f8fafc;
+}
+
+.halo-tab-content #extracted-documentation a:before {
+  content: "📄";
+  font-size: 20px;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  border-radius: 6px;
+  border: 1px solid #dbeafe;
+}
+
+.halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:before {
+  content: "📋";
+  background: #f0fdf4;
+  border-color: #dcfce7;
 }
 
 /* Video responsive */
@@ -254,136 +338,94 @@
 </style>
 
 <div class="halo-product-tabs">
-  {% comment %} Detect available tabs from the HTML content {% endcomment %}
-  {% assign available_tabs = '' %}
-  {% assign tab_titles = '' %}
+  {% comment %} Tabs will be detected and created dynamically by JavaScript {% endcomment %}
 
-  {% comment %} Define tab order and titles {% endcomment %}
-  {% assign ordered_tabs = 'description,features,applications,specification,sterilization-method,compatible-container,documentation,videos' | split: ',' %}
-  {% assign tab_display_names = 'Description,Features,Applications,Specifications,Sterilization Method,Compatible Container,Documentation,Videos' | split: ',' %}
+  {% comment %} Tab Navigation - Will be populated dynamically {% endcomment %}
+  <div class="halo-tab-navigation">
+    <!-- Dynamic tabs will be created here by JavaScript -->
+  </div>
 
-  {% comment %} Check which tabs are present in the content {% endcomment %}
-  {% assign found_tabs = '' %}
-  {% assign found_titles = '' %}
-
-  {% comment %} Check for description {% endcomment %}
-  {% if product_description contains 'id="description"' %}
-    {% assign found_tabs = 'description' %}
-    {% assign found_titles = 'Description' %}
-  {% endif %}
-
-  {% comment %} Check for features {% endcomment %}
-  {% if product_description contains 'id="features"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'features' %}
-      {% assign found_titles = 'Features' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',features' %}
-      {% assign found_titles = found_titles | append: ',Features' %}
-    {% endif %}
-  {% endif %}
-
-  {% comment %} Check for applications {% endcomment %}
-  {% if product_description contains 'id="applications"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'applications' %}
-      {% assign found_titles = 'Applications' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',applications' %}
-      {% assign found_titles = found_titles | append: ',Applications' %}
-    {% endif %}
-  {% endif %}
-
-  {% comment %} Check for specification {% endcomment %}
-  {% if product_description contains 'id="specification"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'specification' %}
-      {% assign found_titles = 'Specifications' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',specification' %}
-      {% assign found_titles = found_titles | append: ',Specifications' %}
-    {% endif %}
-  {% endif %}
-
-  {% comment %} Check for sterilization-method {% endcomment %}
-  {% if product_description contains 'id="sterilization-method"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'sterilization-method' %}
-      {% assign found_titles = 'Sterilization Method' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',sterilization-method' %}
-      {% assign found_titles = found_titles | append: ',Sterilization Method' %}
-    {% endif %}
-  {% endif %}
-
-  {% comment %} Check for compatible-container {% endcomment %}
-  {% if product_description contains 'id="compatible-container"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'compatible-container' %}
-      {% assign found_titles = 'Compatible Container' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',compatible-container' %}
-      {% assign found_titles = found_titles | append: ',Compatible Container' %}
-    {% endif %}
-  {% endif %}
-
-  {% comment %} Check for documentation {% endcomment %}
-  {% if product_description contains 'id="documentation"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'documentation' %}
-      {% assign found_titles = 'Documentation' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',documentation' %}
-      {% assign found_titles = found_titles | append: ',Documentation' %}
-    {% endif %}
-  {% endif %}
-
-  {% comment %} Check for videos {% endcomment %}
-  {% if product_description contains 'id="videos"' %}
-    {% if found_tabs == '' %}
-      {% assign found_tabs = 'videos' %}
-      {% assign found_titles = 'Videos' %}
-    {% else %}
-      {% assign found_tabs = found_tabs | append: ',videos' %}
-      {% assign found_titles = found_titles | append: ',Videos' %}
-    {% endif %}
-  {% endif %}
-
-  {% assign available_tabs = found_tabs | split: ',' %}
-  {% assign tab_titles = found_titles | split: ',' %}
-
-  {% comment %} Only show tabs if we found any {% endcomment %}
-  {% if available_tabs.size > 0 %}
-
-    {% comment %} Tab Navigation {% endcomment %}
-    <div class="halo-tab-navigation">
-      {% for tab in available_tabs %}
-        {% assign tab_title = tab_titles[forloop.index0] %}
-        {% assign is_first = forloop.first %}
-        <button class="halo-tab-button{% if is_first %} active{% endif %}" 
-                onclick="haloSwitchTab(event, '{{ tab }}')" 
-                data-tab="{{ tab }}">
-          {{ tab_title }}
-        </button>
-      {% endfor %}
-    </div>
-
-    {% comment %} Tab Content - Direct HTML Display {% endcomment %}
-    <div class="halo-tab-content-container">
-      {% comment %} Hide original container and extract content directly {% endcomment %}
-      <div style="display: none;" id="original-content">{{ product_description }}</div>
-      
-      {% for tab in available_tabs %}
-        {% assign is_first = forloop.first %}
-        <div id="halo-{{ tab }}" class="halo-tab-content{% if is_first %} active{% endif %}">
-          <div class="halo-tab-content-inner">
-            <div id="extracted-{{ tab }}"></div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
+  {% comment %} Tab Content - Will be populated dynamically {% endcomment %}
+  <div class="halo-tab-content-container">
+    {% comment %} Hide original container and extract content directly {% endcomment %}
+    <div style="display: none;" id="original-content">{{ product_description }}</div>
+    <!-- Dynamic tab content will be created here by JavaScript -->
+  </div>
 
     <script>
+    function createDynamicTabs() {
+      const originalContent = document.getElementById('original-content');
+      if (!originalContent) return;
+      
+      const htmlContent = originalContent.innerHTML;
+      
+      // Create a temporary div to parse the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      
+      // Find all tab-content divs with IDs and extract available tabs
+      const tabElements = tempDiv.querySelectorAll('div[id]');
+      const availableTabs = [];
+      const tabTitles = {
+        'description': 'Description',
+        'features': 'Features', 
+        'applications': 'Applications',
+        'specification': 'Specifications',
+        'sterilization-method': 'Sterilization Method',
+        'compatible-container': 'Compatible Container',
+        'documentation': 'Documentation',
+        'videos': 'Videos'
+      };
+      
+      // Check which tabs actually have content
+      tabElements.forEach(function(element) {
+        const tabId = element.id;
+        if (tabTitles[tabId] && element.innerHTML.trim()) {
+          availableTabs.push(tabId);
+        }
+      });
+      
+      // Dynamically create tab navigation
+      const tabNavigation = document.querySelector('.halo-tab-navigation');
+      if (tabNavigation && availableTabs.length > 0) {
+        tabNavigation.innerHTML = '';
+        
+        availableTabs.forEach(function(tabId, index) {
+          const button = document.createElement('button');
+          button.className = 'halo-tab-button' + (index === 0 ? ' active' : '');
+          button.setAttribute('onclick', `haloSwitchTab(event, '${tabId}')`);
+          button.setAttribute('data-tab', tabId);
+          button.textContent = tabTitles[tabId];
+          tabNavigation.appendChild(button);
+        });
+      }
+      
+      // Dynamically create tab content containers
+      const tabContainer = document.querySelector('.halo-tab-content-container');
+      if (tabContainer && availableTabs.length > 0) {
+        tabContainer.innerHTML = '<div style="display: none;" id="original-content">' + originalContent.innerHTML + '</div>';
+        
+        availableTabs.forEach(function(tabId, index) {
+          const tabDiv = document.createElement('div');
+          tabDiv.id = 'halo-' + tabId;
+          tabDiv.className = 'halo-tab-content' + (index === 0 ? ' active' : '');
+          
+          const innerDiv = document.createElement('div');
+          innerDiv.className = 'halo-tab-content-inner';
+          
+          const extractedDiv = document.createElement('div');
+          extractedDiv.id = 'extracted-' + tabId;
+          
+          innerDiv.appendChild(extractedDiv);
+          tabDiv.appendChild(innerDiv);
+          tabContainer.appendChild(tabDiv);
+        });
+      }
+      
+      // Clean up
+      tempDiv.remove();
+    }
+
     function extractTabContent() {
       const originalContent = document.getElementById('original-content');
       if (!originalContent) return;
@@ -437,7 +479,10 @@
 
     // Initialize tabs on page load
     document.addEventListener('DOMContentLoaded', function() {
-      // Extract content first
+      // Create dynamic tabs first
+      createDynamicTabs();
+      
+      // Then extract content
       extractTabContent();
       
       // Ensure first tab is active by default
