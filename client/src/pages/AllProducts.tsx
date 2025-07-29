@@ -65,53 +65,32 @@ export default function AllProducts() {
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Query for initial products (paginated)
+  // Query for initial products (fetch ALL products from start)
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/products/all", currentPage],
+    queryKey: ["/api/products/all", "comprehensive"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
+      // Fetch ALL products with comprehensive mode for accurate counts
+      const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true`);
       return response.json();
     }
   });
 
-  // Query for comprehensive status data (all products)
-  const { data: comprehensiveData } = useQuery({
-    queryKey: ["/api/products/all/comprehensive-status"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/products/all?comprehensive=true&limit=12500`);
-      return response.json();
-    }
-  });
 
+
+  // Update products when ALL data loads (comprehensive fetch)
   useEffect(() => {
-    if (data) {
-      if (currentPage === 1) {
-        setAllProducts(data.products || []);
-        setTotalFetched(data.products?.length || 0);
-      } else {
-        setAllProducts(prev => [...prev, ...(data.products || [])]);
-        setTotalFetched(prev => prev + (data.products?.length || 0));
-      }
-      setHasMore(data.hasMore || false);
+    if (data && data.products) {
+      setAllProducts(data.products);
+      setTotalFetched(data.products.length);
+      setHasMore(false); // All products loaded at once
       setIsLoadingMore(false);
 
-      // Check content status for new products
-      if (data.products && data.products.length > 0) {
-        checkContentStatus(data.products.map((p: ShopifyProduct) => p.id));
-      }
-    }
-  }, [data, currentPage]);
-
-  // Check content status for ALL products when comprehensive data loads (single request)
-  useEffect(() => {
-    if (comprehensiveData && comprehensiveData.products) {
-      const allProductIds = comprehensiveData.products.map((p: ShopifyProduct) => p.id);
-      console.log(`Checking content status for ${allProductIds.length} total products in store (single backend request)`);
-      
-      // Send ALL product IDs in one request - backend will handle batching and rate limiting
+      // Check content status for ALL products (single backend request)
+      console.log(`Checking content status for ${data.products.length} total products in store (single backend request)`);
+      const allProductIds = data.products.map((p: ShopifyProduct) => p.id);
       checkContentStatus(allProductIds);
     }
-  }, [comprehensiveData]);
+  }, [data]);
 
   useEffect(() => {
     if (error) {
@@ -194,8 +173,8 @@ export default function AllProducts() {
   const displayProducts = filterProducts(baseProducts);
   const isShowingSearchResults = searchTerm.length >= 2;
 
-  // Calculate counts for filter display using comprehensive data if available
-  const allProductsForCounting = comprehensiveData?.products || baseProducts;
+  // Calculate counts for filter display using all loaded products
+  const allProductsForCounting = baseProducts;
   const totalProducts = baseProducts.length;
   const shopifyContentCount = allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasShopifyContent).length;
   const newLayoutCount = allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasNewLayout).length;
@@ -331,7 +310,7 @@ export default function AllProducts() {
         </div>
       </div>
 
-      {isLoading && currentPage === 1 ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
           <span className="ml-2 text-slate-600">Loading products...</span>
