@@ -448,35 +448,37 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       let datasheetTitle = '';
       let datasheetUrl = '';
       
-      // Look for documentation-link-card structure first
-      const cardMatches = docDiv[1].match(/<div[^>]*class="[^"]*documentation-link-card[^"]*"[^>]*>([\s\S]*?)<\/div>/g);
-      console.log('📚 Documentation cards found:', cardMatches ? cardMatches.length : 0);
+      // UPDATED: Extract documentation from card structure
+      console.log('📚 UPDATED: Debugging documentation content length:', docDiv[1].length);
       
-      if (cardMatches) {
-        cardMatches.forEach((card, index) => {
-          console.log(`📚 Processing card ${index + 1}:`, card.substring(0, 200) + '...');
+      // Look for doc-title spans first (works for both old and new card structure)
+      const titleMatches = docDiv[1].match(/<span[^>]*class="[^"]*doc-title[^"]*"[^>]*>(.*?)<\/span>/g);
+      const hrefMatches = docDiv[1].match(/<a[^>]*href="([^"]*)"[^>]*>/g);
+      
+      console.log('📚 UPDATED: Found title spans:', titleMatches ? titleMatches.length : 0);
+      console.log('📚 UPDATED: Found href links:', hrefMatches ? hrefMatches.length : 0);
+      
+      if (titleMatches && hrefMatches) {
+        // Process each title/href pair
+        for (let i = 0; i < Math.min(titleMatches.length, hrefMatches.length); i++) {
+          const titleMatch = titleMatches[i].match(/<span[^>]*class="[^"]*doc-title[^"]*"[^>]*>(.*?)<\/span>/);
+          const hrefMatch = hrefMatches[i].match(/href="([^"]*)"/);
           
-          // Extract href from the card
-          const hrefMatch = card.match(/<a[^>]*href="([^"]*)"[^>]*>/);
-          
-          // Extract title from doc-title span
-          const titleMatch = card.match(/<span[^>]*class="[^"]*doc-title[^"]*"[^>]*>(.*?)<\/span>/);
-          
-          console.log('📚 Card href match:', hrefMatch ? hrefMatch[1] : 'NOT FOUND');
-          console.log('📚 Card title match:', titleMatch ? titleMatch[1] : 'NOT FOUND');
-          
-          if (hrefMatch && titleMatch && !datasheetTitle) {
-            const url = hrefMatch[1];
+          if (titleMatch && hrefMatch) {
             const title = titleMatch[1].replace(/<[^>]*>/g, '').trim();
+            const url = hrefMatch[1];
+            
+            console.log(`📚 UPDATED: Processing link ${i + 1}: "${title}" -> ${url}`);
             
             // Skip the default datasheet link but capture the first valid one
-            if (!url.includes('product-data-sheets')) {
-              console.log('📚 Extracted documentation from card:', title, 'URL:', url);
+            if (!url.includes('product-data-sheets') && !datasheetTitle) {
+              console.log('📚 UPDATED: Extracted documentation:', title, 'URL:', url);
               datasheetTitle = title;
               datasheetUrl = url;
+              break; // Take the first valid one
             }
           }
-        });
+        }
       }
       
       // Fallback: try simple link extraction if no cards found
