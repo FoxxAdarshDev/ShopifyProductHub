@@ -294,6 +294,7 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   color: #1f2937;
   font-weight: 500;
+  min-height: 60px;
 }
 
 .halo-tab-content #extracted-documentation a:hover {
@@ -306,20 +307,57 @@
 .halo-tab-content #extracted-documentation a:before {
   content: "📄";
   font-size: 20px;
-  min-width: 24px;
-  height: 24px;
+  min-width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #eff6ff;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #dbeafe;
+  flex-shrink: 0;
 }
 
 .halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:before {
   content: "📋";
   background: #f0fdf4;
   border-color: #dcfce7;
+}
+
+/* Special styling for datasheet links with blue background */
+.halo-tab-content #extracted-documentation a[href*=".pdf"] {
+  background: #eff6ff;
+  border-color: #dbeafe;
+}
+
+.halo-tab-content #extracted-documentation a[href*=".pdf"]:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.halo-tab-content #extracted-documentation a[href*=".pdf"]:before {
+  content: "📄";
+  background: #2563eb;
+  color: white;
+  border-color: #1d4ed8;
+}
+
+/* Special styling for product datasheet page links with green background */
+.halo-tab-content #extracted-documentation a[href*="product-data-sheets"] {
+  background: #f0fdf4;
+  border-color: #dcfce7;
+}
+
+.halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:before {
+  content: "📋";
+  background: #16a34a;
+  color: white;
+  border-color: #15803d;
 }
 
 /* Video responsive */
