@@ -376,177 +376,122 @@
           <div class="halo-tab-content-inner">
             {% comment %} Extract and display the specific tab content {% endcomment %}
             {% if tab == 'description' %}
-              {% assign tab_start = 'id="description"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find description content between opening and closing div tags {% endcomment %}
+              {% assign desc_start = product_description | split: 'id="description"' %}
+              {% if desc_start.size > 1 %}
+                {% assign desc_after_id = desc_start[1] %}
+                {% assign desc_after_opening = desc_after_id | split: '>' %}
+                {% if desc_after_opening.size > 1 %}
+                  {% assign desc_content_raw = desc_after_opening[1] %}
+                  {% assign desc_end_split = desc_content_raw | split: '</div>' %}
+                  {% assign desc_final_content = desc_end_split[0] %}
+                  {{ desc_final_content }}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'features' %}
-              {% assign tab_start = 'id="features"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find features content between opening and closing div tags {% endcomment %}
+              {% assign feat_start = product_description | split: 'id="features"' %}
+              {% if feat_start.size > 1 %}
+                {% assign feat_after_id = feat_start[1] %}
+                {% assign feat_after_opening = feat_after_id | split: '>' %}
+                {% if feat_after_opening.size > 1 %}
+                  {% assign feat_content_raw = feat_after_opening[1] %}
+                  {% assign feat_end_split = feat_content_raw | split: '</div>' %}
+                  {% assign feat_final_content = feat_end_split[0] %}
+                  {{ feat_final_content }}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'applications' %}
-              {% assign tab_start = 'id="applications"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find applications content between opening and closing div tags {% endcomment %}
+              {% assign app_start = product_description | split: 'id="applications"' %}
+              {% if app_start.size > 1 %}
+                {% assign app_after_id = app_start[1] %}
+                {% assign app_after_opening = app_after_id | split: '>' %}
+                {% if app_after_opening.size > 1 %}
+                  {% assign app_content_raw = app_after_opening[1] %}
+                  {% assign app_end_split = app_content_raw | split: '</div>' %}
+                  {% assign app_final_content = app_end_split[0] %}
+                  {{ app_final_content }}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'specification' %}
-              {% assign tab_start = 'id="specification"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div id=' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find specification content between opening and closing div tags {% endcomment %}
+              {% assign spec_start = product_description | split: 'id="specification"' %}
+              {% if spec_start.size > 1 %}
+                {% assign spec_after_id = spec_start[1] %}
+                {% assign spec_after_opening = spec_after_id | split: '>' %}
+                {% if spec_after_opening.size > 1 %}
+                  {% assign spec_content_raw = spec_after_opening[1] %}
+                  {% assign spec_end_split = spec_content_raw | split: '</div>' %}
+                  {% assign spec_final_content = spec_end_split[0] %}
+                  {{ spec_final_content }}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'sterilization-method' %}
-              {% assign tab_start = 'id="sterilization-method"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find sterilization-method content between opening and closing div tags {% endcomment %}
+              {% assign ster_start = product_description | split: 'id="sterilization-method"' %}
+              {% if ster_start.size > 1 %}
+                {% assign ster_after_id = ster_start[1] %}
+                {% assign ster_after_opening = ster_after_id | split: '>' %}
+                {% if ster_after_opening.size > 1 %}
+                  {% assign ster_content_raw = ster_after_opening[1] %}
+                  {% assign ster_end_split = ster_content_raw | split: '</div>' %}
+                  {% assign ster_final_content = ster_end_split[0] %}
+                  {{ ster_final_content }}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'compatible-container' %}
-              {% assign tab_start = 'id="compatible-container"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find compatible-container content - this has nested divs so we need special handling {% endcomment %}
+              {% assign comp_start = product_description | split: 'id="compatible-container"' %}
+              {% if comp_start.size > 1 %}
+                {% assign comp_after_id = comp_start[1] %}
+                {% assign comp_after_opening = comp_after_id | split: '>' %}
+                {% if comp_after_opening.size > 1 %}
+                  {% assign comp_content_with_nested = comp_after_opening[1] %}
+                  {% comment %} For compatible container, we need to find the end of the entire section {% endcomment %}
+                  {% assign comp_end_marker = comp_content_with_nested | split: '<div class="tab-content" id="sterilization-method"' %}
+                  {% if comp_end_marker.size > 1 %}
+                    {% assign comp_final_content = comp_end_marker[0] %}
+                    {% comment %} Remove trailing closing div tags {% endcomment %}
+                    {% assign comp_clean = comp_final_content | split: '</div>' %}
+                    {% assign comp_output = '' %}
+                    {% for comp_part in comp_clean %}
+                      {% unless forloop.last %}
+                        {% if comp_output == '' %}
+                          {% assign comp_output = comp_part %}
+                        {% else %}
+                          {% assign comp_output = comp_output | append: '</div>' | append: comp_part %}
+                        {% endif %}
+                      {% endunless %}
+                    {% endfor %}
+                    {{ comp_output }}
+                  {% endif %}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'documentation' %}
-              {% assign tab_start = 'id="documentation"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div id=' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find documentation content between opening and closing div tags {% endcomment %}
+              {% assign doc_start = product_description | split: 'id="documentation"' %}
+              {% if doc_start.size > 1 %}
+                {% assign doc_after_id = doc_start[1] %}
+                {% assign doc_after_opening = doc_after_id | split: '>' %}
+                {% if doc_after_opening.size > 1 %}
+                  {% assign doc_content_raw = doc_after_opening[1] %}
+                  {% assign doc_end_split = doc_content_raw | split: '</div>' %}
+                  {% assign doc_final_content = doc_end_split[0] %}
+                  {{ doc_final_content }}
                 {% endif %}
               {% endif %}
             {% elsif tab == 'videos' %}
-              {% assign tab_start = 'id="videos"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '</div>' %}
-                {% if content_end.size > 1 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign content_parts = tab_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
+              {% comment %} Find videos content between opening and closing div tags {% endcomment %}
+              {% assign vid_start = product_description | split: 'id="videos"' %}
+              {% if vid_start.size > 1 %}
+                {% assign vid_after_id = vid_start[1] %}
+                {% assign vid_after_opening = vid_after_id | split: '>' %}
+                {% if vid_after_opening.size > 1 %}
+                  {% assign vid_content_raw = vid_after_opening[1] %}
+                  {% assign vid_end_split = vid_content_raw | split: '</div>' %}
+                  {% assign vid_final_content = vid_end_split[0] %}
+                  {{ vid_final_content }}
                 {% endif %}
               {% endif %}
             {% endif %}
