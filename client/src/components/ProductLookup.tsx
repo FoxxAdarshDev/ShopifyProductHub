@@ -95,19 +95,27 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
     },
   });
 
-  const handleProductSelect = (product: any) => {
+  const handleProductSelect = (product: any, navigate: boolean = false) => {
     setSelectedProduct(product);
-    onProductFound({
-      id: product.id,
-      shopifyId: product.id.toString(),
-      sku: product.variants[0]?.sku || '',
-      title: product.title,
-      description: product.body_html || ''
-    }, []);
-    toast({
-      title: "Product Selected",
-      description: `Successfully loaded ${product.title}`,
-    });
+    
+    if (navigate) {
+      // Navigate to product manager with product ID
+      import('wouter').then(({ navigate }) => {
+        navigate(`/product-manager/${product.id}`);
+      });
+    } else {
+      onProductFound({
+        id: product.id,
+        shopifyId: product.id.toString(),
+        sku: product.variants[0]?.sku || '',
+        title: product.title,
+        description: product.body_html || ''
+      }, []);
+      toast({
+        title: "Product Selected",
+        description: `Successfully loaded ${product.title}`,
+      });
+    }
   };
 
   const handleCreateProduct = () => {
@@ -155,49 +163,82 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
             )}
           </div>
 
-          {/* Search Results */}
+          {/* Search Results - Product Cards */}
           {foundProducts.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <Label className="text-sm font-medium text-slate-700">
                 Search Results ({foundProducts.length})
               </Label>
-              <div className="max-h-64 overflow-y-auto space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                 {foundProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedProduct?.id === product.id
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'bg-white border-slate-200 hover:bg-slate-50'
-                    }`}
-                    onClick={() => handleProductSelect(product)}
-                    data-testid={`product-result-${product.id}`}
-                  >
-                    <h4 className="font-medium text-slate-900 text-sm">{product.title}</h4>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Product ID: {product.id}
-                    </p>
-                    {product.variants.length > 0 && (
-                      <div className="mt-2">
-                        <p className="text-xs text-slate-500 mb-1">SKUs:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {product.variants.slice(0, 3).map((variant: any) => (
-                            <span
-                              key={variant.id}
-                              className="inline-block px-2 py-1 bg-slate-100 text-xs rounded"
-                            >
-                              {variant.sku}
-                            </span>
-                          ))}
-                          {product.variants.length > 3 && (
-                            <span className="text-xs text-slate-500">
-                              +{product.variants.length - 3} more
-                            </span>
-                          )}
-                        </div>
+                  <Card key={product.id} className="relative">
+                    <CardHeader className="pb-3">
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-slate-900 text-sm leading-tight">{product.title}</h4>
+                        <p className="text-xs text-slate-600">
+                          Product ID: {product.id}
+                        </p>
                       </div>
-                    )}
-                  </div>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-4">
+                      {product.variants.length > 0 && (
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs font-medium text-slate-700 mb-2">
+                              Variants ({product.variants.length})
+                            </p>
+                            <div className="space-y-1 max-h-24 overflow-y-auto">
+                              {product.variants.slice(0, 3).map((variant: any) => (
+                                <div key={variant.id} className="flex justify-between items-center text-xs">
+                                  <span className="font-mono bg-slate-100 px-2 py-1 rounded truncate">
+                                    {variant.sku}
+                                  </span>
+                                  <span className="text-slate-500 ml-2">
+                                    ${variant.price}
+                                  </span>
+                                </div>
+                              ))}
+                              {product.variants.length > 3 && (
+                                <p className="text-xs text-slate-500 italic">
+                                  +{product.variants.length - 3} more variants
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <p className="text-xs text-slate-500">Content: Not Added</p>
+                            <Button 
+                              onClick={() => handleProductSelect(product, true)}
+                              className="w-full"
+                              size="sm"
+                            >
+                              Select Product
+                            </Button>
+                            
+                            {product.variants.length > 1 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-slate-500 mb-1">Quick select variant:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {product.variants.slice(0, 2).map((variant: any) => (
+                                    <Button
+                                      key={variant.id}
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs px-2 py-1 h-auto"
+                                      onClick={() => handleProductSelect({...product, selectedVariant: variant}, true)}
+                                    >
+                                      {variant.sku}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
