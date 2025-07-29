@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useProductStatusCache } from "@/hooks/useProductStatusCache";
 import { useParams } from "wouter";
 import ProductLookup from "@/components/ProductLookup";
 import TabSelector from "@/components/TabSelector";
@@ -82,6 +83,7 @@ export default function ProductManager() {
   const [hasShopifyTemplate, setHasShopifyTemplate] = useState(false);
   const [contentStatus, setContentStatus] = useState<any>(null);
   const { toast } = useToast();
+  const { getStatus, updateCache } = useProductStatusCache();
   const params = useParams();
   const productId = params.productId;
 
@@ -96,15 +98,31 @@ export default function ProductManager() {
     enabled: !!productId
   });
 
-  // Check content status for a product
+  // Check content status for a product with caching
   const checkContentStatus = async (productId: string) => {
     try {
+      // First check cache
+      const cachedStatus = getStatus(productId);
+      if (cachedStatus) {
+        setContentStatus(cachedStatus);
+      }
+      
+      // Still fetch fresh data in the background
       const response = await apiRequest("POST", "/api/products/content-status", { productIds: [parseInt(productId)] });
       const statusData = await response.json();
-      setContentStatus(statusData[productId] || null);
+      const status = statusData[productId] || null;
+      setContentStatus(status);
+      
+      // Update cache with fresh data
+      if (status) {
+        updateCache({ [productId]: status });
+      }
     } catch (error) {
       console.error("Error checking content status:", error);
-      setContentStatus(null);
+      // If we have cached data, keep it; otherwise set to null
+      if (!getStatus(productId)) {
+        setContentStatus(null);
+      }
     }
   };
 
