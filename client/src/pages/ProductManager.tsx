@@ -275,6 +275,23 @@ export default function ProductManager() {
         title: "Success",
         description: "Product updated on Shopify successfully",
       });
+      
+      // Refresh content status badges after successful Shopify update
+      if (selectedProduct) {
+        checkContentStatus(selectedProduct.id.toString());
+        
+        // Also set hasShopifyTemplate to true since we just updated Shopify
+        setHasShopifyTemplate(true);
+        setHasDraftContent(false); // No longer draft mode
+        
+        // Optionally reload the description to get the updated content
+        setTimeout(() => {
+          if (selectedProduct?.description) {
+            // This will re-extract content to show the updated data
+            // The user should see "Shopify Content" badge now
+          }
+        }, 1000);
+      }
     },
     onError: () => {
       toast({

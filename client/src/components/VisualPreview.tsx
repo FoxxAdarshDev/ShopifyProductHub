@@ -224,13 +224,15 @@ export default function VisualPreview({ contentData, selectedTabs, productSku }:
       )}
       
       {/* Show video if available, otherwise show placeholder */}
-      {data?.videoUrl ? (
-        <div className="aspect-video">
+      {data?.videoUrl && data.videoUrl.trim() ? (
+        <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
           <iframe
             src={data.videoUrl}
             title="Product Video"
-            className="w-full h-full rounded-lg"
+            className="w-full h-full"
             frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
           />
         </div>

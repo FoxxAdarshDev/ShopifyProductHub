@@ -935,46 +935,131 @@ Pressure Range,Up to 60 psi 4.1 bar`}
     </Card>
   );
 
-  const renderVideosForm = () => (
-    <Card key="videos" className="content-form">
-      <CardHeader className="form-section-header">
-        <CardTitle className="flex items-center">
-          <Video className="w-5 h-5 text-primary mr-3" />
-          Videos Content
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="form-section-content">
-        <div className="space-y-4">
-          {/* Default content info */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
-              <strong>Default content included:</strong> "Video coming soon" placeholder and YouTube channel link will always appear.
-            </p>
-          </div>
+  // Helper function to convert YouTube watch URL to embed URL
+  const convertYouTubeUrl = (url: string): string => {
+    if (!url || !url.trim()) return "";
+    
+    url = url.trim();
+    
+    // If it's already an embed URL, return as is
+    if (url.includes('youtube.com/embed/') || url.includes('youtu.be/embed/')) {
+      return url;
+    }
+    
+    // If it's an iframe, extract the src URL
+    if (url.includes('<iframe')) {
+      const srcMatch = url.match(/src="([^"]+)"/);
+      if (srcMatch) {
+        return srcMatch[1];
+      }
+    }
+    
+    // Convert watch URL to embed URL
+    let videoId = "";
+    
+    // Handle different YouTube URL formats
+    if (url.includes('youtube.com/watch?v=')) {
+      const match = url.match(/[?&]v=([^&]+)/);
+      videoId = match ? match[1] : "";
+    } else if (url.includes('youtu.be/')) {
+      const match = url.match(/youtu\.be\/([^?]+)/);
+      videoId = match ? match[1] : "";
+    } else if (url.includes('youtube.com/embed/')) {
+      const match = url.match(/embed\/([^?]+)/);
+      videoId = match ? match[1] : "";
+    }
+    
+    // If we found a video ID, create embed URL
+    if (videoId) {
+      // Clean up video ID (remove any extra parameters)
+      videoId = videoId.split('&')[0].split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    // Return original URL if no conversion possible
+    return url;
+  };
 
-          <div>
-            <Label className="block text-sm font-medium text-slate-700 mb-2">Video URL (YouTube Embed - Optional)</Label>
-            <Input
-              placeholder="https://www.youtube.com/embed/..."
-              value={getVideoUrl(contentData.videos)}
-              onChange={(e) => updateContent("videos", "videoUrl", e.target.value)}
-              data-testid="input-video-url"
-            />
-          </div>
+  const renderVideosForm = () => {
+    const currentVideoUrl = getVideoUrl(contentData.videos);
+    
+    return (
+      <Card key="videos" className="content-form">
+        <CardHeader className="form-section-header">
+          <CardTitle className="flex items-center">
+            <Video className="w-5 h-5 text-primary mr-3" />
+            Videos Content
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="form-section-content">
+          <div className="space-y-4">
+            {/* Default content info */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Default content included:</strong> "Video coming soon" placeholder and YouTube channel link will always appear.
+              </p>
+            </div>
 
-          <div>
-            <Label className="block text-sm font-medium text-slate-700 mb-2">YouTube Channel Text (Default Included)</Label>
-            <Input
-              placeholder='Check out all of our videos on our YouTube Channel!'
-              value={contentData.videos?.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!'}
-              onChange={(e) => updateContent("videos", "youtubeChannelText", e.target.value)}
-              data-testid="input-youtube-text"
-            />
+            <div>
+              <Label className="block text-sm font-medium text-slate-700 mb-2">
+                Video URL or Embed Code (Optional)
+              </Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Paste YouTube URL (watch or embed) or full iframe embed code. URLs will be automatically converted to embed format.
+              </p>
+              <Textarea
+                placeholder={`Examples:
+• https://www.youtube.com/watch?v=VIDEO_ID
+• https://www.youtube.com/embed/VIDEO_ID
+• <iframe src="https://www.youtube.com/embed/VIDEO_ID" ...></iframe>`}
+                value={currentVideoUrl}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  const convertedUrl = convertYouTubeUrl(input);
+                  updateContent("videos", "videoUrl", convertedUrl);
+                }}
+                rows={3}
+                data-testid="input-video-url"
+              />
+              
+              {/* Show converted URL preview */}
+              {currentVideoUrl && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                  <strong>Embed URL:</strong> {currentVideoUrl}
+                </div>
+              )}
+              
+              {/* Show iframe preview */}
+              {currentVideoUrl && (
+                <div className="mt-3">
+                  <p className="text-sm font-medium text-slate-700 mb-2">Preview:</p>
+                  <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
+                    <iframe
+                      src={currentVideoUrl}
+                      title="Video Preview"
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="block text-sm font-medium text-slate-700 mb-2">YouTube Channel Text (Default Included)</Label>
+              <Input
+                placeholder='Check out all of our videos on our YouTube Channel!'
+                value={contentData.videos?.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!'}
+                onChange={(e) => updateContent("videos", "youtubeChannelText", e.target.value)}
+                data-testid="input-youtube-text"
+              />
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderDocumentationForm = () => (
     <Card key="documentation" className="content-form">

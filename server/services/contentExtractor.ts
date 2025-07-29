@@ -531,8 +531,9 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       console.log('🎬 Found videos div with structured content');
       console.log('🎬 Videos div content preview:', videoDiv[1].substring(0, 200) + '...');
       
-      const videos: Array<{url: string, title: string}> = [];
-      const iframeMatches = videoDiv[1].match(/<iframe[^>]*src="([^"]*)"[^>]*><\/iframe>/g);
+      const videos: Array<{url: string, title: string, embedCode?: string}> = [];
+      // Updated regex to capture full iframe with all attributes including allowfullscreen
+      const iframeMatches = videoDiv[1].match(/<iframe[^>]*>[\s\S]*?<\/iframe>/g);
       console.log('🎬 Video iframes found:', iframeMatches ? iframeMatches.length : 0);
       
       if (iframeMatches) {
@@ -540,8 +541,14 @@ export function extractContentFromHtml(html: string): ExtractedContent {
           const srcMatch = iframe.match(/src="([^"]*)"/);
           if (srcMatch) {
             const url = srcMatch[1];
+            const cleanIframe = iframe.trim();
             console.log('🎬 Extracted video URL:', url);
-            videos.push({ url, title: 'Product Video' });
+            console.log('🎬 Extracted full iframe:', cleanIframe.substring(0, 200) + '...');
+            videos.push({ 
+              url, 
+              title: 'Product Video',
+              embedCode: cleanIframe
+            });
           }
         });
       }
