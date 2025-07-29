@@ -329,6 +329,90 @@
   aspect-ratio: 16/9;
 }
 
+/* YouTube Channel Card */
+.youtube-channel-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.youtube-channel-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
+}
+
+.youtube-channel-logo {
+  width: 48px;
+  height: 48px;
+  background: #1a4a5c;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.youtube-channel-logo svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+.youtube-channel-info {
+  flex-grow: 1;
+}
+
+.youtube-channel-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 16px;
+  margin: 0 0 4px 0;
+}
+
+.youtube-channel-button {
+  background: #ff0000;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.youtube-channel-button:hover {
+  background: #cc0000;
+  color: white;
+  text-decoration: none;
+}
+
+.youtube-channel-stats {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Video section default text highlight */
+.video-default-text {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  color: #0c4a6e;
+  font-style: italic;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .halo-tab-navigation {
@@ -502,6 +586,44 @@
           extractedElement.innerHTML = content;
         }
       });
+      
+      // Add default content for Videos section
+      const videosSection = document.getElementById('extracted-videos');
+      if (videosSection && videosSection.innerHTML.trim() === '') {
+        videosSection.innerHTML = `
+          <div class="video-default-text">
+            <p>Video coming soon</p>
+          </div>
+          <div class="youtube-channel-card">
+            <div class="youtube-channel-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21.8 8.001c0 0-.2-1.4-.8-2-.8-.8-1.6-.8-2-.8-2.8-.2-7-.2-7-.2s-4.2 0-7 .2c-.4 0-1.2 0-2 .8-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.6c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.2.8 1.6.2 6.8.2 6.8.2s4.2 0 7-.2c.4 0 1.2 0 2-.8.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.6c0-1.6-.2-3.201-.2-3.201zM9.5 15.5v-7l5.5 3.5-5.5 3.5z"/>
+              </svg>
+            </div>
+            <div class="youtube-channel-info">
+              <h4 class="youtube-channel-name">Foxx Life Sciences</h4>
+              <p class="youtube-channel-stats">Subscribe for product videos and tutorials</p>
+            </div>
+            <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" class="youtube-channel-button" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21.8 8.001c0 0-.2-1.4-.8-2-.8-.8-1.6-.8-2-.8-2.8-.2-7-.2-7-.2s-4.2 0-7 .2c-.4 0-1.2 0-2 .8-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.6c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.2.8 1.6.2 6.8.2 6.8.2s4.2 0 7-.2c.4 0 1.2 0 2-.8.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.6c0-1.6-.2-3.201-.2-3.201zM9.5 15.5v-7l5.5 3.5-5.5 3.5z"/>
+              </svg>
+              YouTube
+            </a>
+          </div>
+        `;
+      }
+      
+      // Add default content for Documentation section
+      const documentationSection = document.getElementById('extracted-documentation');
+      if (documentationSection && documentationSection.innerHTML.trim() === '') {
+        documentationSection.innerHTML = `
+          <div class="documentation-default-section">
+            <h4>📊 Product Datasheets</h4>
+            <p><a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank" style="color: #0c4a6e; text-decoration: none;">Click here for a full list of our product datasheets!</a></p>
+          </div>
+        `;
+      }
       
       // Clean up
       tempDiv.remove();
