@@ -108,49 +108,56 @@ export default function ProductManager() {
     }
   };
 
-  // Load draft content for a product
+  // Load content for a product based on template status
   const loadDraftContent = async (product: any) => {
     let finalContentMap: any = {};
     let finalSelectedTabs: string[] = [];
     
-    try {
-      const response = await apiRequest("GET", `/api/draft-content/${product.id}`);
-      const draftData = await response.json();
+    // First check if content has our template structure in Shopify
+    let hasShopifyTemplate = false;
+    if (product.description) {
+      const html = product.description;
+      const hasContainerClass = html.includes('class="container"');
+      const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
+      const hasDataSkuAttributes = html.includes('data-sku=');
       
-      if (draftData.draftContent && draftData.draftContent.length > 0) {
-        // Use draft content if it exists
-        console.log('Loading draft content from database');
-        draftData.draftContent.forEach((draft: any) => {
-          finalContentMap[draft.tabType] = draft.content;
-          if (!finalSelectedTabs.includes(draft.tabType)) {
-            finalSelectedTabs.push(draft.tabType);
-          }
-        });
-      }
-    } catch (error) {
-      console.log('No draft content found, checking for existing content');
+      hasShopifyTemplate = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
     }
     
-    // If no draft content, try to extract content from Shopify description
-    if (Object.keys(finalContentMap).length === 0) {
+    if (hasShopifyTemplate) {
+      // If has Shopify template, extract content directly from Shopify and load into forms
+      console.log('🎯 Has Shopify template - extracting content directly from Shopify');
       try {
         const response = await apiRequest("GET", `/api/extract-content/${product.id}`);
         const extractionData = await response.json();
         
         if (extractionData.extractedContent && Object.keys(extractionData.extractedContent).length > 0) {
-          console.log('Loading extracted content from Shopify description');
+          console.log('✅ Loading extracted content from Shopify template');
           finalContentMap = extractionData.extractedContent;
           finalSelectedTabs = Object.keys(extractionData.extractedContent);
-          
-          // Show success message for auto-extraction
-          console.log('🎯 Auto-detected and loaded template structure');
-          toast({
-            title: "Content Auto-Loaded",
-            description: `Detected existing layout with ${finalSelectedTabs.length} sections: ${finalSelectedTabs.join(', ')}`,
-          });
         }
       } catch (error) {
-        console.log('No content could be extracted from Shopify description');
+        console.log('Failed to extract content from Shopify template');
+      }
+    } else {
+      // If no Shopify template, use draft content
+      console.log('📝 No Shopify template - checking for draft content');
+      try {
+        const response = await apiRequest("GET", `/api/draft-content/${product.id}`);
+        const draftData = await response.json();
+        
+        if (draftData.draftContent && draftData.draftContent.length > 0) {
+          console.log('✅ Loading draft content from database');
+          draftData.draftContent.forEach((draft: any) => {
+            finalContentMap[draft.tabType] = draft.content;
+            if (!finalSelectedTabs.includes(draft.tabType)) {
+              finalSelectedTabs.push(draft.tabType);
+            }
+          });
+          console.log('✅ Loaded draft content for tabs:', finalSelectedTabs);
+        }
+      } catch (error) {
+        console.log('No draft content found');
       }
     }
     
@@ -179,20 +186,11 @@ export default function ProductManager() {
     setSelectedTabs(orderedTabs);
     setContentData(finalContentMap);
     
-    // Check if content has our template structure in Shopify
-    let hasShopifyTemplate = false;
-    if (product.description) {
-      const html = product.description;
-      const hasContainerClass = html.includes('class="container"');
-      const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
-      const hasDataSkuAttributes = html.includes('data-sku=');
-      
-      hasShopifyTemplate = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
-    }
+    // Set hasShopifyTemplate based on detection done earlier
     setHasShopifyTemplate(hasShopifyTemplate);
     
     // Check if we have draft content or content data
-    // Hide draft mode if content is already saved to Shopify
+    // Show draft mode only when no Shopify template and has content
     const showDraftMode = Object.keys(finalContentMap).length > 0 && !hasShopifyTemplate;
     setHasDraftContent(showDraftMode);
     
