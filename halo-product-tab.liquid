@@ -533,16 +533,16 @@
         }
       });
 
-      // Define tab icons
+      // Define tab icons - removed for professional appearance
       const tabIcons = {
-        'description': '📝',
-        'features': '⭐', 
-        'applications': '🔧',
-        'specification': '📊',
-        'sterilization-method': '🧪',
-        'compatible-container': '📦',
-        'documentation': '📚',
-        'videos': '🎬'
+        'description': '',
+        'features': '', 
+        'applications': '',
+        'specification': '',
+        'sterilization-method': '',
+        'compatible-container': '',
+        'documentation': '',
+        'videos': ''
       };
 
       // Dynamically create tab navigation
@@ -556,16 +556,10 @@
           button.setAttribute('onclick', `haloSwitchTab(event, '${tabId}')`);
           button.setAttribute('data-tab', tabId);
 
-          // Add icon
-          const iconSpan = document.createElement('span');
-          iconSpan.className = 'halo-tab-icon';
-          iconSpan.textContent = tabIcons[tabId] || '📄';
-
-          // Add text
+          // Add text only (no icons for professional appearance)
           const textSpan = document.createElement('span');
           textSpan.textContent = tabTitles[tabId];
 
-          button.appendChild(iconSpan);
           button.appendChild(textSpan);
           tabNavigation.appendChild(button);
         });
