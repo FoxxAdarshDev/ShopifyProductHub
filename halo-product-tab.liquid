@@ -339,58 +339,40 @@
           {% endunless %}
           
           <div class="halo-tab-content-inner">
-            {% comment %} Extract content using improved parsing {% endcomment %}
-            {% assign tab_id_search = 'id="' | append: tab | append: '"' %}
-            {% assign content_sections = product_description | split: tab_id_search %}
+            {% comment %} Simplified content extraction {% endcomment %}
+            {% assign tab_start_marker = 'id="' | append: tab | append: '"' %}
+            {% assign content_split = product_description | split: tab_start_marker %}
             
-            {% if content_sections.size > 1 %}
-              {% assign after_id = content_sections[1] %}
-              {% assign after_opening_tag = after_id | split: '>' %}
+            {% if content_split.size > 1 %}
+              {% assign after_id_part = content_split[1] %}
+              {% assign after_tag_start = after_id_part | split: '>' %}
               
-              {% if after_opening_tag.size > 1 %}
-                {% assign content_with_closing = after_opening_tag[1] %}
+              {% if after_tag_start.size > 1 %}
+                {% assign content_section = after_tag_start[1] %}
                 
-                {% comment %} Find the end of this tab's content {% endcomment %}
-                {% if tab == 'compatible-container' %}
-                  {% comment %} Special handling for compatible container with nested divs {% endcomment %}
-                  {% assign next_tab_start = content_with_closing | split: '<div class="tab-content"' %}
-                  {% if next_tab_start.size > 1 %}
-                    {% assign tab_content = next_tab_start[0] %}
-                  {% else %}
-                    {% assign next_tab_start = content_with_closing | split: '<div id=' %}
-                    {% if next_tab_start.size > 1 %}
-                      {% assign tab_content = next_tab_start[0] %}
-                    {% else %}
-                      {% assign content_parts = content_with_closing | split: '</div>' %}
-                      {% assign tab_content = content_parts[0] %}
-                      {% for part in content_parts offset: 1 limit: 10 %}
-                        {% if part contains 'compatible-item' or part contains '</div>' %}
-                          {% assign tab_content = tab_content | append: '</div>' | append: part %}
-                        {% else %}
-                          {% break %}
-                        {% endif %}
-                      {% endfor %}
-                    {% endif %}
-                  {% endif %}
-                {% else %}
-                  {% comment %} Standard content extraction {% endcomment %}
-                  {% assign next_tab_start = content_with_closing | split: '<div class="tab-content"' %}
-                  {% if next_tab_start.size > 1 %}
-                    {% assign tab_content = next_tab_start[0] %}
-                  {% else %}
-                    {% assign next_tab_start = content_with_closing | split: '<div id=' %}
-                    {% if next_tab_start.size > 1 %}
-                      {% assign tab_content = next_tab_start[0] %}
-                    {% else %}
-                      {% assign content_parts = content_with_closing | split: '</div>' %}
-                      {% assign tab_content = content_parts[0] %}
-                    {% endif %}
-                  {% endif %}
+                {% comment %} Find content end - look for next div with id or class="tab-content" {% endcomment %}
+                {% assign end_markers = content_section | split: '<div class="tab-content"' %}
+                {% assign content_part = end_markers[0] %}
+                
+                {% if end_markers.size == 1 %}
+                  {% assign end_markers = content_section | split: '<div id="' %}
+                  {% assign content_part = end_markers[0] %}
                 {% endif %}
                 
-                {% comment %} Clean up any trailing tags and output content {% endcomment %}
-                {% assign clean_content = tab_content | strip %}
-                {{ clean_content }}
+                {% comment %} Clean up trailing div tags {% endcomment %}
+                {% assign div_parts = content_part | split: '</div>' %}
+                {% assign final_content = '' %}
+                {% for part in div_parts %}
+                  {% unless forloop.last %}
+                    {% if final_content == '' %}
+                      {% assign final_content = part %}
+                    {% else %}
+                      {% assign final_content = final_content | append: '</div>' | append: part %}
+                    {% endif %}
+                  {% endunless %}
+                {% endfor %}
+                
+                {{ final_content | strip }}
               {% endif %}
             {% endif %}
           </div>
@@ -399,33 +381,6 @@
 
       {% comment %} JavaScript for scroll navigation {% endcomment %}
       <script>
-        document.addEventListener("DOMContentLoaded", function() {
-          // Initialize tabs - hide any tabs without content
-          var tabs = document.querySelectorAll(".halo-tabs .halo-tab");
-          tabs.forEach(function(tab) {
-            var tabName = tab.getAttribute("data-tab");
-            var tabContent = document.getElementById(tabName);
-            if (!tabContent || !tabContent.querySelector('.halo-tab-content-inner').innerHTML.trim()) {
-              tab.style.display = "none";
-            } else {
-              // Add headers to non-description tabs if they don't have them
-              if (tabName !== 'description' && !tabContent.querySelector('.halo-tab-header')) {
-                var header = document.createElement("div");
-                header.className = "halo-tab-header";
-                header.innerHTML = "<strong>" + tab.textContent + "</strong>";
-                tabContent.insertBefore(header, tabContent.firstChild);
-              }
-            }
-          });
-
-          // Set first visible tab as active
-          var defaultTab = document.querySelector(".halo-tab:not([style*='display: none'])");
-          if (defaultTab) {
-            defaultTab.classList.add("active");
-            haloOpenTab(defaultTab.getAttribute("data-tab"), defaultTab, false);
-          }
-        });
-
         function haloOpenTab(tabName, elem, shouldScroll = true) {
           // Update tab styles
           var tablinks = document.getElementsByClassName("halo-tab");
@@ -464,6 +419,16 @@
           if (event.target.classList.contains("halo-tab")) {
             var tabName = event.target.getAttribute("data-tab");
             haloOpenTab(tabName, event.target, true);
+          }
+        });
+
+        // Initialize on page load
+        document.addEventListener("DOMContentLoaded", function() {
+          // Set first tab as active
+          var firstTab = document.querySelector(".halo-tab");
+          if (firstTab) {
+            firstTab.classList.add("active");
+            haloOpenTab(firstTab.getAttribute("data-tab"), firstTab, false);
           }
         });
       </script>
