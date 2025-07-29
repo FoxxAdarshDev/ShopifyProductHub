@@ -54,7 +54,12 @@ export const useProductStatusCache = () => {
   }, [cache]);
 
   const updateCache = (statusData: ProductStatusCache) => {
-    setCache(prev => ({ ...prev, ...statusData }));
+    console.log('Updating cache with:', Object.keys(statusData).length, 'products');
+    setCache(prev => {
+      const newCache = { ...prev, ...statusData };
+      console.log('New cache size:', Object.keys(newCache).length);
+      return newCache;
+    });
   };
 
   const getStatus = (productId: string): ProductStatus | null => {
@@ -72,13 +77,15 @@ export const useProductStatusCache = () => {
 
   const getStats = () => {
     const statuses = Object.values(cache);
-    return {
+    const stats = {
       total: statuses.length,
       newLayout: statuses.filter(s => s.hasNewLayout).length,
       draftMode: statuses.filter(s => s.hasDraftContent).length,
       shopifyContent: statuses.filter(s => s.hasShopifyContent).length,
       noContent: statuses.filter(s => !s.hasShopifyContent && !s.hasNewLayout).length
     };
+    console.log('Cache stats calculated:', stats, 'from', statuses.length, 'cached products');
+    return stats;
   };
 
   return {

@@ -194,21 +194,31 @@ export default function AllProducts() {
   const allProductsForCounting = baseProducts;
   const totalProducts = baseProducts.length;
   
-  // Use cached stats if available, otherwise calculate from current status
+  // Use cached stats if available (has cache data), otherwise calculate from current status
   const cachedStats = getStats();
-  const shouldUseCachedStats = Object.keys(cache).length > 0 && allProducts.length === 0;
+  const hasCachedData = Object.keys(cache).length > 0;
+  const hasContentStatusData = Object.keys(contentStatus).length > 0;
   
-  const shopifyContentCount = shouldUseCachedStats ? cachedStats.shopifyContent : 
-    allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasShopifyContent).length;
-  const newLayoutCount = shouldUseCachedStats ? cachedStats.newLayout :
-    allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasNewLayout).length;
-  const draftModeCount = shouldUseCachedStats ? cachedStats.draftMode :
-    allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasDraftContent).length;
-  const noContentCount = shouldUseCachedStats ? cachedStats.noContent :
-    allProductsForCounting.filter((p: ShopifyProduct) => {
+  // Prioritize cached data if available, fallback to current contentStatus calculations
+  const shopifyContentCount = hasCachedData ? cachedStats.shopifyContent : 
+    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasShopifyContent).length : 0);
+  const newLayoutCount = hasCachedData ? cachedStats.newLayout :
+    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasNewLayout).length : 0);
+  const draftModeCount = hasCachedData ? cachedStats.draftMode :
+    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasDraftContent).length : 0);
+  const noContentCount = hasCachedData ? cachedStats.noContent :
+    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => {
       const status = contentStatus[p.id];
       return !status?.hasShopifyContent && !status?.hasNewLayout;
-    }).length;
+    }).length : 0);
+    
+  // Debug logging
+  console.log('AllProducts stats:', { 
+    hasCachedData, 
+    hasContentStatusData, 
+    cachedStats, 
+    calculated: { shopifyContentCount, newLayoutCount, draftModeCount, noContentCount } 
+  });
 
   // Check content status for products
   const checkContentStatus = async (productIds: number[]) => {
@@ -230,10 +240,25 @@ export default function AllProducts() {
       
       const statusData = await response.json();
       console.log(`AllProducts: Received status data for ${Object.keys(statusData).length} products`);
+      
+      // Convert backend response format to frontend format for cache
+      const cacheData: Record<string, any> = {};
+      Object.keys(statusData).forEach(productId => {
+        const status = statusData[productId];
+        cacheData[productId] = {
+          hasShopifyContent: status.hasShopifyContent,
+          hasNewLayout: status.hasNewLayout,
+          hasDraftContent: status.hasDraftContent,
+          contentCount: status.contentCount,
+          lastUpdated: new Date().toISOString()
+        };
+      });
+      
       setContentStatus(prev => ({ ...prev, ...statusData }));
       
-      // Update cache with new status data
-      updateCache(statusData);
+      // Update cache with converted data
+      updateCache(cacheData);
+      console.log(`AllProducts: Updated cache with ${Object.keys(cacheData).length} products`);
     } catch (error) {
       console.error("AllProducts: Error checking content status:", error);
     }
