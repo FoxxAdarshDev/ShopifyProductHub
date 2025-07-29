@@ -203,41 +203,33 @@
 .halo-tab-content .logo-grid {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-  gap: 20px !important;
+  gap: 20px !important; /* Fixed: Added proper gaps */
   margin: 32px 0 !important;
-  padding: 24px !important;
+  padding: 24px !important; /* Fixed: Added padding */
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border-radius: 12px !important;
-  border: 2px solid #e2e8f0 !important;
-  justify-items: center !important; /* Center items in grid */
-}
-
-/* Fixed: Single logo styling - don't stretch full width */
-.halo-tab-content .logo-grid:has(img:only-child),
-.halo-tab-content .logo-grid img:only-child {
-  max-width: 200px !important; /* Limit single logo width */
-  justify-self: center !important;
+  border: 2px solid #e2e8f0 !important; /* Fixed: Added border */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .halo-tab-content .logo-grid img {
   max-height: 80px !important;
   width: 100% !important;
-  max-width: 150px !important; /* Prevent logos from being too wide */
   object-fit: contain !important;
   background: white !important;
-  border: 2px solid #cbd5e1 !important;
+  border: 2px solid #cbd5e1 !important; /* Fixed: Individual image borders */
   border-radius: 8px !important;
-  padding: 12px !important;
+  padding: 12px !important; /* Fixed: Added padding inside images */
   display: block !important;
-  margin: 0 auto !important;
+  margin: 0 auto !important; /* Fixed: Center aligned images */
   transition: all 0.3s ease !important;
-  /* Removed box-shadow as requested */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
 .halo-tab-content .logo-grid img:hover {
   transform: scale(1.05) !important;
   border-color: #3b82f6 !important;
-  /* Removed hover shadow as requested */
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
 }
 
 /* Compatible Container Styling */
@@ -409,68 +401,34 @@
   line-height: 1.4;
 }
 
-/* Fixed: Video Layout - 80% video, 20% subscribe area */
+/* Fixed: Enhanced Video Styling - Full Width with Border Radius */
+.halo-tab-content iframe {
+  width: 100% !important; /* Fixed: Full width */
+  max-width: 100% !important;
+  height: 350px !important; /* Fixed height for better appearance */
+  aspect-ratio: 16/9 !important;
+  border-radius: 16px !important; /* Fixed: Added border radius */
+  border: 3px solid #e2e8f0 !important; /* Added stylish border */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* Enhanced shadow */
+  margin: 20px 0 !important;
+  display: block !important;
+  transition: all 0.3s ease !important;
+}
+
+.halo-tab-content iframe:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Enhanced Video Container */
 .halo-tab-content #videos {
   width: 100% !important;
-  padding: 0 !important;
-  display: flex !important;
-  gap: 20px !important;
-  align-items: flex-start !important;
-  box-sizing: border-box !important;
+  padding: 0 !important; /* Remove padding for full width effect */
 }
 
-.video-content-wrapper {
-  width: 80% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  flex: 1 !important; /* Take available space */
-}
-
-.video-content-wrapper > * {
-  width: 100% !important; /* Ensure all children take full width */
-  box-sizing: border-box !important;
-}
-
-/* Force iframe to fill container properly */
-.video-content-wrapper iframe,
-.video-content-wrapper > div iframe,
-.video-content-wrapper * iframe {
+.halo-tab-content #videos > div {
   width: 100% !important;
-  max-width: 100% !important;
-  min-width: 100% !important;
-  box-sizing: border-box !important;
-  flex-shrink: 0 !important;
-}
-
-.video-subscribe-wrapper {
-  width: 20% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  padding: 24px !important;
-  background: #ffffff !important; /* Clean white background */
-  border-radius: 12px !important;
-  border: 2px solid #e5e7eb !important; /* Slightly stronger border */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important; /* Minimal shadow */
-}
-
-.halo-tab-content #videos iframe {
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 400px !important; /* Standard video height */
-  border-radius: 12px !important;
-  border: 2px solid #d1d5db !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  margin: 0 !important;
-  display: block !important;
-  transition: all 0.2s ease !important;
-  box-sizing: border-box !important;
-}
-
-.halo-tab-content #videos iframe:hover {
-  border-color: #9ca3af !important; /* Subtle hover effect */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; /* Light hover shadow */
 }
 
 /* Mobile responsive */
@@ -518,19 +476,10 @@
     grid-template-columns: 1fr;
   }
 
-  .halo-tab-content #videos {
-    flex-direction: column !important;
-  }
-  
-  .video-content-wrapper,
-  .video-subscribe-wrapper {
-    width: 100% !important;
-  }
-  
-  .halo-tab-content #videos iframe {
+  .halo-tab-content iframe {
     width: 100% !important;
     height: 250px !important;
-    border-radius: 12px !important;
+    border-radius: 12px !important; /* Maintain border radius on mobile */
   }
   
   .halo-tab-button {
@@ -556,14 +505,14 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Fixed: Clean YouTube Section Styling - Removed Shadows */
+/* Fixed: Enhanced YouTube Section Styling */
 .youtube-channel-section {
   margin-top: 32px !important;
   padding: 28px !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  background: #f8fafc !important; /* Removed gradient */
-  /* Removed box-shadow */
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
   width: 100% !important;
 }
 
@@ -603,74 +552,21 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Full-Width YouTube Channel Card */
-.youtube-channel-card {
-  width: 100% !important;
-  background: #ffffff !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  padding: 16px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.3s ease !important;
-  margin: 0 !important;
-}
-
-.youtube-channel-card:hover {
-  border-color: #d1d5db !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-}
-
-.youtube-channel-header {
-  display: flex !important;
-  align-items: flex-start !important;
-  gap: 12px !important;
-  margin-bottom: 16px !important;
-}
-
-.youtube-channel-card .youtube-icon {
-  width: 24px !important;
-  height: 24px !important;
-  background: #ff0000 !important;
-  color: white !important;
-  border-radius: 4px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 12px !important;
-  font-weight: bold !important;
-  flex-shrink: 0 !important;
-}
-
-.youtube-channel-info {
-  flex: 1 !important;
-}
-
-.youtube-channel-title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #1f2937 !important;
-  margin-bottom: 4px !important;
-}
-
-.youtube-channel-subtitle {
-  font-size: 14px !important;
-  color: #6b7280 !important;
-  line-height: 1.4 !important;
-}
-
+/* Fixed: Subscribe Button Container - Made Visible and Styled */
 .subscribe-button-container {
-  display: block !important;
+  display: block !important; /* Fixed: Ensure visibility */
   visibility: visible !important;
   opacity: 1 !important;
-  width: 100% !important;
+  min-height: 40px !important;
+  min-width: 120px !important;
   z-index: 1000 !important;
 }
 
 .g-ytsubscribe {
-  display: block !important;
+  display: block !important; /* Fixed: Make subscribe button visible */
   visibility: visible !important;
   opacity: 1 !important;
-  width: 100% !important;
+  transform: scale(1.2) !important; /* Make it larger */
 }
 
 .youtube-description {
@@ -827,47 +723,13 @@
 
         if (extractedElement) {
           // Clone the inner content without the wrapper div
-          let content = element.innerHTML;
-          
-          // Special handling for videos tab to create 80/20 layout
-          if (tabId === 'videos') {
-            content = createVideoLayout(content);
-          }
-          
+          const content = element.innerHTML;
           extractedElement.innerHTML = content;
         }
       });
 
       // Clean up
       tempDiv.remove();
-    }
-
-    // Function to create 80/20 video layout with subscribe button
-    function createVideoLayout(originalContent) {
-      // Remove any existing YouTube channel sections to avoid duplicates
-      const cleanContent = originalContent.replace(/<div class="youtube-channel-section">[\s\S]*?<\/div>/g, '');
-      
-      // Create wrapper container with clean content
-      const videoWrapper = `
-        <div class="video-content-wrapper">
-          ${cleanContent}
-        </div>
-        <div class="video-subscribe-wrapper">
-          <div class="youtube-channel-card">
-            <div class="youtube-channel-header">
-              <div class="youtube-icon">▶</div>
-              <div class="youtube-channel-info">
-                <div class="youtube-channel-title">YouTube Channel</div>
-                <div class="youtube-channel-subtitle">Check out all of our videos on our YouTube Channel!</div>
-              </div>
-            </div>
-            <div class="subscribe-button-container">
-              <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
-            </div>
-          </div>
-        </div>
-      `;
-      return videoWrapper;
     }
 
     function haloSwitchTab(event, tabId) {
@@ -955,39 +817,7 @@
           firstButton.classList.add('active');
           firstContent.classList.add('active');
         }
-
-        // Initialize YouTube subscribe buttons after content is loaded
-        setTimeout(function() {
-          try {
-            if (typeof gapi !== 'undefined' && gapi.load) {
-              gapi.load('ytsubscribe', function() {
-                try {
-                  // Initialize YouTube subscribe buttons (only once)
-                  var subscribeButtons = document.querySelectorAll('.g-ytsubscribe:not([data-initialized])');
-                  subscribeButtons.forEach(function(button) {
-                    // Set attributes only once
-                    button.setAttribute('data-channelid', 'UCfTcuV6zESARyzKfG2T6YFg');
-                    button.setAttribute('data-layout', 'full');
-                    button.setAttribute('data-count', 'hidden');
-                    button.setAttribute('data-initialized', 'true'); // Mark as initialized
-                  });
-                  
-                  // Force render if needed
-                  if (typeof gapi.ytsubscribe !== 'undefined' && gapi.ytsubscribe.render) {
-                    subscribeButtons.forEach(function(button) {
-                      gapi.ytsubscribe.render(button);
-                    });
-                  }
-                } catch (e) {
-                  console.log('YouTube subscribe render error (non-critical):', e);
-                }
-              });
-            }
-          } catch (e) {
-            console.log('YouTube API initialization error (non-critical):', e);
-          }
-        }, 1000); // Wait 1 second for scripts to load
-      }, 500); // Increased timeout to allow scripts to load
+      }, 100);
     });
     </script>
 
