@@ -270,7 +270,7 @@
   transform: translateY(-1px);
 }
 
-/* Documentation Links Styling */
+/* Documentation Links Styling - Match Preview Panel Layout */
 .halo-tab-content #extracted-documentation {
   display: flex;
   flex-direction: column;
@@ -281,50 +281,63 @@
   margin: 0;
 }
 
+/* Base documentation link styling - matches preview panel cards */
 .halo-tab-content #extracted-documentation a {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   background: #ffffff;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   color: #1f2937;
-  font-weight: 500;
-  min-height: 60px;
+  min-height: 70px;
 }
 
 .halo-tab-content #extracted-documentation a:hover {
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-  border-color: #d1d5db;
-  background: #f8fafc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
+  text-decoration: none;
 }
 
+/* Icon styling to match preview panel */
 .halo-tab-content #extracted-documentation a:before {
   content: "📄";
-  font-size: 20px;
-  min-width: 32px;
-  height: 32px;
+  font-size: 24px;
+  min-width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eff6ff;
-  border-radius: 8px;
-  border: 1px solid #dbeafe;
   flex-shrink: 0;
+  color: #3b82f6;
 }
 
-.halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:before {
-  content: "📋";
-  background: #f0fdf4;
-  border-color: #dcfce7;
+/* Content area for title and subtitle */
+.halo-tab-content #extracted-documentation a .doc-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
 }
 
-/* Special styling for datasheet links with blue background */
+.halo-tab-content #extracted-documentation a .doc-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  line-height: 1.3;
+}
+
+.halo-tab-content #extracted-documentation a .doc-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* PDF links - blue styling */
 .halo-tab-content #extracted-documentation a[href*=".pdf"] {
   background: #eff6ff;
   border-color: #dbeafe;
@@ -332,17 +345,15 @@
 
 .halo-tab-content #extracted-documentation a[href*=".pdf"]:hover {
   background: #dbeafe;
-  border-color: #93c5fd;
+  border-color: #3b82f6;
 }
 
 .halo-tab-content #extracted-documentation a[href*=".pdf"]:before {
   content: "📄";
-  background: #2563eb;
-  color: white;
-  border-color: #1d4ed8;
+  color: #2563eb;
 }
 
-/* Special styling for product datasheet page links with green background */
+/* Product datasheet page links - green styling */
 .halo-tab-content #extracted-documentation a[href*="product-data-sheets"] {
   background: #f0fdf4;
   border-color: #dcfce7;
@@ -350,14 +361,12 @@
 
 .halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:hover {
   background: #dcfce7;
-  border-color: #86efac;
+  border-color: #16a34a;
 }
 
 .halo-tab-content #extracted-documentation a[href*="product-data-sheets"]:before {
   content: "📋";
-  background: #16a34a;
-  color: white;
-  border-color: #15803d;
+  color: #16a34a;
 }
 
 /* Video responsive */
@@ -535,14 +544,53 @@
         const extractedElement = document.getElementById('extracted-' + tabId);
         
         if (extractedElement) {
-          // Clone the inner content without the wrapper div
-          const content = element.innerHTML;
-          extractedElement.innerHTML = content;
+          // Special handling for documentation to match preview panel layout
+          if (tabId === 'documentation') {
+            processDocumentationContent(element, extractedElement);
+          } else {
+            // Clone the inner content without the wrapper div
+            const content = element.innerHTML;
+            extractedElement.innerHTML = content;
+          }
         }
       });
       
       // Clean up
       tempDiv.remove();
+    }
+
+    function processDocumentationContent(sourceElement, targetElement) {
+      const content = sourceElement.innerHTML;
+      let processedContent = content;
+      
+      // Find and replace documentation links with proper structure
+      processedContent = processedContent.replace(
+        /<a\s+href="([^"]*)"[^>]*>([^<]+)<\/a>/g,
+        function(match, href, text) {
+          let title = text.trim();
+          let subtitle = '';
+          let icon = '📄';
+          
+          // Determine subtitle and icon based on link type
+          if (href.includes('.pdf')) {
+            subtitle = 'Download PDF →';
+            icon = '📄';
+          } else if (href.includes('product-data-sheets')) {
+            title = 'Product Datasheets';
+            subtitle = 'Click here for a full list of our product datasheets!';
+            icon = '📋';
+          }
+          
+          return `<a href="${href}" target="_blank" rel="noopener noreferrer">
+            <div class="doc-content">
+              <div class="doc-title">${title}</div>
+              ${subtitle ? `<div class="doc-subtitle">${subtitle}</div>` : ''}
+            </div>
+          </a>`;
+        }
+      );
+      
+      targetElement.innerHTML = processedContent;
     }
 
     function haloSwitchTab(event, tabId) {
