@@ -342,7 +342,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "productIds must be an array" });
       }
 
-      console.log(`Processing content status for ${productIds.length} products with intelligent rate limiting`);
+      // Import cache service
+      const { contentStatusCache } = await import('./services/contentStatusCache.js');
+
+      console.log(`Processing content status for ${productIds.length} products with cache and rate limiting`);
+      
+      // Check cache stats
+      const cacheStats = contentStatusCache.getStats();
+      console.log(`Cache stats: ${cacheStats.fresh} fresh entries out of ${cacheStats.total} total`);
 
       const contentStatus: Record<string, {
         hasShopifyContent: boolean;
@@ -354,8 +361,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Helper function to add delay between requests
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
-      // Process in smaller batches internally to manage rate limits
-      const batchSize = 10;
+      // Process in much smaller batches to avoid rate limits
+      const batchSize = 5; // Reduced from 10 to 5
       const batches = [];
       for (let i = 0; i < productIds.length; i += batchSize) {
         batches.push(productIds.slice(i, i + batchSize));
@@ -367,18 +374,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const batch = batches[batchIndex];
         console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} products`);
         
-        // Add delay between batches
+        // Add longer delay between batches
         if (batchIndex > 0) {
-          await delay(1000); // 1 second delay between batches
+          await delay(2000); // 2 second delay between batches
         }
         
         for (let i = 0; i < batch.length; i++) {
           const productId = batch[i];
           
           try {
-            // Add smaller delay between individual requests within batch
+            // Check cache first
+            const cached = contentStatusCache.get(productId.toString());
+            if (cached) {
+              contentStatus[productId] = cached;
+              console.log(`Using cached status for product ${productId}`);
+              continue;
+            }
+
+            // Add longer delay between individual requests within batch
             if (i > 0) {
-              await delay(200); // 200ms delay between individual requests
+              await delay(500); // 500ms delay between individual requests
             }
           
             // Check local database first (fast and doesn't hit API)
@@ -401,8 +416,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let hasShopifyContent = false;
             let isOurTemplateStructure = false;
             
-            // Only check Shopify for products that ACTUALLY need verification (very limited)
-            const needsShopifyCheck = !hasNewLayout && !hasDraftContent;
+            // Drastically reduce Shopify API calls - only check if no local data at all
+            const needsShopifyCheck = !hasNewLayout && !hasDraftContent && !localProduct;
             
             if (needsShopifyCheck) {
               try {
@@ -456,12 +471,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
 
-            contentStatus[productId] = {
+            const status = {
               hasShopifyContent,
               hasNewLayout,
               hasDraftContent,
               contentCount
             };
+            
+            contentStatus[productId] = status;
+            
+            // Cache the result
+            contentStatusCache.set(productId.toString(), status);
           } catch (error) {
             console.error(`Error checking status for product ${productId}:`, error);
             contentStatus[productId] = {

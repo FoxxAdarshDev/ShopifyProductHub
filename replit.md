@@ -12,6 +12,8 @@ This is a fully functional, production-ready web application for managing Shopif
 
 **Rate Limiting & Performance Optimization** (January 29, 2025): Fixed critical Shopify API rate limiting issues (HTTP 429 errors) by implementing intelligent batching and rate limiting in content status checks. Limited API requests to 20 products per batch with 100ms delays between individual requests and 200ms delays between batches. Optimized content status checking to prioritize local database queries and only check Shopify API when necessary. System now gracefully handles rate limits and continues processing without overwhelming the API.
 
+**Persistent State Management & Caching** (January 29, 2025): Implemented ContentStatusCache service to store content status data and prevent re-fetching during navigation. Reduced batch size from 10 to 5 products with 2-second delays between batches and 500ms delays between individual requests. Cache persists for 5 minutes and automatically invalidates expired entries. Frontend now sends single request for all 334 products while backend handles intelligent batching and state persistence. System prioritizes cached data, then local database, and only hits Shopify API when absolutely necessary.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
