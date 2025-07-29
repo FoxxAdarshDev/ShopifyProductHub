@@ -266,24 +266,88 @@
   {% assign found_tabs = '' %}
   {% assign found_titles = '' %}
   
-  {% for tab in ordered_tabs %}
-    {% assign tab_id = 'id="' | append: tab | append: '"' %}
-    {% if product_description contains tab_id %}
-      {% if found_tabs == '' %}
-        {% assign found_tabs = tab %}
-      {% else %}
-        {% assign found_tabs = found_tabs | append: ',' | append: tab %}
-      {% endif %}
-      
-      {% assign tab_index = forloop.index0 %}
-      {% assign tab_title = tab_display_names[tab_index] %}
-      {% if found_titles == '' %}
-        {% assign found_titles = tab_title %}
-      {% else %}
-        {% assign found_titles = found_titles | append: ',' | append: tab_title %}
-      {% endif %}
+  {% comment %} Check for description {% endcomment %}
+  {% if product_description contains 'id="description"' %}
+    {% assign found_tabs = 'description' %}
+    {% assign found_titles = 'Description' %}
+  {% endif %}
+  
+  {% comment %} Check for features {% endcomment %}
+  {% if product_description contains 'id="features"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'features' %}
+      {% assign found_titles = 'Features' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',features' %}
+      {% assign found_titles = found_titles | append: ',Features' %}
     {% endif %}
-  {% endfor %}
+  {% endif %}
+  
+  {% comment %} Check for applications {% endcomment %}
+  {% if product_description contains 'id="applications"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'applications' %}
+      {% assign found_titles = 'Applications' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',applications' %}
+      {% assign found_titles = found_titles | append: ',Applications' %}
+    {% endif %}
+  {% endif %}
+  
+  {% comment %} Check for specification {% endcomment %}
+  {% if product_description contains 'id="specification"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'specification' %}
+      {% assign found_titles = 'Specifications' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',specification' %}
+      {% assign found_titles = found_titles | append: ',Specifications' %}
+    {% endif %}
+  {% endif %}
+  
+  {% comment %} Check for sterilization-method {% endcomment %}
+  {% if product_description contains 'id="sterilization-method"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'sterilization-method' %}
+      {% assign found_titles = 'Sterilization Method' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',sterilization-method' %}
+      {% assign found_titles = found_titles | append: ',Sterilization Method' %}
+    {% endif %}
+  {% endif %}
+  
+  {% comment %} Check for compatible-container {% endcomment %}
+  {% if product_description contains 'id="compatible-container"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'compatible-container' %}
+      {% assign found_titles = 'Compatible Container' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',compatible-container' %}
+      {% assign found_titles = found_titles | append: ',Compatible Container' %}
+    {% endif %}
+  {% endif %}
+  
+  {% comment %} Check for documentation {% endcomment %}
+  {% if product_description contains 'id="documentation"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'documentation' %}
+      {% assign found_titles = 'Documentation' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',documentation' %}
+      {% assign found_titles = found_titles | append: ',Documentation' %}
+    {% endif %}
+  {% endif %}
+  
+  {% comment %} Check for videos {% endcomment %}
+  {% if product_description contains 'id="videos"' %}
+    {% if found_tabs == '' %}
+      {% assign found_tabs = 'videos' %}
+      {% assign found_titles = 'Videos' %}
+    {% else %}
+      {% assign found_tabs = found_tabs | append: ',videos' %}
+      {% assign found_titles = found_titles | append: ',Videos' %}
+    {% endif %}
+  {% endif %}
   
   {% assign available_tabs = found_tabs | split: ',' %}
   {% assign tab_titles = found_titles | split: ',' %}
@@ -311,27 +375,180 @@
         <div id="halo-{{ tab }}" class="halo-tab-content{% if is_first %} active{% endif %}">
           <div class="halo-tab-content-inner">
             {% comment %} Extract and display the specific tab content {% endcomment %}
-            {% assign tab_start = 'id="' | append: tab | append: '"' %}
-            {% assign content_start = product_description | split: tab_start %}
-            {% if content_start.size > 1 %}
-              {% assign content_part = content_start[1] %}
-              {% assign content_end = content_part | split: '<div class="tab-content"' %}
-              {% assign tab_content = content_end[0] %}
-              {% assign final_content = tab_content | split: '</div>' %}
-              {% assign clean_content = final_content[0] %}
-              
-              {% comment %} Remove the opening > and any extra attributes {% endcomment %}
-              {% assign content_parts = clean_content | split: '>' %}
-              {% assign content_without_opening = '' %}
-              {% for part in content_parts offset: 1 %}
-                {% if content_without_opening == '' %}
-                  {% assign content_without_opening = part %}
-                {% else %}
-                  {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+            {% if tab == 'description' %}
+              {% assign tab_start = 'id="description"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div class="tab-content"' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
                 {% endif %}
-              {% endfor %}
-              
-              {{ content_without_opening }}
+              {% endif %}
+            {% elsif tab == 'features' %}
+              {% assign tab_start = 'id="features"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div class="tab-content"' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
+            {% elsif tab == 'applications' %}
+              {% assign tab_start = 'id="applications"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div class="tab-content"' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
+            {% elsif tab == 'specification' %}
+              {% assign tab_start = 'id="specification"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div id=' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
+            {% elsif tab == 'sterilization-method' %}
+              {% assign tab_start = 'id="sterilization-method"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div class="tab-content"' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
+            {% elsif tab == 'compatible-container' %}
+              {% assign tab_start = 'id="compatible-container"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div class="tab-content"' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
+            {% elsif tab == 'documentation' %}
+              {% assign tab_start = 'id="documentation"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '<div id=' %}
+                {% if content_end.size > 0 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign final_content = tab_content | split: '</div>' %}
+                  {% assign clean_content = final_content[0] %}
+                  {% assign content_parts = clean_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
+            {% elsif tab == 'videos' %}
+              {% assign tab_start = 'id="videos"' %}
+              {% assign content_start = product_description | split: tab_start %}
+              {% if content_start.size > 1 %}
+                {% assign content_part = content_start[1] %}
+                {% assign content_end = content_part | split: '</div>' %}
+                {% if content_end.size > 1 %}
+                  {% assign tab_content = content_end[0] %}
+                  {% assign content_parts = tab_content | split: '>' %}
+                  {% assign content_without_opening = '' %}
+                  {% for part in content_parts offset: 1 %}
+                    {% if content_without_opening == '' %}
+                      {% assign content_without_opening = part %}
+                    {% else %}
+                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ content_without_opening }}
+                {% endif %}
+              {% endif %}
             {% endif %}
           </div>
         </div>
