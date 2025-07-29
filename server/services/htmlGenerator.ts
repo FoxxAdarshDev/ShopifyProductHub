@@ -287,20 +287,43 @@ class HtmlGenerator {
     // Add specific product datasheet if provided
     if (content.datasheetUrl) {
       const absoluteUrl = convertToAbsoluteUrl(content.datasheetUrl);
-      html += `    <p><a href="${absoluteUrl}" target="_blank">${content.datasheetTitle || 'Product Datasheet'}</a></p>\n`;
+      html += `      <div class="documentation-link-card">\n`;
+      html += `        <a href="${absoluteUrl}" target="_blank" rel="noopener noreferrer">\n`;
+      html += `          <span class="doc-icon pdf-icon">📄</span>\n`;
+      html += `          <span class="doc-content">\n`;
+      html += `            <span class="doc-title">${content.datasheetTitle || 'Product Datasheet'}</span>\n`;
+      html += `            <span class="doc-subtitle">Download PDF →</span>\n`;
+      html += `          </span>\n`;
+      html += `        </a>\n`;
+      html += `      </div>\n`;
     }
 
     // Add additional links if provided
     if (content.additionalLinks && Array.isArray(content.additionalLinks)) {
       content.additionalLinks.forEach((link: { url: string; title: string }) => {
         const absoluteUrl = convertToAbsoluteUrl(link.url);
-        html += `    <p><a href="${absoluteUrl}" target="_blank">${link.title}</a></p>\n`;
+        html += `      <div class="documentation-link-card">\n`;
+        html += `        <a href="${absoluteUrl}" target="_blank" rel="noopener noreferrer">\n`;
+        html += `          <span class="doc-icon general-icon">📄</span>\n`;
+        html += `          <span class="doc-content">\n`;
+        html += `            <span class="doc-title">${link.title}</span>\n`;
+        html += `            <span class="doc-subtitle">Open Link →</span>\n`;
+        html += `          </span>\n`;
+        html += `        </a>\n`;
+        html += `      </div>\n`;
       });
     }
 
     // Always include default product datasheets link
-    const defaultDatasheetText = content.defaultDatasheetText || 'Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank">here</a> for a full list of our product datasheets!';
-    html += `    <p>${defaultDatasheetText}</p>\n`;
+    html += `      <div class="documentation-link-card">\n`;
+    html += `        <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank" rel="noopener noreferrer">\n`;
+    html += `          <span class="doc-icon datasheet-icon">📋</span>\n`;
+    html += `          <span class="doc-content">\n`;
+    html += `            <span class="doc-title">Product Datasheets</span>\n`;
+    html += `            <span class="doc-subtitle">Click here for a full list of our product datasheets!</span>\n`;
+    html += `          </span>\n`;
+    html += `        </a>\n`;
+    html += `      </div>\n`;
 
     html += '    </div>\n';
     return html;
