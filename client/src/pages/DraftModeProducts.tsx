@@ -229,7 +229,7 @@ export default function DraftModeProducts() {
                   </CardTitle>
                   <div className="flex flex-wrap gap-1">
                     <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900 dark:text-orange-100">
-                      Draft Mode: {status.contentCount || 0}
+                      Draft Mode
                     </Badge>
                   </div>
                 </CardHeader>

@@ -229,7 +229,7 @@ export default function NewLayoutProducts() {
                   </CardTitle>
                   <div className="flex flex-wrap gap-1">
                     <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-100">
-                      New Layout: {status.contentCount || 0}
+                      New Layout
                     </Badge>
                     {status.hasShopifyContent && (
                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-100">
