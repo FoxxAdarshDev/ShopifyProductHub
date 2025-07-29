@@ -79,17 +79,43 @@
 }
 
 .halo-tab-content {
-  display: none;
-  animation: fadeIn 0.3s ease-in-out;
+  display: block;
+  margin-bottom: 40px;
+  padding: 24px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  scroll-margin-top: 100px;
 }
 
 .halo-tab-content.active {
-  display: block;
+  border-color: #3b82f6;
+  background: #f8fafc;
+  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.1);
 }
 
 .halo-tab-content-inner {
-  padding: 20px 0;
   line-height: 1.6;
+}
+
+.halo-tab-section-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.halo-tab-section-title:before {
+  content: "";
+  width: 4px;
+  height: 28px;
+  background: #3b82f6;
+  border-radius: 2px;
 }
 
 /* Content Styling */
@@ -307,6 +333,14 @@
 @media (max-width: 768px) {
   .halo-tab-navigation {
     flex-direction: column;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    margin-bottom: 10px;
+    padding: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 
   .halo-tab-button {
@@ -314,11 +348,24 @@
     border-radius: 6px;
     border-bottom: none;
     border-left: 3px solid transparent;
+    margin: 2px 8px;
   }
 
   .halo-tab-button.active {
     border-left-color: #3b82f6;
     border-bottom: none;
+    background: #eff6ff;
+  }
+
+  .halo-tab-content {
+    margin-bottom: 20px;
+    padding: 16px;
+    scroll-margin-top: 120px;
+  }
+
+  .halo-tab-section-title {
+    font-size: 24px;
+    margin-bottom: 16px;
   }
 
   .compatible-items-grid {
@@ -413,9 +460,15 @@
           const innerDiv = document.createElement('div');
           innerDiv.className = 'halo-tab-content-inner';
           
+          // Add section title
+          const titleDiv = document.createElement('h2');
+          titleDiv.className = 'halo-tab-section-title';
+          titleDiv.textContent = tabTitles[tabId];
+          
           const extractedDiv = document.createElement('div');
           extractedDiv.id = 'extracted-' + tabId;
           
+          innerDiv.appendChild(titleDiv);
           innerDiv.appendChild(extractedDiv);
           tabDiv.appendChild(innerDiv);
           tabContainer.appendChild(tabDiv);
@@ -464,17 +517,59 @@
       // Add active class to clicked button
       event.target.classList.add('active');
 
-      // Hide all tab content
+      // Remove active class from all tab content
       var tabContents = document.querySelectorAll('.halo-tab-content');
       tabContents.forEach(function(content) {
         content.classList.remove('active');
       });
 
-      // Show selected tab content
+      // Find and scroll to the selected tab content
       var activeTab = document.getElementById('halo-' + tabId);
       if (activeTab) {
+        // Add active class for highlighting
         activeTab.classList.add('active');
+        
+        // Smooth scroll to the section
+        activeTab.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest' 
+        });
       }
+    }
+
+    // Add scroll spy functionality to highlight active section
+    function setupScrollSpy() {
+      const tabContents = document.querySelectorAll('.halo-tab-content');
+      const tabButtons = document.querySelectorAll('.halo-tab-button');
+      
+      if (tabContents.length === 0 || tabButtons.length === 0) return;
+
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            const tabId = entry.target.id.replace('halo-', '');
+            
+            // Remove active from all buttons and content
+            tabButtons.forEach(function(btn) { btn.classList.remove('active'); });
+            tabContents.forEach(function(content) { content.classList.remove('active'); });
+            
+            // Add active to current section and button
+            entry.target.classList.add('active');
+            const activeButton = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeButton) {
+              activeButton.classList.add('active');
+            }
+          }
+        });
+      }, { 
+        threshold: [0.5],
+        rootMargin: '-20% 0px -20% 0px'
+      });
+
+      tabContents.forEach(function(content) {
+        observer.observe(content);
+      });
     }
 
     // Initialize tabs on page load
@@ -485,14 +580,19 @@
       // Then extract content
       extractTabContent();
       
-      // Ensure first tab is active by default
-      var firstButton = document.querySelector('.halo-tab-button');
-      var firstContent = document.querySelector('.halo-tab-content');
+      // Setup scroll spy to highlight active sections
+      setTimeout(function() {
+        setupScrollSpy();
+        
+        // Ensure first tab is active by default
+        var firstButton = document.querySelector('.halo-tab-button');
+        var firstContent = document.querySelector('.halo-tab-content');
 
-      if (firstButton && firstContent) {
-        firstButton.classList.add('active');
-        firstContent.classList.add('active');
-      }
+        if (firstButton && firstContent) {
+          firstButton.classList.add('active');
+          firstContent.classList.add('active');
+        }
+      }, 100);
     });
     </script>
 
