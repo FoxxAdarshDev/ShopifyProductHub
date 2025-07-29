@@ -109,13 +109,13 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       
       // Extract H2 heading if present
       const h2Match = descDiv[1].match(/<h2[^>]*>(.*?)<\/h2>/);
-      const title = h2Match ? h2Match[1].replace(/<[^>]*>/g, '').trim() : '';
-      console.log('📄 H2 heading found:', title || 'None');
+      const h2Heading = h2Match ? h2Match[1].replace(/<[^>]*>/g, '').trim() : '';
+      console.log('📄 H2 heading found:', h2Heading || 'None');
       
       // Extract paragraphs
       const paragraphs = descDiv[1].match(/<p[^>]*>(.*?)<\/p>/g);
       console.log('📄 Paragraphs in description div:', paragraphs ? paragraphs.length : 0);
-      const textContent = paragraphs ? paragraphs.map(p => p.replace(/<[^>]*>/g, '').trim()).join('\n\n') : '';
+      const description = paragraphs ? paragraphs.map(p => p.replace(/<[^>]*>/g, '').trim()).join('\n\n') : '';
       
       // Extract logo grid images from the logo-grid div
       const logoGridMatch = descDiv[1].match(/<div[^>]*class="logo-grid"[^>]*>([\s\S]*?)<\/div>/);
@@ -156,16 +156,16 @@ export function extractContentFromHtml(html: string): ExtractedContent {
         console.log('📄 Final logo details:', logos);
       }
       
-      if (textContent || title || logos.length > 0) {
+      if (description || h2Heading || logos.length > 0) {
         extractedContent.description = {
-          title: title,
-          description: textContent,
+          h2Heading: h2Heading, // Use h2Heading to match form field
+          description: description, // Use description to match form field
           logos: logos
         };
-        console.log('✅ Enhanced description extracted with title, text, and logos');
-        console.log('📄 Final description object:', { title, textLength: textContent.length, logoCount: logos.length });
+        console.log('✅ Enhanced description extracted with h2Heading, description, and logos');
+        console.log('📄 Final description object:', { h2Heading, descriptionLength: description.length, logoCount: logos.length });
       } else {
-        console.log('❌ No description content extracted - title, text, and logos all empty');
+        console.log('❌ No description content extracted - h2Heading, description, and logos all empty');
       }
     }
 
@@ -436,7 +436,8 @@ export function extractContentFromHtml(html: string): ExtractedContent {
       console.log('📚 Documentation div content preview:', docDiv[1].substring(0, 200) + '...');
       console.log('📚 Full documentation content:', docDiv[1]);
       
-      const datasheets: Array<{title: string, url: string}> = [];
+      let datasheetTitle = '';
+      let datasheetUrl = '';
       
       // Look for documentation-link-card structure first
       const cardMatches = docDiv[1].match(/<div[^>]*class="[^"]*documentation-link-card[^"]*"[^>]*>([\s\S]*?)<\/div>/g);
@@ -455,56 +456,60 @@ export function extractContentFromHtml(html: string): ExtractedContent {
           console.log('📚 Card href match:', hrefMatch ? hrefMatch[1] : 'NOT FOUND');
           console.log('📚 Card title match:', titleMatch ? titleMatch[1] : 'NOT FOUND');
           
-          if (hrefMatch && titleMatch) {
+          if (hrefMatch && titleMatch && !datasheetTitle) {
             const url = hrefMatch[1];
             const title = titleMatch[1].replace(/<[^>]*>/g, '').trim();
             
-            // Skip the default datasheet link
+            // Skip the default datasheet link but capture the first valid one
             if (!url.includes('product-data-sheets')) {
               console.log('📚 Extracted documentation from card:', title, 'URL:', url);
-              datasheets.push({ title, url });
+              datasheetTitle = title;
+              datasheetUrl = url;
             }
           }
         });
       }
       
       // Fallback: try simple link extraction if no cards found
-      if (datasheets.length === 0) {
+      if (!datasheetTitle) {
         console.log('📚 No cards found, trying simple link extraction...');
         const linkMatches = docDiv[1].match(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g);
         console.log('📚 Simple documentation links found:', linkMatches ? linkMatches.length : 0);
         
         if (linkMatches) {
-          linkMatches.forEach(link => {
+          for (const link of linkMatches) {
             const hrefMatch = link.match(/href="([^"]*)"/);
             const textContent = link.replace(/<[^>]*>/g, '').trim();
             
             if (hrefMatch && textContent) {
               const url = hrefMatch[1];
               const title = textContent;
-              // Skip the default datasheet link
+              // Skip the default datasheet link but capture the first valid one
               if (!url.includes('product-data-sheets')) {
                 console.log('📚 Extracted simple documentation link:', title);
-                datasheets.push({ title, url });
+                datasheetTitle = title;
+                datasheetUrl = url;
+                break; // Take the first valid one
               }
             }
-          });
+          }
         }
       }
       
-      // Always create documentation section - include default link when no custom datasheets
-      extractedContent.documentation = {
-        datasheets: datasheets,
-        // For backward compatibility with forms, also set single fields from first datasheet
-        datasheetTitle: datasheets.length > 0 ? datasheets[0].title : '',
-        datasheetUrl: datasheets.length > 0 ? datasheets[0].url : ''
-      };
-      if (datasheets.length > 0) {
-        console.log('✅ Documentation extracted with custom datasheets:', datasheets.length);
-        console.log('📚 First datasheet title:', datasheets[0].title);
-        console.log('📚 First datasheet URL:', datasheets[0].url.substring(0, 50) + '...');
+      // Create documentation section with the extracted datasheet info
+      if (datasheetTitle && datasheetUrl) {
+        extractedContent.documentation = {
+          datasheetTitle: datasheetTitle,
+          datasheetUrl: datasheetUrl
+        };
+        console.log('✅ Documentation extracted with datasheet:', datasheetTitle);
+        console.log('📚 Datasheet URL:', datasheetUrl);
       } else {
-        console.log('✅ Documentation section extracted (default content only)');
+        console.log('✅ Documentation section extracted (no custom datasheet found)');
+        extractedContent.documentation = {
+          datasheetTitle: '',
+          datasheetUrl: ''
+        };
       }
     }
 
