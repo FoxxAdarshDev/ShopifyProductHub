@@ -71,22 +71,22 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     console.log('🔍 HTML contains expected H2:', h2InHtml);
     console.log('🔍 HTML contains expected logo URL:', logoInHtml);
     
-    // Try pattern 1: Original complex pattern
+    // Try pattern 1: Original complex pattern (class first, then id)
     let descDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
-    console.log('🔍 Pattern 1 (complex) result:', descDiv ? 'FOUND' : 'NOT FOUND');
+    console.log('🔍 Pattern 1 (class-first) result:', descDiv ? 'FOUND' : 'NOT FOUND');
     
-    // Try pattern 2: Simpler id-first pattern
+    // Try pattern 2: Reverse order (id first, then class)  
     if (!descDiv) {
       console.log('🔍 Trying pattern 2 (id-first)...');
-      descDiv = html.match(/<div[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
+      descDiv = html.match(/<div[^>]*id="description"[^>]*class="[^"]*tab-content[^"]*"[^>]*>([\s\S]*?)<\/div>/);
       console.log('🔍 Pattern 2 (id-first) result:', descDiv ? 'FOUND' : 'NOT FOUND');
     }
     
-    // Try pattern 3: Very flexible pattern
+    // Try pattern 3: Simple id-only pattern
     if (!descDiv) {
-      console.log('🔍 Trying pattern 3 (flexible)...');
-      descDiv = html.match(/id="description"[^>]*>([\s\S]*?)<\/div>/);
-      console.log('🔍 Pattern 3 (flexible) result:', descDiv ? 'FOUND' : 'NOT FOUND');
+      console.log('🔍 Trying pattern 3 (id-only)...');
+      descDiv = html.match(/<div[^>]*id="description"[^>]*>([\s\S]*?)<\/div>/);
+      console.log('🔍 Pattern 3 (id-only) result:', descDiv ? 'FOUND' : 'NOT FOUND');
     }
     
     // FORCE EXTRACTION: If patterns fail, search for logo-grid directly
@@ -429,7 +429,16 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     }
 
     // Extract documentation content - look for tab-content with id="documentation"
-    const docDiv = html.match(/<div[^>]*id="documentation"[^>]*class="[^"]*tab-content[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    // Try multiple patterns since class and id order can vary
+    let docDiv = html.match(/<div[^>]*id="documentation"[^>]*class="[^"]*tab-content[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    if (!docDiv) {
+      // Try pattern with class first, then id
+      docDiv = html.match(/<div[^>]*class="[^"]*tab-content[^"]*"[^>]*id="documentation"[^>]*>([\s\S]*?)<\/div>/);
+    }
+    if (!docDiv) {
+      // Try simple id-only pattern
+      docDiv = html.match(/<div[^>]*id="documentation"[^>]*>([\s\S]*?)<\/div>/);
+    }
     console.log('🔍 Documentation div search result:', docDiv ? 'FOUND' : 'NOT FOUND');
     if (docDiv && docDiv[1]) {
       console.log('📚 Found documentation div with structured content');
