@@ -89,12 +89,20 @@ export default function NewLayoutProducts() {
     
     try {
       console.log(`NewLayoutProducts: Making content status request for ${productIds.length} products`);
-      const response = await apiRequest("POST", "/api/products/content-status", {
-        body: JSON.stringify({ productIds }),
-        headers: { "Content-Type": "application/json" }
+      const response = await fetch("/api/products/content-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`NewLayoutProducts: Content status API error: ${response.status} - ${errorText}`);
+        return;
+      }
+      
       const statusData = await response.json();
-      console.log(`NewLayoutProducts: Received status data:`, statusData);
+      console.log(`NewLayoutProducts: Received status data for ${Object.keys(statusData).length} products`);
       setContentStatus(statusData);
     } catch (error) {
       console.error("NewLayoutProducts: Error checking content status:", error);

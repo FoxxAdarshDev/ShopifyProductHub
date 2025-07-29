@@ -208,14 +208,24 @@ export default function AllProducts() {
     if (!productIds || productIds.length === 0) return;
     
     try {
-      const response = await apiRequest("POST", "/api/products/content-status", {
-        body: JSON.stringify({ productIds }),
-        headers: { "Content-Type": "application/json" }
+      console.log(`AllProducts: Checking content status for ${productIds.length} products`);
+      const response = await fetch("/api/products/content-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`AllProducts: Content status API error: ${response.status} - ${errorText}`);
+        return;
+      }
+      
       const statusData = await response.json();
+      console.log(`AllProducts: Received status data for ${Object.keys(statusData).length} products`);
       setContentStatus(prev => ({ ...prev, ...statusData }));
     } catch (error) {
-      console.error("Error checking content status:", error);
+      console.error("AllProducts: Error checking content status:", error);
     }
   };
 
