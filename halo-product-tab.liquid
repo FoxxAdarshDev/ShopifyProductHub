@@ -368,194 +368,50 @@
       {% endfor %}
     </div>
 
-    {% comment %} Tab Content {% endcomment %}
+    {% comment %} Tab Content - Direct HTML Display {% endcomment %}
     <div class="halo-tab-content-container">
+      {% comment %} Hide original container and extract content directly {% endcomment %}
+      <div style="display: none;" id="original-content">{{ product_description }}</div>
+      
       {% for tab in available_tabs %}
         {% assign is_first = forloop.first %}
         <div id="halo-{{ tab }}" class="halo-tab-content{% if is_first %} active{% endif %}">
           <div class="halo-tab-content-inner">
-            {% comment %} Extract and display the specific tab content {% endcomment %}
-            {% if tab == 'description' %}
-              {% assign tab_start = 'id="description"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'features' %}
-              {% assign tab_start = 'id="features"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'applications' %}
-              {% assign tab_start = 'id="applications"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'specification' %}
-              {% assign tab_start = 'id="specification"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div id=' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'sterilization-method' %}
-              {% assign tab_start = 'id="sterilization-method"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'compatible-container' %}
-              {% assign tab_start = 'id="compatible-container"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div class="tab-content"' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'documentation' %}
-              {% assign tab_start = 'id="documentation"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '<div id=' %}
-                {% if content_end.size > 0 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign final_content = tab_content | split: '</div>' %}
-                  {% assign clean_content = final_content[0] %}
-                  {% assign content_parts = clean_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% elsif tab == 'videos' %}
-              {% assign tab_start = 'id="videos"' %}
-              {% assign content_start = product_description | split: tab_start %}
-              {% if content_start.size > 1 %}
-                {% assign content_part = content_start[1] %}
-                {% assign content_end = content_part | split: '</div>' %}
-                {% if content_end.size > 1 %}
-                  {% assign tab_content = content_end[0] %}
-                  {% assign content_parts = tab_content | split: '>' %}
-                  {% assign content_without_opening = '' %}
-                  {% for part in content_parts offset: 1 %}
-                    {% if content_without_opening == '' %}
-                      {% assign content_without_opening = part %}
-                    {% else %}
-                      {% assign content_without_opening = content_without_opening | append: '>' | append: part %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ content_without_opening }}
-                {% endif %}
-              {% endif %}
-            {% endif %}
+            <div id="extracted-{{ tab }}"></div>
           </div>
         </div>
       {% endfor %}
     </div>
 
     <script>
+    function extractTabContent() {
+      const originalContent = document.getElementById('original-content');
+      if (!originalContent) return;
+      
+      const htmlContent = originalContent.innerHTML;
+      
+      // Create a temporary div to parse the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      
+      // Find all tab-content divs with IDs
+      const tabElements = tempDiv.querySelectorAll('div[id]');
+      
+      tabElements.forEach(function(element) {
+        const tabId = element.id;
+        const extractedElement = document.getElementById('extracted-' + tabId);
+        
+        if (extractedElement) {
+          // Clone the inner content without the wrapper div
+          const content = element.innerHTML;
+          extractedElement.innerHTML = content;
+        }
+      });
+      
+      // Clean up
+      tempDiv.remove();
+    }
+
     function haloSwitchTab(event, tabId) {
       // Remove active class from all tab buttons
       var tabButtons = document.querySelectorAll('.halo-tab-button');
@@ -581,6 +437,9 @@
 
     // Initialize tabs on page load
     document.addEventListener('DOMContentLoaded', function() {
+      // Extract content first
+      extractTabContent();
+      
       // Ensure first tab is active by default
       var firstButton = document.querySelector('.halo-tab-button');
       var firstContent = document.querySelector('.halo-tab-content');

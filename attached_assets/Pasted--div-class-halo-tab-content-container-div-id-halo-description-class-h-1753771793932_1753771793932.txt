@@ -1,0 +1,322 @@
+<div class="halo-tab-content-container">
+      
+        
+        <div id="halo-description" class="halo-tab-content active">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+    <h2>VersaCap® 38-430 with 3× 1/8" Hose Barb Ports – Tamper-Evident Closure for Sterile Fluid Management</h2>
+    <p>The 38-430 VersaCap® with Tamper Evident Ring is a secure, cleanroom-compatible closure designed for use in bioprocess, pharmaceutical, and laboratory applications. It fits standard 38-430 threaded bottles and provides an added layer of protection for critical fluids and materials by clearly indicating first-time opening.</p>
+    <p>This patented cap features a break-away tamper evident ring for irreversible security, along with a molded, non-machined adapter that ensures a clean, reliable seal in sterile environments. The rotating adapter design minimizes tubing twist during handling, while interchangeable polypropylene inserts allow for 2 and 3 port configurations in both 1/8" and 1/4" hose barb sizes. Made from autoclavable polypropylene, the cap is chemical-resistant and built for repeated use.</p>
+    <p>Foxx Life Sciences offers custom bottle assemblies with VersaCap® Technology tailored to your unique fluid handling needs—whether for sampling, filling, or storage. Caps can be configured with filters, dip tubes, or connectors to suit a variety of bioprocess workflows. For custom solutions or additional information, please contact our sales team.</p>
+    <div class="logo-grid">
+    <img alt="undefined" src="https://cdn.shopify.com/s/files/1/0964/0048/files/class_vi_web_large.png?12500854575707624221">
+    
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-features" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+     <ul>
+            <li><span style="line-height: 1.4;">Delivers clear, tamper-evident indication upon first opening to ensure product integrity and regulatory compliance</span></li>
+            <li><span style="line-height: 1.4;">VersaCap® technology provides the flexibility of interchangeable top-connectors</span></li>
+            <li><span style="line-height: 1.4;">Adapter rotates independently of the cap to prevent tubing from twisting or tangling during use</span></li>
+            <li><span style="line-height: 1.4;">Available in 2 or 3 port options with 1/8" or 1/4" hose barb sizes</span></li>
+            <li><span style="line-height: 1.4;">The Cap is Autoclavable or can be gamma sterilized if required</span></li>
+     </ul>
+    
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-applications" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+    <ul>
+            <li><span style="line-height: 1.4;">Delivers clear, tamper-evident indication upon first opening to ensure product integrity and regulatory compliance</span></li>
+            <li><span style="line-height: 1.4;">VersaCap® technology provides the flexibility of interchangeable top-connectors</span></li>
+            <li><span style="line-height: 1.4;">Adapter rotates independently of the cap to prevent tubing from twisting or tangling during use</span></li>
+            <li><span style="line-height: 1.4;">Available in 2 or 3 port options with 1/8" or 1/4" hose barb sizes</span></li>
+            <li><span style="line-height: 1.4;">The Cap is Autoclavable or can be gamma sterilized if required</span></li>
+    </ul>
+    
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-specification" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+    <table style="width: 100%; height: 78.3752px;">
+    <tbody>
+    <tr>
+    <td>ITEM</td>
+    <td>VALUE</td>
+    </tr>
+    <tr>
+    <td>Manufacturer</td>
+    <td>Foxx Life Sciences</td>
+    </tr>
+    <tr>
+    <td>Brand</td>
+    <td>VersaCap®</td>
+    </tr>
+    <tr>
+    <td>Quantity</td>
+    <td>4/CS</td>
+    </tr>
+    <tr>
+    <td>Cap Size</td>
+    <td>38-430</td>
+    </tr>
+    <tr>
+    <td>Cap Type</td>
+    <td>Open</td>
+    </tr>
+    <tr>
+    <td>Adapter Type</td>
+    <td>3x1/8</td>
+    </tr>
+    <tr>
+    <td>Cap Material</td>
+    <td>Polypropylene</td>
+    </tr>
+    </tbody>
+    </table>
+    
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-sterilization-method" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+        <ul>
+            <li><span style="line-height: 1.4;">Delivers clear, tamper-evident indication upon first opening to ensure product integrity and regulatory compliance</span></li>
+            <li><span style="line-height: 1.4;">VersaCap® technology provides the flexibility of interchangeable top-connectors</span></li>
+            <li><span style="line-height: 1.4;">Adapter rotates independently of the cap to prevent tubing from twisting or tangling during use</span></li>
+            <li><span style="line-height: 1.4;">Available in 2 or 3 port options with 1/8" or 1/4" hose barb sizes</span></li>
+            <li><span style="line-height: 1.4;">The Cap is Autoclavable or can be gamma sterilized if required</span></li>
+        </ul>
+    
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-compatible-container" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+        <h3>Compatible Container</h3>
+        <div class="compatible-items-grid">
+            <div class="compatible-item">
+                <img src="https://cdn.shopify.com/s/files/1/0621/4805/1160/files/EZBioTSNoCap125mL.jpg?v=1728091418" alt="EZBio Titanium Square Bottle, PETG,38-430mm 125ml Non Ster No Cap, 96/CS" loading="lazy">
+                <div class="compatible-item-content">
+                    <h4 class="compatible-item-title">EZBio Titanium Square Bottle, PETG,38-430mm 125ml Non Ster No Cap, 96/CS</h4>
+                    <p class="compatible-item-description">Product: EZBio Titanium Square Bottle, PETG,38-430mm 125ml Non Ster No Cap, 96/CS</p>
+                    <a href="https://foxxbioprocess.com/products/ezbio-titanium-square-polyethylene-terephthalate-glycol-petg-media-bottles-non-sterile-storage-bottles-38-430-neck-125ml-no-cap-96-cs" target="_blank" class="compatible-item-link">View Product →</a>
+                
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-documentation" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+    <p><a href="https://cdn.shopify.com/s/files/1/1064/0118/files/Tamper_Evident_VersaCap_38-430mm-DatasSheet-June-28th-25-Foxx-Life-Sciences.pdf?v=1751058143" target="_blank">38-430mm Tamper-Evident Closures Caps Datasheet</a></p>
+    <p>Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank">here</a> for a full list of our product datasheets!</p>
+    
+                
+              
+            
+          </div>
+        </div>
+      
+        
+        <div id="halo-videos" class="halo-tab-content">
+          <div class="halo-tab-content-inner">
+            
+            
+              
+              
+              
+                
+                
+                
+                  
+                  
+                  
+                  
+                  
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/ULMhwPsSSi8?si=H-wkRozJofLwh2qt" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>
+    <p>Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!</p>
+    
+                
+              
+            
+          </div>
+        </div>
+      
+    </div>
+
+    <script>
+    function haloSwitchTab(event, tabId) {
+      // Remove active class from all tab buttons
+      var tabButtons = document.querySelectorAll('.halo-tab-button');
+      tabButtons.forEach(function(button) {
+        button.classList.remove('active');
+      });
+
+      // Add active class to clicked button
+      event.target.classList.add('active');
+
+      // Hide all tab content
+      var tabContents = document.querySelectorAll('.halo-tab-content');
+      tabContents.forEach(function(content) {
+        content.classList.remove('active');
+      });
+
+      // Show selected tab content
+      var activeTab = document.getElementById('halo-' + tabId);
+      if (activeTab) {
+        activeTab.classList.add('active');
+      }
+    }
+
+    // Initialize tabs on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Ensure first tab is active by default
+      var firstButton = document.querySelector('.halo-tab-button');
+      var firstContent = document.querySelector('.halo-tab-content');
+
+      if (firstButton && firstContent) {
+        firstButton.classList.add('active');
+        firstContent.classList.add('active');
+      }
+    });
+    </script>
+
+  
+
+
+
+</div>
+</div>
+    </div>
+</div>
