@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useProductStatusCache } from "@/hooks/useProductStatusCache";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,7 @@ export default function NewLayoutProducts() {
   const [isLoading, setIsLoading] = useState(true);
   const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
   const { toast } = useToast();
+  const { cache, updateCache, getStatus, getStats } = useProductStatusCache();
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -103,7 +105,25 @@ export default function NewLayoutProducts() {
       
       const statusData = await response.json();
       console.log(`NewLayoutProducts: Received status data for ${Object.keys(statusData).length} products`);
+      
+      // Convert backend response format to frontend format for cache
+      const cacheData: Record<string, any> = {};
+      Object.keys(statusData).forEach(productId => {
+        const status = statusData[productId];
+        cacheData[productId] = {
+          hasShopifyContent: status.hasShopifyContent,
+          hasNewLayout: status.hasNewLayout,
+          hasDraftContent: status.hasDraftContent,
+          contentCount: status.contentCount,
+          lastUpdated: new Date().toISOString()
+        };
+      });
+      
       setContentStatus(statusData);
+      
+      // Update cache with converted data
+      updateCache(cacheData);
+      console.log(`NewLayoutProducts: Updated cache with ${Object.keys(cacheData).length} products`);
     } catch (error) {
       console.error("NewLayoutProducts: Error checking content status:", error);
     }
@@ -114,7 +134,9 @@ export default function NewLayoutProducts() {
     if (!allProducts.length) return;
 
     let filtered = allProducts.filter(product => {
-      const status = contentStatus[product.id];
+      // Try cache first, fallback to contentStatus
+      const cachedStatus = getStatus(product.id.toString());
+      const status = cachedStatus || contentStatus[product.id];
       return status && status.hasNewLayout;
     });
 
@@ -130,8 +152,9 @@ export default function NewLayoutProducts() {
       });
     }
 
+    console.log(`NewLayoutProducts: Filtered ${filtered.length} products with new layout from ${allProducts.length} total products`);
     setFilteredProducts(filtered);
-  }, [allProducts, contentStatus, debouncedSearchTerm]);
+  }, [allProducts, contentStatus, debouncedSearchTerm, cache]);
 
   const newLayoutCount = filteredProducts.length;
   const totalNewLayoutInStore = allProducts.filter(product => {
