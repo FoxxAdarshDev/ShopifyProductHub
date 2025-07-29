@@ -63,6 +63,13 @@ export interface IStorage {
   updateProductStatus(shopifyProductId: string, status: Partial<InsertProductStatus>): Promise<ProductStatus>;
   deleteProductStatus(shopifyProductId: string): Promise<void>;
   getAllProductStatuses(): Promise<ProductStatus[]>;
+  getProductStatusCounts(): Promise<{
+    total: number;
+    shopifyContent: number;
+    newLayout: number;
+    draftMode: number;
+    noContent: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -332,6 +339,38 @@ export class DatabaseStorage implements IStorage {
       .update(productStatus)
       .set({ lastShopifyCheck: new Date('2020-01-01') });
     return result.rowCount || 0;
+  }
+
+  async getProductStatusCounts(): Promise<{
+    total: number;
+    shopifyContent: number;
+    newLayout: number;
+    draftMode: number;
+    noContent: number;
+  }> {
+    try {
+      const statusData = await db.select().from(productStatus);
+      
+      const counts = {
+        total: statusData.length,
+        shopifyContent: statusData.filter(s => s.hasShopifyContent).length,
+        newLayout: statusData.filter(s => s.hasNewLayout).length,
+        draftMode: statusData.filter(s => s.hasDraftContent).length,
+        noContent: statusData.filter(s => !s.hasShopifyContent && !s.hasNewLayout).length
+      };
+      
+      console.log('Database status counts:', counts);
+      return counts;
+    } catch (error) {
+      console.error('Error getting product status counts:', error);
+      return {
+        total: 0,
+        shopifyContent: 0,
+        newLayout: 0,
+        draftMode: 0,
+        noContent: 0
+      };
+    }
   }
 }
 

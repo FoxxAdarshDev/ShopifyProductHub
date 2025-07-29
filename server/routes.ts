@@ -350,6 +350,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fast count endpoint for immediate UI display
+  app.get("/api/products/status-counts", async (req, res) => {
+    try {
+      // Get counts directly from database for immediate display
+      const counts = await storage.getProductStatusCounts();
+      res.json(counts);
+    } catch (error) {
+      console.error("Error getting status counts:", error);
+      res.status(500).json({ error: "Failed to get status counts" });
+    }
+  });
+
   // Check product content status for multiple products with database-first approach
   app.post("/api/products/content-status", async (req, res) => {
     try {

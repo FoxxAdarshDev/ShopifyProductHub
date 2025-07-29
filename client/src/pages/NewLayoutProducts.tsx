@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Package, ChevronRight, Loader2, Layout } from "lucide-react";
 import { Link } from "wouter";
+import { useStatusCounts } from "../hooks/useStatusCounts";
 
 // Debounce hook for search
 const useDebounce = (value: string, delay: number) => {
@@ -57,6 +58,7 @@ export default function NewLayoutProducts() {
   const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
   const { toast } = useToast();
   const { cache, updateCache, getStatus, getStats } = useProductStatusCache();
+  const { data: statusCounts } = useStatusCounts();
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -173,7 +175,7 @@ export default function NewLayoutProducts() {
   }, [allProducts, contentStatus, debouncedSearchTerm, cache]);
 
   const newLayoutCount = filteredProducts.length;
-  const totalNewLayoutInStore = allProducts.filter(product => {
+  const totalNewLayoutInStore = statusCounts?.newLayout ?? allProducts.filter(product => {
     const status = contentStatus[product.id];
     return status && status.hasNewLayout;
   }).length;

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useProductStatusCache } from "@/hooks/useProductStatusCache";
+import { useStatusCounts } from "@/hooks/useStatusCounts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ export default function AllProducts() {
   const [contentFilter, setContentFilter] = useState<'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none'>('all');
   const { toast } = useToast();
   const { cache, updateCache, getStats } = useProductStatusCache();
+  const { data: statusCounts } = useStatusCounts();
 
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -199,18 +201,22 @@ export default function AllProducts() {
   const hasCachedData = Object.keys(cache).length > 0;
   const hasContentStatusData = Object.keys(contentStatus).length > 0;
   
-  // Prioritize cached data if available, fallback to current contentStatus calculations
-  const shopifyContentCount = hasCachedData ? cachedStats.shopifyContent : 
-    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasShopifyContent).length : 0);
-  const newLayoutCount = hasCachedData ? cachedStats.newLayout :
-    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasNewLayout).length : 0);
-  const draftModeCount = hasCachedData ? cachedStats.draftMode :
-    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasDraftContent).length : 0);
-  const noContentCount = hasCachedData ? cachedStats.noContent :
-    (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => {
-      const status = contentStatus[p.id];
-      return !status?.hasShopifyContent && !status?.hasNewLayout;
-    }).length : 0);
+  // Use database counts immediately, fallback to cached data, then calculations
+  const shopifyContentCount = statusCounts?.shopifyContent ?? 
+    (hasCachedData ? cachedStats.shopifyContent : 
+      (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasShopifyContent).length : 0));
+  const newLayoutCount = statusCounts?.newLayout ?? 
+    (hasCachedData ? cachedStats.newLayout :
+      (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasNewLayout).length : 0));
+  const draftModeCount = statusCounts?.draftMode ?? 
+    (hasCachedData ? cachedStats.draftMode :
+      (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => contentStatus[p.id]?.hasDraftContent).length : 0));
+  const noContentCount = statusCounts?.noContent ?? 
+    (hasCachedData ? cachedStats.noContent :
+      (hasContentStatusData ? allProductsForCounting.filter((p: ShopifyProduct) => {
+        const status = contentStatus[p.id];
+        return !status?.hasShopifyContent && !status?.hasNewLayout;
+      }).length : 0));
     
   // Debug logging
   console.log('AllProducts stats:', { 

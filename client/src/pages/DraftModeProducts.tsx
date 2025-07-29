@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Package, ChevronRight, Loader2, FileEdit } from "lucide-react";
 import { Link } from "wouter";
+import { useStatusCounts } from "../hooks/useStatusCounts";
 
 // Debounce hook for search
 const useDebounce = (value: string, delay: number) => {
@@ -57,6 +58,7 @@ export default function DraftModeProducts() {
   const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
   const { toast } = useToast();
   const { cache, updateCache, getStatus, getStats } = useProductStatusCache();
+  const { data: statusCounts } = useStatusCounts();
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -173,7 +175,7 @@ export default function DraftModeProducts() {
   }, [allProducts, contentStatus, debouncedSearchTerm, cache]);
 
   const draftCount = filteredProducts.length;
-  const totalDraftInStore = allProducts.filter(product => {
+  const totalDraftInStore = statusCounts?.draftMode ?? allProducts.filter(product => {
     const status = contentStatus[product.id];
     return status && status.hasDraftContent;
   }).length;
