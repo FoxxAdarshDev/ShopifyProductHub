@@ -1,0 +1,141 @@
+rocessing batch 21/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 8704690651352, skipping Shopify check
+Processing batch 21/67 with 5 products
+Processing batch 21/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846036340952, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846036177112, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846036177112, skipping Shopify check
+Processing batch 22/67 with 5 products
+Processing batch 22/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846020120792, skipping Shopify check
+Processing batch 22/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846021431512, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846019530968, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846019530968, skipping Shopify check
+Processing batch 23/67 with 5 products
+Processing batch 23/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846015959256, skipping Shopify check
+Processing batch 23/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846023987416, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846023954648, skipping Shopify check
+Processing batch 24/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846029590744, skipping Shopify check
+Processing batch 24/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846029590744, skipping Shopify check
+Processing batch 24/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846023889112, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846023889112, skipping Shopify check
+Processing batch 25/67 with 5 products
+Processing batch 25/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846020677848, skipping Shopify check
+Processing batch 25/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846020645080, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846020055256, skipping Shopify check
+Processing batch 26/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846018056408, skipping Shopify check
+Processing batch 26/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846018056408, skipping Shopify check
+Processing batch 26/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846015500504, skipping Shopify check
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846024020184, skipping Shopify check
+Processing batch 27/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846025593048, skipping Shopify check
+Processing batch 27/67 with 5 products
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:425:40)
+Rate limited for product 7846025593048, skipping Shopify check
+Processing batch 27/67 with 5 products

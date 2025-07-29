@@ -272,6 +272,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update local product record
       await storage.updateProduct(product.id, { description: generatedHtml });
 
+      // Clear draft content after successful Shopify update
+      await storage.deleteDraftContentByProduct(product.shopifyId);
+      console.log(`🧹 Cleared draft content for product ${product.shopifyId} after Shopify update`);
+
+      // Update product status to reflect that content is now published
+      const { productStatusService } = await import('./services/productStatusService.js');
+      await productStatusService.clearDraftStatusOnPublish(product.shopifyId);
+      console.log(`📊 Updated product status - cleared draft mode for product ${product.shopifyId}`);
+
       res.json({ message: "Product updated successfully" });
     } catch (error) {
       console.error("Shopify update error:", error);
@@ -334,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check product content status for multiple products with detailed info
+  // Check product content status for multiple products with database-first approach
   app.post("/api/products/content-status", async (req, res) => {
     try {
       const { productIds } = req.body;
@@ -342,161 +351,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "productIds must be an array" });
       }
 
-      // Import cache service
-      const { contentStatusCache } = await import('./services/contentStatusCache.js');
-
-      console.log(`Processing content status for ${productIds.length} products with cache and rate limiting`);
+      console.log(`Processing content status for ${productIds.length} products using database-first approach`);
       
-      // Check cache stats
-      const cacheStats = contentStatusCache.getStats();
-      console.log(`Cache stats: ${cacheStats.fresh} fresh entries out of ${cacheStats.total} total`);
+      // Use the new product status service with intelligent caching and rate limiting
+      const { productStatusService } = await import('./services/productStatusService.js');
+      const contentStatus = await productStatusService.getBatchProductStatus(productIds);
 
-      const contentStatus: Record<string, {
+      // Convert to expected format
+      const responseData: Record<string, {
         hasShopifyContent: boolean;
         hasNewLayout: boolean;
         hasDraftContent: boolean;
         contentCount: number;
       }> = {};
-      
-      // Helper function to add delay between requests
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      // Process in much smaller batches to avoid rate limits
-      const batchSize = 5; // Reduced from 10 to 5
-      const batches = [];
-      for (let i = 0; i < productIds.length; i += batchSize) {
-        batches.push(productIds.slice(i, i + batchSize));
-      }
-      
-      console.log(`Processing ${productIds.length} products in ${batches.length} batches of ${batchSize}`);
-      
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} products`);
-        
-        // Add longer delay between batches
-        if (batchIndex > 0) {
-          await delay(2000); // 2 second delay between batches
-        }
-        
-        for (let i = 0; i < batch.length; i++) {
-          const productId = batch[i];
-          
-          try {
-            // Check cache first
-            const cached = contentStatusCache.get(productId.toString());
-            if (cached) {
-              contentStatus[productId] = cached;
-              console.log(`Using cached status for product ${productId}`);
-              continue;
-            }
 
-            // Add longer delay between individual requests within batch
-            if (i > 0) {
-              await delay(500); // 500ms delay between individual requests
-            }
-          
-            // Check local database first (fast and doesn't hit API)
-            const localProduct = await storage.getProductByShopifyId(productId.toString());
-            let hasNewLayout = false;
-            let hasDraftContent = false;
-            let contentCount = 0;
-            
-            if (localProduct) {
-              const content = await storage.getProductContent(localProduct.id);
-              hasNewLayout = content.length > 0;
-              contentCount = content.length;
-              
-              // Check for draft content
-              const draftContent = await storage.getDraftContentByProduct(productId.toString());
-              hasDraftContent = draftContent.length > 0;
-            }
-            
-            // For most products, use only local data to avoid API calls
-            let hasShopifyContent = false;
-            let isOurTemplateStructure = false;
-            
-            // Check Shopify for template structure if no local content
-            const needsShopifyCheck = !hasNewLayout && !hasDraftContent;
-            
-            if (needsShopifyCheck) {
-              try {
-                // Check Shopify for existing content
-                const shopifyProduct = await shopifyService.getProductById(productId.toString());
-                hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
-                
-                // Check if Shopify content matches our template structure (for New Layout detection)
-                if (hasShopifyContent && shopifyProduct?.body_html) {
-                  // Check for our template structure markers
-                  const html = shopifyProduct.body_html;
-                  const hasContainerClass = html.includes('class="container"');
-                  const hasTabStructure = html.includes('id="description"') || html.includes('id="features"') || html.includes('id="applications"');
-                  const hasDataSkuAttributes = html.includes('data-sku=');
-                  
-                  isOurTemplateStructure = hasContainerClass && hasTabStructure && hasDataSkuAttributes;
-                }
-                
-                // If content is already saved to Shopify (detected our template), don't show draft mode
-                if (isOurTemplateStructure) {
-                  hasDraftContent = false; // Hide draft mode when content is published to Shopify
-                }
-                
-                // If we detected our template structure in Shopify but no local content, mark it as New Layout
-                if (isOurTemplateStructure && !hasNewLayout) {
-                  hasNewLayout = true;
-                  // Estimate content count from Shopify HTML structure
-                  const html = shopifyProduct?.body_html || '';
-                  let estimatedCount = 0;
-                  if (html.includes('id="description"')) estimatedCount++;
-                  if (html.includes('id="features"')) estimatedCount++;
-                  if (html.includes('id="applications"')) estimatedCount++;
-                  if (html.includes('id="specifications"')) estimatedCount++;
-                  if (html.includes('data-section="documentation"')) estimatedCount++;
-                  if (html.includes('data-section="videos"')) estimatedCount++;
-                  if (html.includes('data-section="safety-guidelines"')) estimatedCount++;
-                  if (html.includes('data-section="sterilization-method"')) estimatedCount++;
-                  if (html.includes('data-section="compatible-container"')) estimatedCount++;
-                  contentCount = Math.max(contentCount, estimatedCount);
-                }
-              } catch (shopifyError: any) {
-                // Handle rate limiting gracefully
-                if (shopifyError.message.includes('429')) {
-                  console.warn(`Rate limited for product ${productId}, skipping Shopify check`);
-                  // Use local data only for rate-limited products
-                  hasShopifyContent = false;
-                } else {
-                  console.error(`Error checking Shopify for product ${productId}:`, shopifyError);
-                  hasShopifyContent = false;
-                }
-              }
-            }
-
-            const status = {
-              hasShopifyContent,
-              hasNewLayout,
-              hasDraftContent,
-              contentCount
-            };
-            
-            contentStatus[productId] = status;
-            
-            // Cache the result
-            contentStatusCache.set(productId.toString(), status);
-          } catch (error) {
-            console.error(`Error checking status for product ${productId}:`, error);
-            contentStatus[productId] = {
-              hasShopifyContent: false,
-              hasNewLayout: false,
-              hasDraftContent: false,
-              contentCount: 0
-            };
-          }
-        }
+      for (const [productId, status] of Object.entries(contentStatus)) {
+        responseData[productId] = {
+          hasShopifyContent: status.hasShopifyContent,
+          hasNewLayout: status.hasNewLayout,
+          hasDraftContent: status.hasDraftContent,
+          contentCount: status.contentCount
+        };
       }
 
-      res.json(contentStatus);
+      res.json(responseData);
     } catch (error) {
-      console.error("Content status check error:", error);
+      console.error("Content status error:", error);
       res.status(500).json({ message: "Failed to check content status" });
     }
   });

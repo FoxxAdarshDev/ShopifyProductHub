@@ -59,6 +59,20 @@ export const draftContent = pgTable("draft_content", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Product status tracking - persistent status for products with content
+export const productStatus = pgTable("product_status", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shopifyProductId: varchar("shopify_product_id").notNull().unique(),
+  hasNewLayout: boolean("has_new_layout").default(false),
+  hasDraftContent: boolean("has_draft_content").default(false),
+  hasShopifyContent: boolean("has_shopify_content").default(false),
+  contentCount: text("content_count").default("0"), // Store as text to allow complex counting
+  isOurTemplateStructure: boolean("is_our_template_structure").default(false),
+  lastShopifyCheck: timestamp("last_shopify_check"),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const productContentRelations = relations(productContent, ({ one }) => ({
   product: one(products, {
     fields: [productContent.productId],
@@ -105,6 +119,12 @@ export const insertDraftContentSchema = createInsertSchema(draftContent).omit({
   updatedAt: true,
 });
 
+export const insertProductStatusSchema = createInsertSchema(productStatus).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -123,3 +143,6 @@ export type Logo = typeof logoLibrary.$inferSelect;
 
 export type InsertDraftContent = z.infer<typeof insertDraftContentSchema>;
 export type DraftContent = typeof draftContent.$inferSelect;
+
+export type InsertProductStatus = z.infer<typeof insertProductStatusSchema>;
+export type ProductStatus = typeof productStatus.$inferSelect;

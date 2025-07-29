@@ -4,6 +4,7 @@ import {
   productContent, 
   logoLibrary,
   draftContent,
+  productStatus,
   type Product, 
   type InsertProduct,
   type ContentTemplate,
@@ -13,7 +14,9 @@ import {
   type Logo,
   type InsertLogo,
   type DraftContent,
-  type InsertDraftContent
+  type InsertDraftContent,
+  type ProductStatus,
+  type InsertProductStatus
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like } from "drizzle-orm";
@@ -53,6 +56,13 @@ export interface IStorage {
   updateDraftContent(id: string, content: Partial<InsertDraftContent>): Promise<DraftContent>;
   deleteDraftContentByProduct(shopifyProductId: string): Promise<void>;
   deleteDraftContentByProductAndType(shopifyProductId: string, tabType: string): Promise<void>;
+
+  // Product Status Management
+  getProductStatus(shopifyProductId: string): Promise<ProductStatus | undefined>;
+  createProductStatus(status: InsertProductStatus): Promise<ProductStatus>;
+  updateProductStatus(shopifyProductId: string, status: Partial<InsertProductStatus>): Promise<ProductStatus>;
+  deleteProductStatus(shopifyProductId: string): Promise<void>;
+  getAllProductStatuses(): Promise<ProductStatus[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -220,6 +230,48 @@ export class DatabaseStorage implements IStorage {
       eq(draftContent.shopifyProductId, shopifyProductId),
       eq(draftContent.tabType, tabType)
     ));
+  }
+
+  // Product Status Management
+  async getProductStatus(shopifyProductId: string): Promise<ProductStatus | undefined> {
+    const [status] = await db.select().from(productStatus).where(eq(productStatus.shopifyProductId, shopifyProductId));
+    return status || undefined;
+  }
+
+  async createProductStatus(insertStatus: InsertProductStatus): Promise<ProductStatus> {
+    const [status] = await db
+      .insert(productStatus)
+      .values(insertStatus)
+      .returning();
+    return status;
+  }
+
+  async updateProductStatus(shopifyProductId: string, updateData: Partial<InsertProductStatus>): Promise<ProductStatus> {
+    // First try to update existing status
+    const existing = await this.getProductStatus(shopifyProductId);
+    
+    if (existing) {
+      const [status] = await db
+        .update(productStatus)
+        .set({ ...updateData, lastUpdated: new Date() })
+        .where(eq(productStatus.shopifyProductId, shopifyProductId))
+        .returning();
+      return status;
+    } else {
+      // Create new status if it doesn't exist
+      return await this.createProductStatus({
+        shopifyProductId,
+        ...updateData
+      } as InsertProductStatus);
+    }
+  }
+
+  async deleteProductStatus(shopifyProductId: string): Promise<void> {
+    await db.delete(productStatus).where(eq(productStatus.shopifyProductId, shopifyProductId));
+  }
+
+  async getAllProductStatuses(): Promise<ProductStatus[]> {
+    return await db.select().from(productStatus);
   }
 }
 
