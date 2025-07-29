@@ -355,27 +355,6 @@
   line-height: 1.4;
 }
 
-/* Special styling for different link types */
-.halo-tab-content #extracted-documentation .documentation-link-card a[href*=".pdf"] {
-  background: #eff6ff;
-  border-color: #dbeafe;
-}
-
-.halo-tab-content #extracted-documentation .documentation-link-card a[href*=".pdf"]:hover {
-  background: #dbeafe;
-  border-color: #93c5fd;
-}
-
-.halo-tab-content #extracted-documentation .documentation-link-card a[href*="product-data-sheets"] {
-  background: #f0fdf4;
-  border-color: #dcfce7;
-}
-
-.halo-tab-content #extracted-documentation .documentation-link-card a[href*="product-data-sheets"]:hover {
-  background: #dcfce7;
-  border-color: #86efac;
-}
-
 /* Video responsive */
 .halo-tab-content iframe {
   max-width: 100%;
@@ -435,6 +414,53 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* YouTube section styles */
+.youtube-channel-section {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.youtube-brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.youtube-logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.youtube-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: #ff0000;
+  color: #ffffff;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.brand-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.subscribe-button-container {
+  /* Add any specific styling for the button container here */
+}
+
+.youtube-description {
+  font-size: 14px;
+  color: #555;
 }
 </style>
 
@@ -649,6 +675,13 @@
       }, 100);
     });
     </script>
+
+<script src="https://apis.google.com/js/platform.js"></script>
+    <!-- Subscribe button container -->
+    <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
+
+   <!-- Include the external script -->
+   <script src="//www.foxxlifesciences.com/cdn/shop/t/37/assets/modalFunctions.js"></script>
 
 </div>
 

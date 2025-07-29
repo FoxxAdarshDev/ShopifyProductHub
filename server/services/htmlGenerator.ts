@@ -273,9 +273,23 @@ class HtmlGenerator {
       html += `        <p>Video coming soon</p>\n`;
     }
 
-    // Always include YouTube channel link (default or custom)
+    // Always include YouTube channel section with subscribe button
     const youtubeText = content.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!';
-    html += `    <p>${youtubeText}</p>\n`;
+    
+    html += `    <div class="youtube-channel-section">\n`;
+    html += `      <div class="youtube-brand-header">\n`;
+    html += `        <div class="youtube-logo-container">\n`;
+    html += `          <div class="youtube-icon">\n`;
+    html += `            <span>▶</span>\n`;
+    html += `          </div>\n`;
+    html += `          <span class="brand-name">Foxx Life Sciences</span>\n`;
+    html += `        </div>\n`;
+    html += `        <div class="subscribe-button-container">\n`;
+    html += `          <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>\n`;
+    html += `        </div>\n`;
+    html += `      </div>\n`;
+    html += `      <p class="youtube-description">${youtubeText}</p>\n`;
+    html += `    </div>\n`;
 
     html += '    </div>\n';
     return html;
