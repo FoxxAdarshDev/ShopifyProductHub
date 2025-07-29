@@ -1,0 +1,103 @@
+<script>document.addEventListener("DOMContentLoaded", function() {
+    var productDescription=document.querySelector(".product-description");
+    if (productDescription) {
+        var emailRegex=/sales@foxxlifesciences\.com/;
+        var emailMatch=productDescription.innerHTML.match(emailRegex);
+        if (emailMatch) {
+            var emailLink=document.createElement("a");
+            emailLink.href="mailto:sales@foxxlifesciences.com?subject=Product Inquiry: " + document.title + "&body=I am interested in " + window.location.href;
+            emailLink.style.color="#0071CE";
+            emailLink.textContent="sales@foxxlifesciences.com";
+            productDescription.innerHTML=productDescription.innerHTML.replace(emailRegex, emailLink.outerHTML);
+        }
+        var phoneRegex=/1[\s\-]*603[\s\-]*890[\s\-]*3699/;
+        var phoneMatch=productDescription.innerHTML.match(phoneRegex);
+        if (phoneMatch) {
+            var phoneLink=document.createElement("a");
+            phoneLink.href="tel:16038903699";
+            phoneLink.style.color="#0071CE";
+            phoneLink.textContent="1-603-890-3699";
+            productDescription.innerHTML=productDescription.innerHTML.replace(phoneRegex, phoneLink.outerHTML);
+        }
+    }
+    var tabs=document.querySelectorAll(".tabs .tab");
+    tabs.forEach(function(tab) {
+        var tabName=tab.getAttribute("onclick").split("'")[1];
+        var tabContent=document.getElementById(tabName);
+        if ( !tabContent) {
+            tab.style.display="none";
+        }
+        else {
+            if (tabName !=='description') {
+                var header=document.createElement("div");
+                header.className="tab-header";
+                header.innerHTML=`<strong>${tab.textContent}
+                </strong>`;
+                tabContent.insertBefore(header, tabContent.firstChild);
+            }
+        }
+    }
+    );
+    var defaultTab=document.querySelector(".tab:not([style*='display: none'])");
+    if (defaultTab) {
+        defaultTab.classList.add("active");
+        openTab(defaultTab.getAttribute("onclick").split("'")[1], defaultTab, false);
+    }
+}
+
+);
+function openTab(tabName, elem, shouldScroll=true) {
+    var tabcontent=document.getElementsByClassName("tab-content");
+    var tablinks=document.getElementsByClassName("tab");
+    for (var i=0;
+    i < tabcontent.length;
+    i++) {
+        tabcontent[i].classList.remove("active");
+        tabcontent[i].style.border="none";
+        var header=tabcontent[i].querySelector(".tab-header");
+        if (header) {
+            if (tabcontent[i].id===tabName) {
+                header.style.color="#000000";
+                header.style.fontSize="24px";
+                header.style.display="block";
+            }
+            else {
+                header.style.color="#808080";
+                header.style.fontSize="18px";
+                header.style.display="block";
+            }
+        }
+    }
+    for (var i=0;
+    i < tablinks.length;
+    i++) {
+        tablinks[i].classList.remove("active");
+        tablinks[i].classList.remove("active_desc");
+    }
+    var selectedTabContent=document.getElementById(tabName);
+    if (selectedTabContent) {
+        selectedTabContent.classList.add("active");
+        selectedTabContent.style.border="0px solid #008446";
+        selectedTabContent.style.padding="4px";
+        selectedTabContent.style.paddingTop="30px";
+        selectedTabContent.style.paddingBottom="30px";
+        selectedTabContent.style.marginBottom="30px";
+        selectedTabContent.style.marginTop="30px";
+    }
+    elem.classList.add("active");
+    if (selectedTabContent && shouldScroll) {
+        selectedTabContent.scrollIntoView( {
+            behavior: 'smooth', block: 'start'
+        }
+        );
+    }
+}
+
+document.addEventListener("click", function(event) {
+    if (event.target.classList.contains("tab")) {
+        openTab(event.target.getAttribute("onclick").split("'")[1], event.target, true);
+    }
+}
+
+);
+</script>

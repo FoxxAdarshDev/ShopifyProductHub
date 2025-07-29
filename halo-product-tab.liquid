@@ -1,7 +1,7 @@
 {% comment %}
-  Halo Product Tab Template
-  Dynamic tab creation based on actual HTML content analysis
-  Only creates tabs for content that actually exists
+  Halo Product Tab Template - Scroll Navigation Version
+  Shows all content visible with scroll-to-section navigation
+  Based on your existing website pattern
 {% endcomment %}
 
 {% comment %} Get the product description {% endcomment %}
@@ -95,28 +95,33 @@
     {% assign tab_array = available_tabs | split: ',' %}
     {% assign title_array = available_titles | split: ',' %}
 
-    <div class="halo-product-tabs-container">
+    <div class="halo-product-container">
       <style>
-        .halo-product-tabs-container {
+        .halo-product-container {
           max-width: 1200px;
           margin: 0 auto;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         
-        .halo-tab-navigation {
+        .halo-tabs {
           display: flex;
           border-bottom: 1px solid #e2e8f0;
           margin-bottom: 32px;
           overflow-x: auto;
           scrollbar-width: none;
           -ms-overflow-style: none;
+          position: sticky;
+          top: 0;
+          background: white;
+          z-index: 100;
+          padding: 8px 0;
         }
         
-        .halo-tab-navigation::-webkit-scrollbar {
+        .halo-tabs::-webkit-scrollbar {
           display: none;
         }
         
-        .halo-tab-button {
+        .halo-tab {
           background: none;
           border: none;
           padding: 16px 24px;
@@ -128,46 +133,56 @@
           border-bottom: 2px solid transparent;
           transition: all 0.2s ease;
           min-width: fit-content;
+          text-decoration: none;
         }
         
-        .halo-tab-button:hover {
+        .halo-tab:hover {
           color: #1e293b;
           background-color: #f8fafc;
         }
         
-        .halo-tab-button.active {
+        .halo-tab.active {
           color: #2563eb;
           border-bottom-color: #2563eb;
           background-color: #eff6ff;
         }
         
         .halo-tab-content {
-          display: none;
-          animation: fadeIn 0.3s ease;
+          margin-bottom: 48px;
+          scroll-margin-top: 120px;
         }
         
-        .halo-tab-content.active {
-          display: block;
+        .halo-tab-header {
+          font-size: 24px;
+          font-weight: 600;
+          color: #000000;
+          margin-bottom: 24px;
+          padding-bottom: 12px;
+          border-bottom: 2px solid #e2e8f0;
         }
         
-        .halo-tab-content-inner {
-          padding: 0;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+        .halo-tab-header.inactive {
+          font-size: 18px;
+          color: #808080;
         }
         
         /* Responsive design */
         @media (max-width: 768px) {
-          .halo-tab-button {
+          .halo-tab {
             padding: 12px 16px;
             font-size: 13px;
           }
           
-          .halo-tab-navigation {
+          .halo-tabs {
             margin-bottom: 24px;
+          }
+          
+          .halo-tab-header {
+            font-size: 20px;
+          }
+          
+          .halo-tab-header.inactive {
+            font-size: 16px;
           }
         }
         
@@ -278,27 +293,35 @@
         }
       </style>
 
-      {% comment %} Tab Navigation - Always show when tabs exist {% endcomment %}
-      {% if tab_array.size > 0 %}
-        <div class="halo-tab-navigation">
-          {% for tab in tab_array %}
-            {% assign tab_index = forloop.index0 %}
-            {% assign tab_title = title_array[tab_index] %}
-            {% assign is_first = forloop.first %}
-            <button 
-              class="halo-tab-button{% if is_first %} active{% endif %}" 
-              onclick="haloShowTab('halo-{{ tab }}', this)"
-              type="button">
-              {{ tab_title }}
-            </button>
-          {% endfor %}
-        </div>
-      {% endif %}
+      {% comment %} Tab Navigation {% endcomment %}
+      <div class="halo-tabs">
+        {% for tab in tab_array %}
+          {% assign tab_index = forloop.index0 %}
+          {% assign tab_title = title_array[tab_index] %}
+          {% assign is_first = forloop.first %}
+          <div 
+            class="halo-tab{% if is_first %} active{% endif %}" 
+            onclick="haloOpenTab('{{ tab }}', this)"
+            data-tab="{{ tab }}">
+            {{ tab_title }}
+          </div>
+        {% endfor %}
+      </div>
 
-      {% comment %} Tab Content - Dynamic content extraction {% endcomment %}
+      {% comment %} All Tab Content - Visible by default {% endcomment %}
       {% for tab in tab_array %}
+        {% assign tab_index = forloop.index0 %}
+        {% assign tab_title = title_array[tab_index] %}
         {% assign is_first = forloop.first %}
-        <div id="halo-{{ tab }}" class="halo-tab-content{% if is_first %} active{% endif %}">
+        
+        <div id="{{ tab }}" class="halo-tab-content">
+          {% comment %} Add header for non-description tabs {% endcomment %}
+          {% unless tab == 'description' %}
+            <div class="halo-tab-header{% unless is_first %} inactive{% endunless %}">
+              <strong>{{ tab_title }}</strong>
+            </div>
+          {% endunless %}
+          
           <div class="halo-tab-content-inner">
             {% comment %} Extract content using improved parsing {% endcomment %}
             {% assign tab_id_search = 'id="' | append: tab | append: '"' %}
@@ -358,48 +381,73 @@
         </div>
       {% endfor %}
 
-      {% comment %} JavaScript for tab switching {% endcomment %}
+      {% comment %} JavaScript for scroll navigation {% endcomment %}
       <script>
-        function haloShowTab(targetId, clickedButton) {
-          // Hide all tab contents
-          var tabContents = document.querySelectorAll('.halo-tab-content');
-          tabContents.forEach(function(content) {
-            content.classList.remove('active');
+        document.addEventListener("DOMContentLoaded", function() {
+          // Initialize tabs - hide any tabs without content
+          var tabs = document.querySelectorAll(".halo-tabs .halo-tab");
+          tabs.forEach(function(tab) {
+            var tabName = tab.getAttribute("data-tab");
+            var tabContent = document.getElementById(tabName);
+            if (!tabContent || !tabContent.querySelector('.halo-tab-content-inner').innerHTML.trim()) {
+              tab.style.display = "none";
+            } else {
+              // Add headers to non-description tabs if they don't have them
+              if (tabName !== 'description' && !tabContent.querySelector('.halo-tab-header')) {
+                var header = document.createElement("div");
+                header.className = "halo-tab-header";
+                header.innerHTML = "<strong>" + tab.textContent + "</strong>";
+                tabContent.insertBefore(header, tabContent.firstChild);
+              }
+            }
           });
-          
-          // Remove active class from all buttons
-          var tabButtons = document.querySelectorAll('.halo-tab-button');
-          tabButtons.forEach(function(button) {
-            button.classList.remove('active');
-          });
-          
-          // Show target tab content
-          var targetTab = document.getElementById(targetId);
-          if (targetTab) {
-            targetTab.classList.add('active');
+
+          // Set first visible tab as active
+          var defaultTab = document.querySelector(".halo-tab:not([style*='display: none'])");
+          if (defaultTab) {
+            defaultTab.classList.add("active");
+            haloOpenTab(defaultTab.getAttribute("data-tab"), defaultTab, false);
           }
-          
-          // Add active class to clicked button
-          if (clickedButton) {
-            clickedButton.classList.add('active');
+        });
+
+        function haloOpenTab(tabName, elem, shouldScroll = true) {
+          // Update tab styles
+          var tablinks = document.getElementsByClassName("halo-tab");
+          for (var i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+          }
+          elem.classList.add("active");
+
+          // Update header styles
+          var headers = document.querySelectorAll(".halo-tab-header");
+          headers.forEach(function(header) {
+            var content = header.closest('.halo-tab-content');
+            if (content && content.id === tabName) {
+              header.style.color = "#000000";
+              header.style.fontSize = "24px";
+              header.classList.remove("inactive");
+            } else {
+              header.style.color = "#808080";
+              header.style.fontSize = "18px";
+              header.classList.add("inactive");
+            }
+          });
+
+          // Scroll to content
+          var selectedTabContent = document.getElementById(tabName);
+          if (selectedTabContent && shouldScroll) {
+            selectedTabContent.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
           }
         }
 
-        // Alternative function name for compatibility
-        function haloSwitchTab(event, tabId) {
-          var targetId = 'halo-' + tabId;
-          haloShowTab(targetId, event.target);
-        }
-
-        // Initialize tabs on page load
-        document.addEventListener('DOMContentLoaded', function() {
-          // Ensure first tab is active by default
-          var firstButton = document.querySelector('.halo-tab-button');
-          var firstContent = document.querySelector('.halo-tab-content');
-          
-          if (firstButton && firstContent) {
-            firstButton.classList.add('active');
-            firstContent.classList.add('active');
+        // Handle click events
+        document.addEventListener("click", function(event) {
+          if (event.target.classList.contains("halo-tab")) {
+            var tabName = event.target.getAttribute("data-tab");
+            haloOpenTab(tabName, event.target, true);
           }
         });
       </script>
