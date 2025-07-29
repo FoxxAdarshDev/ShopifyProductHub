@@ -1,12 +1,17 @@
 {% comment %}
-  Shopify Product Tab Template - Automatically detects and creates tabs from product description HTML
-
+  Shopify Product Tab Template - Enhanced Version with YouTube API Integration
+  
   This template analyzes the product description HTML content and:
   1. Detects tab content sections by their IDs
   2. Creates corresponding tab navigation
   3. Handles active/inactive tab states
-  4. Provides responsive styling
+  4. Provides responsive styling with enhanced logo grid and video styling
 {% endcomment %}
+
+<!-- YouTube API Script - Load once globally -->
+<script src="https://apis.google.com/js/platform.js"></script>
+<!-- Include the external script -->
+<script src="//www.foxxlifesciences.com/cdn/shop/t/37/assets/modalFunctions.js"></script>
 
 {% assign product_description = product.description %}
 
@@ -58,20 +63,21 @@
 .halo-tab-button {
   background: none;
   border: none;
-  padding: 12px 16px;
+  padding: 16px 20px; /* Increased padding for better appearance */
   cursor: pointer;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #6b7280;
+  border-radius: 8px;
+  font-size: 18px !important; /* Fixed: Significantly increased font size */
+  font-weight: 600 !important; /* Made bolder for better readability */
+  color: #374151;
   text-transform: capitalize;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
   border-bottom: 2px solid transparent;
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 44px;
+  gap: 8px;
+  min-height: 52px; /* Increased height for larger buttons */
+  letter-spacing: 0.5px; /* Better text spacing */
 }
 
 .halo-tab-button:hover {
@@ -193,16 +199,37 @@
   color: #374151;
 }
 
+/* Fixed: Enhanced Logo Grid Styling */
 .halo-tab-content .logo-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin: 20px 0;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+  gap: 20px !important; /* Fixed: Added proper gaps */
+  margin: 32px 0 !important;
+  padding: 24px !important; /* Fixed: Added padding */
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-radius: 12px !important;
+  border: 2px solid #e2e8f0 !important; /* Fixed: Added border */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .halo-tab-content .logo-grid img {
-  max-height: 60px;
-  width: auto;
+  max-height: 80px !important;
+  width: 100% !important;
+  object-fit: contain !important;
+  background: white !important;
+  border: 2px solid #cbd5e1 !important; /* Fixed: Individual image borders */
+  border-radius: 8px !important;
+  padding: 12px !important; /* Fixed: Added padding inside images */
+  display: block !important;
+  margin: 0 auto !important; /* Fixed: Center aligned images */
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.halo-tab-content .logo-grid img:hover {
+  transform: scale(1.05) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
 }
 
 /* Compatible Container Styling */
@@ -374,11 +401,34 @@
   line-height: 1.4;
 }
 
-/* Video responsive */
+/* Fixed: Enhanced Video Styling - Full Width with Border Radius */
 .halo-tab-content iframe {
-  max-width: 100%;
-  height: auto;
-  aspect-ratio: 16/9;
+  width: 100% !important; /* Fixed: Full width */
+  max-width: 100% !important;
+  height: 350px !important; /* Fixed height for better appearance */
+  aspect-ratio: 16/9 !important;
+  border-radius: 16px !important; /* Fixed: Added border radius */
+  border: 3px solid #e2e8f0 !important; /* Added stylish border */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* Enhanced shadow */
+  margin: 20px 0 !important;
+  display: block !important;
+  transition: all 0.3s ease !important;
+}
+
+.halo-tab-content iframe:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Enhanced Video Container */
+.halo-tab-content #videos {
+  width: 100% !important;
+  padding: 0 !important; /* Remove padding for full width effect */
+}
+
+.halo-tab-content #videos > div {
+  width: 100% !important;
 }
 
 /* Mobile responsive */
@@ -427,8 +477,26 @@
   }
 
   .halo-tab-content iframe {
-    width: 100%;
-    height: 250px;
+    width: 100% !important;
+    height: 250px !important;
+    border-radius: 12px !important; /* Maintain border radius on mobile */
+  }
+  
+  .halo-tab-button {
+    font-size: 16px !important; /* Adjust for mobile but keep readable */
+    padding: 14px 18px !important;
+  }
+  
+  .halo-tab-content .logo-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+    gap: 16px !important;
+    padding: 20px !important;
+  }
+  
+  .youtube-brand-header {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 12px !important;
   }
 }
 
@@ -437,51 +505,90 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* YouTube section styles */
+/* Fixed: Enhanced YouTube Section Styling */
 .youtube-channel-section {
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  margin-top: 32px !important;
+  padding: 28px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  width: 100% !important;
 }
 
 .youtube-brand-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 20px !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
 }
 
 .youtube-logo-container {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
 }
 
 .youtube-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  background-color: #ff0000;
-  color: #ffffff;
-  font-size: 12px;
-  margin-right: 8px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
+  color: #ffffff !important;
+  font-size: 24px !important;
+  font-weight: bold !important;
+  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.3) !important;
 }
 
 .brand-name {
-  font-weight: 500;
-  color: #333;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  color: #1f2937 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* Fixed: Subscribe Button Container - Made Visible and Styled */
 .subscribe-button-container {
-  /* Add any specific styling for the button container here */
+  display: block !important; /* Fixed: Ensure visibility */
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 40px !important;
+  min-width: 120px !important;
+  z-index: 1000 !important;
+}
+
+.g-ytsubscribe {
+  display: block !important; /* Fixed: Make subscribe button visible */
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: scale(1.2) !important; /* Make it larger */
 }
 
 .youtube-description {
-  font-size: 14px;
-  color: #555;
+  font-size: 16px !important;
+  color: #4b5563 !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+  text-align: center !important;
+  font-weight: 500 !important;
+}
+
+.youtube-description a {
+  color: #2563eb !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid transparent !important;
+  transition: all 0.3s ease !important;
+}
+
+.youtube-description a:hover {
+  border-bottom-color: #2563eb !important;
+  color: #1d4ed8 !important;
 }
 </style>
 
