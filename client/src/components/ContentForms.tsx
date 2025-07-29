@@ -23,21 +23,21 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   // Auto-save functionality with 1-second delay
   const saveDraftContent = async (tabType: string, content: any, updatedContentData: any) => {
     if (!productId) return;
-    
+
     try {
       await apiRequest("POST", "/api/draft-content", {
         shopifyProductId: productId,
         tabType: tabType,
         content: content
       });
-      
+
       // Update draft status if callback is provided
       if (onDraftStatusChange) {
         // Check if any selected tabs have meaningful content using the updated content data
         const hasContent = selectedTabs.some(tabType => {
           const data = updatedContentData[tabType];
           if (!data) return false;
-          
+
           // Check different types of content
           return Object.values(data).some(value => {
             if (typeof value === 'string') {
@@ -72,12 +72,12 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       },
     };
     onContentChange(updated);
-    
+
     // Auto-save with 1-second delay
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       saveDraftContent(tabType, updated[tabType], updated);
     }, 1000);
@@ -152,7 +152,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         // Skip header row if it contains "Item" and "Value" or similar
         const firstCell = cells[0].textContent?.trim().toLowerCase() || '';
         const secondCell = cells[1].textContent?.trim().toLowerCase() || '';
-        
+
         if (index === 0 && (firstCell.includes('item') || firstCell.includes('property') || 
                            firstCell.includes('specification') || firstCell.includes('parameter')) &&
                            (secondCell.includes('value') || secondCell.includes('description'))) {
@@ -161,7 +161,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
         const item = cells[0].textContent?.trim() || '';
         const value = cells[1].textContent?.trim() || '';
-        
+
         if (item && value) {
           specifications.push({ item, value });
         }
@@ -218,17 +218,17 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   // Helper function to get video URL from either format
   const getVideoUrl = (videoData: any): string => {
     if (!videoData) return "";
-    
+
     // Handle direct videoUrl format
     if (videoData.videoUrl) {
       return videoData.videoUrl;
     }
-    
+
     // Handle videos array format (from extraction)
     if (videoData.videos && Array.isArray(videoData.videos) && videoData.videos.length > 0) {
       return videoData.videos[0].url || "";
     }
-    
+
     return "";
   };
 
@@ -250,7 +250,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
     // Split by line breaks first (handles copy-paste from sheets/documents)
     const lines = cleanText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-    
+
     if (lines.length > 1) {
       // Multiple lines - treat each as separate item
       return lines;
@@ -258,7 +258,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
     // Single line - split by periods if it looks like sentences
     const singleLine = lines[0] || cleanText;
-    
+
     // Check if it looks like multiple sentences (has periods followed by capital letters or spaces)
     if (singleLine.match(/\.\s+[A-Z]/) || singleLine.match(/\.[A-Z]/)) {
       // Split by periods and clean up
@@ -292,7 +292,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
   const handleSmartTextInput = (tabType: string, field: string, text: string) => {
     const parsedItems = parseListText(text);
     const currentItems = contentData[tabType]?.[field] || [];
-    
+
     if (parsedItems.length > 1) {
       // Multiple items found - replace current items
       updateContent(tabType, field, parsedItems);
@@ -313,12 +313,12 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
     const cleanUrl = url.trim();
     console.log('Parsing URL:', cleanUrl);
-    
+
     try {
       const urlObj = new URL(cleanUrl);
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
       console.log('URL parts:', pathParts);
-      
+
       // Handle /collections/handle/products/product-handle format
       if (pathParts[0] === 'collections' && pathParts[2] === 'products' && pathParts[3]) {
         console.log('Found product in collection:', pathParts[3]);
@@ -328,7 +328,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
           url: cleanUrl
         };
       }
-      
+
       // Handle /collections/handle format
       if (pathParts[0] === 'collections' && pathParts[1]) {
         console.log('Found collection:', pathParts[1]);
@@ -338,7 +338,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
           url: cleanUrl
         };
       }
-      
+
       // Handle /products/handle format
       if (pathParts[0] === 'products' && pathParts[1]) {
         console.log('Found product:', pathParts[1]);
@@ -351,7 +351,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     } catch (error) {
       // If URL parsing fails, try regex patterns for partial URLs
       console.log('URL parsing failed, trying regex patterns');
-      
+
       // Extract collection handle from URL patterns
       const collectionMatch = cleanUrl.match(/\/collections\/([a-z0-9-]+)/);
       if (collectionMatch) {
@@ -384,13 +384,13 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         if (response.ok) {
           const data = await response.json();
           console.log('Collection API response:', data);
-          
+
           // Handle both direct collection and nested collection format
           const collection = data.collection || data;
           if (collection) {
             // Get collection image or featured image
             let imageUrl = collection.image?.src || collection.image || null;
-            
+
             // If no collection image, try to get first product image
             if (!imageUrl && collection.products?.length > 0) {
               const firstProduct = collection.products[0];
@@ -400,7 +400,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
                 imageUrl = firstProduct.image.src || firstProduct.image;
               }
             }
-            
+
             return {
               title: collection.title,
               image: imageUrl,
@@ -414,12 +414,12 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         if (response.ok) {
           const data = await response.json();
           console.log('Product API response:', data);
-          
+
           const product = data.product || data;
           if (product) {
             // Get product image - try multiple possible formats
             let imageUrl = null;
-            
+
             if (product.images && Array.isArray(product.images) && product.images.length > 0) {
               imageUrl = product.images[0].src || product.images[0];
             } else if (product.image) {
@@ -427,7 +427,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
             } else if (product.featured_image) {
               imageUrl = product.featured_image;
             }
-            
+
             return {
               title: product.title,
               image: imageUrl,
@@ -456,7 +456,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     console.log('🔍 About to fetch Shopify data...');
     const shopifyData = await fetchShopifyData(urlData);
     console.log('📦 Received shopifyData:', shopifyData);
-    
+
     // Ensure state is initialized before adding items
     const initializeContainer = () => {
       if (!contentData['compatible-container']) {
@@ -465,9 +465,9 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         updateContent("compatible-container", "compatibleItems", []);
       }
     };
-    
+
     initializeContainer();
-    
+
     // Create the new item
     const newItem = shopifyData ? {
       handle: urlData.handle,
@@ -489,7 +489,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     console.log('🔄 Current items:', currentItems);
     console.log('🆕 New item:', newItem);
     console.log('📋 Updated items array:', updatedItems);
-    
+
     // Force a fresh update to trigger re-render with proper state update
     onContentChange({
       ...contentData,
@@ -499,7 +499,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         title: "Compatible Container"
       }
     });
-    
+
     // Also update the primary fields for backward compatibility
     if (currentItems.length === 0) {
       // Set collection handle for first item
@@ -513,7 +513,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         }
       });
     }
-    
+
     // Auto-save the updated compatible container data
     setTimeout(() => {
       const updatedContentData = {
@@ -530,7 +530,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
         collectionHandle: urlData.handle
       }, updatedContentData);
     }, 100);
-    
+
     console.log('✅ Compatible container item added successfully');
   };
 
@@ -563,7 +563,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
               data-testid="textarea-description-content"
             />
           </div>
-          
+
           <LogoManager
             logos={contentData.description?.logos || []}
             onLogosChange={(logos) => updateContent("description", "logos", logos)}
@@ -951,7 +951,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               <strong>Default content included:</strong> "Video coming soon" placeholder and YouTube channel link will always appear.
             </p>
           </div>
-          
+
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">Video URL (YouTube Embed - Optional)</Label>
             <Input
@@ -961,7 +961,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               data-testid="input-video-url"
             />
           </div>
-          
+
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">YouTube Channel Text (Default Included)</Label>
             <Input
@@ -992,7 +992,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
               <strong>Default content included:</strong> Link to product datasheets page will always appear.
             </p>
           </div>
-          
+
           <div>
             <Label className="block text-sm font-medium text-slate-700 mb-2">Datasheet Title (Optional)</Label>
             <Input
@@ -1161,7 +1161,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                  
+
                   {/* Component Images */}
                   <div className="ml-8">
                     <Label className="block text-sm font-medium text-slate-600 mb-2">Component Images</Label>
@@ -1288,7 +1288,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
           </div>
 
 
-          
+
 
 
           {/* Display compatible items as cards */}
@@ -1325,7 +1325,7 @@ Pressure Range,Up to 60 psi 4.1 bar`}
                             rows={2}
                           />
                         </div>
-                        
+
                         <div className="w-full">
                           <label className="text-xs font-medium text-gray-700 block mb-1">Image URL</label>
                           <Input

@@ -434,25 +434,62 @@ export function extractContentFromHtml(html: string): ExtractedContent {
     if (docDiv && docDiv[1]) {
       console.log('📚 Found documentation div with structured content');
       console.log('📚 Documentation div content preview:', docDiv[1].substring(0, 200) + '...');
+      console.log('📚 Full documentation content:', docDiv[1]);
       
       const datasheets: Array<{title: string, url: string}> = [];
-      const linkMatches = docDiv[1].match(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g);
-      console.log('📚 Documentation links found:', linkMatches ? linkMatches.length : 0);
       
-      if (linkMatches) {
-        linkMatches.forEach(link => {
-          const hrefMatch = link.match(/href="([^"]*)"/);
-          const textMatch = link.match(/>([^<]*)</);
-          if (hrefMatch && textMatch) {
+      // Look for documentation-link-card structure first
+      const cardMatches = docDiv[1].match(/<div[^>]*class="[^"]*documentation-link-card[^"]*"[^>]*>([\s\S]*?)<\/div>/g);
+      console.log('📚 Documentation cards found:', cardMatches ? cardMatches.length : 0);
+      
+      if (cardMatches) {
+        cardMatches.forEach((card, index) => {
+          console.log(`📚 Processing card ${index + 1}:`, card.substring(0, 200) + '...');
+          
+          // Extract href from the card
+          const hrefMatch = card.match(/<a[^>]*href="([^"]*)"[^>]*>/);
+          
+          // Extract title from doc-title span
+          const titleMatch = card.match(/<span[^>]*class="[^"]*doc-title[^"]*"[^>]*>(.*?)<\/span>/);
+          
+          console.log('📚 Card href match:', hrefMatch ? hrefMatch[1] : 'NOT FOUND');
+          console.log('📚 Card title match:', titleMatch ? titleMatch[1] : 'NOT FOUND');
+          
+          if (hrefMatch && titleMatch) {
             const url = hrefMatch[1];
-            const title = textMatch[1].trim();
+            const title = titleMatch[1].replace(/<[^>]*>/g, '').trim();
+            
             // Skip the default datasheet link
             if (!url.includes('product-data-sheets')) {
-              console.log('📚 Extracted documentation link:', title);
+              console.log('📚 Extracted documentation from card:', title, 'URL:', url);
               datasheets.push({ title, url });
             }
           }
         });
+      }
+      
+      // Fallback: try simple link extraction if no cards found
+      if (datasheets.length === 0) {
+        console.log('📚 No cards found, trying simple link extraction...');
+        const linkMatches = docDiv[1].match(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g);
+        console.log('📚 Simple documentation links found:', linkMatches ? linkMatches.length : 0);
+        
+        if (linkMatches) {
+          linkMatches.forEach(link => {
+            const hrefMatch = link.match(/href="([^"]*)"/);
+            const textContent = link.replace(/<[^>]*>/g, '').trim();
+            
+            if (hrefMatch && textContent) {
+              const url = hrefMatch[1];
+              const title = textContent;
+              // Skip the default datasheet link
+              if (!url.includes('product-data-sheets')) {
+                console.log('📚 Extracted simple documentation link:', title);
+                datasheets.push({ title, url });
+              }
+            }
+          });
+        }
       }
       
       // Always create documentation section - include default link when no custom datasheets

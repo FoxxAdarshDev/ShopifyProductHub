@@ -328,6 +328,15 @@ export default function ProductManager() {
           console.log('✅ Final transformed items count:', transformedContent['compatible-container'].compatibleItems.length);
         }
         
+        // Debug logging for extracted content
+        console.log('🔍 Final extracted content:', transformedContent);
+        if (transformedContent.description) {
+          console.log('📄 Description title extracted:', transformedContent.description.title);
+        }
+        if (transformedContent.documentation) {
+          console.log('📚 Documentation extracted:', transformedContent.documentation);
+        }
+        
         // Update content data with transformed content
         setContentData(transformedContent);
         // Select tabs that were extracted
