@@ -269,30 +269,13 @@ class HtmlGenerator {
       // Generate proper iframe with clean URL
       html += `        <iframe width="560" height="315" src="${videoUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>\n`;
     } else {
-      // Enhanced default content with highlighted "Video coming soon"
-      html += `        <div class="video-default-text">\n`;
-      html += `          <p>Video coming soon</p>\n`;
-      html += `        </div>\n`;
+      // Default "Video coming soon" message
+      html += `        <p>Video coming soon</p>\n`;
     }
 
-    // Enhanced YouTube channel card
-    html += `        <div class="youtube-channel-card">\n`;
-    html += `          <div class="youtube-channel-logo">\n`;
-    html += `            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">\n`;
-    html += `              <path d="M21.8 8.001c0 0-.2-1.4-.8-2-.8-.8-1.6-.8-2-.8-2.8-.2-7-.2-7-.2s-4.2 0-7 .2c-.4 0-1.2 0-2 .8-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.6c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.2.8 1.6.2 6.8.2 6.8.2s4.2 0 7-.2c.4 0 1.2 0 2-.8.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.6c0-1.6-.2-3.201-.2-3.201zM9.5 15.5v-7l5.5 3.5-5.5 3.5z"/>\n`;
-    html += `            </svg>\n`;
-    html += `          </div>\n`;
-    html += `          <div class="youtube-channel-info">\n`;
-    html += `            <h4 class="youtube-channel-name">Foxx Life Sciences</h4>\n`;
-    html += `            <p class="youtube-channel-stats">Subscribe for product videos and tutorials</p>\n`;
-    html += `          </div>\n`;
-    html += `          <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" class="youtube-channel-button" target="_blank">\n`;
-    html += `            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">\n`;
-    html += `              <path d="M21.8 8.001c0 0-.2-1.4-.8-2-.8-.8-1.6-.8-2-.8-2.8-.2-7-.2-7-.2s-4.2 0-7 .2c-.4 0-1.2 0-2 .8-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.6c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.2.8 1.6.2 6.8.2 6.8.2s4.2 0 7-.2c.4 0 1.2 0 2-.8.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.6c0-1.6-.2-3.201-.2-3.201zM9.5 15.5v-7l5.5 3.5-5.5 3.5z"/>\n`;
-    html += `            </svg>\n`;
-    html += `            YouTube\n`;
-    html += `          </a>\n`;
-    html += `        </div>\n`;
+    // Always include YouTube channel link (default or custom)
+    const youtubeText = content.youtubeChannelText || 'Check out all of our videos on our <a href="https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg" target="_blank">YouTube Channel</a>!';
+    html += `    <p>${youtubeText}</p>\n`;
 
     html += '    </div>\n';
     return html;
@@ -304,34 +287,20 @@ class HtmlGenerator {
     // Add specific product datasheet if provided
     if (content.datasheetUrl) {
       const absoluteUrl = convertToAbsoluteUrl(content.datasheetUrl);
-      html += `    <a href="${absoluteUrl}" target="_blank" class="documentation-item">\n`;
-      html += `      <div class="documentation-item-header">\n`;
-      html += `        <div class="documentation-item-icon">📄</div>\n`;
-      html += `        <h4 class="documentation-item-title">${content.datasheetTitle || 'Product Datasheet'}</h4>\n`;
-      html += `      </div>\n`;
-      html += `      <p class="documentation-item-description">Download PDF →</p>\n`;
-      html += `    </a>\n`;
+      html += `    <p><a href="${absoluteUrl}" target="_blank">${content.datasheetTitle || 'Product Datasheet'}</a></p>\n`;
     }
 
     // Add additional links if provided
     if (content.additionalLinks && Array.isArray(content.additionalLinks)) {
       content.additionalLinks.forEach((link: { url: string; title: string }) => {
         const absoluteUrl = convertToAbsoluteUrl(link.url);
-        html += `    <a href="${absoluteUrl}" target="_blank" class="documentation-item">\n`;
-        html += `      <div class="documentation-item-header">\n`;
-        html += `        <div class="documentation-item-icon">📄</div>\n`;
-        html += `        <h4 class="documentation-item-title">${link.title}</h4>\n`;
-        html += `      </div>\n`;
-        html += `      <p class="documentation-item-description">Download PDF →</p>\n`;
-        html += `    </a>\n`;
+        html += `    <p><a href="${absoluteUrl}" target="_blank">${link.title}</a></p>\n`;
       });
     }
 
-    // Enhanced default product datasheets section
-    html += `    <div class="documentation-default-section">\n`;
-    html += `      <h4>📊 Product Datasheets</h4>\n`;
-    html += `      <p><a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank" style="color: #0c4a6e; text-decoration: none;">Click here for a full list of our product datasheets!</a></p>\n`;
-    html += `    </div>\n`;
+    // Always include default product datasheets link
+    const defaultDatasheetText = content.defaultDatasheetText || 'Click <a href="http://www.foxxlifesciences.com/pages/product-data-sheets" target="_blank">here</a> for a full list of our product datasheets!';
+    html += `    <p>${defaultDatasheetText}</p>\n`;
 
     html += '    </div>\n';
     return html;
