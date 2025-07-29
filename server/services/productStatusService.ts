@@ -60,7 +60,7 @@ class ProductStatusService {
       // 1. First check database cache
       const dbStatus = await storage.getProductStatus(productId);
       if (dbStatus && this.isRecentStatus(dbStatus.lastShopifyCheck)) {
-        console.log(`Using database status for product ${productId}`);
+        console.log(`Using cached database status for product ${productId}`);
         return {
           hasShopifyContent: dbStatus.hasShopifyContent || false,
           hasNewLayout: dbStatus.hasNewLayout || false,
@@ -83,7 +83,7 @@ class ProductStatusService {
         };
       }
 
-      // 3. Check local database for content and drafts
+      // 3. Check local database for content and drafts (fast, no API call)
       const localProduct = await storage.getProductByShopifyId(productId);
       let hasLocalContent = false;
       let localContentCount = 0;
@@ -96,45 +96,52 @@ class ProductStatusService {
 
       // 4. Check for draft content
       const draftContent = await storage.getDraftContentByProduct(productId);
-      const hasDraftContent = draftContent.length > 0;
+      let hasDraftContent = draftContent.length > 0;
 
-      // 5. Only check Shopify if we need to determine layout structure
+      // 5. Smart Shopify checking with rate limit protection
       let hasShopifyContent = false;
       let isOurTemplateStructure = false;
       let shopifyContentCount = 0;
 
-      try {
-        const shopifyProduct = await shopifyService.getProductById(productId);
-        hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
-        
-        if (hasShopifyContent && shopifyProduct?.body_html) {
-          const layoutDetection = this.detectNewLayoutFromHTML(shopifyProduct.body_html);
-          isOurTemplateStructure = layoutDetection.isNewLayout;
-          shopifyContentCount = layoutDetection.contentCount;
-        }
-      } catch (shopifyError: any) {
-        if (shopifyError.message.includes('429')) {
-          console.warn(`Rate limited for product ${productId}, using database data only`);
-          // Use database data when rate limited
-          hasShopifyContent = dbStatus?.hasShopifyContent || false;
-          isOurTemplateStructure = dbStatus?.isOurTemplateStructure || false;
-          shopifyContentCount = parseInt(dbStatus?.contentCount || '0');
-        } else {
-          console.error(`Shopify error for product ${productId}:`, shopifyError);
+      // Only check Shopify if we don't have complete local data
+      const needsShopifyCheck = !hasLocalContent && !hasDraftContent;
+      
+      if (needsShopifyCheck) {
+        try {
+          const shopifyProduct = await shopifyService.getProductById(productId);
+          hasShopifyContent = !!(shopifyProduct?.body_html && shopifyProduct.body_html.trim() !== '');
+          
+          if (hasShopifyContent && shopifyProduct?.body_html) {
+            const layoutDetection = this.detectNewLayoutFromHTML(shopifyProduct.body_html);
+            isOurTemplateStructure = layoutDetection.isNewLayout;
+            shopifyContentCount = layoutDetection.contentCount;
+          }
+        } catch (shopifyError: any) {
+          if (shopifyError.message.includes('429')) {
+            console.warn(`Rate limited for product ${productId}, using database data only`);
+            // Use database data when rate limited
+            hasShopifyContent = dbStatus?.hasShopifyContent || false;
+            isOurTemplateStructure = dbStatus?.isOurTemplateStructure || false;
+            shopifyContentCount = parseInt(dbStatus?.contentCount || '0');
+          } else {
+            console.error(`Shopify error for product ${productId}:`, shopifyError);
+          }
         }
       }
 
-      // 6. Determine final status
+      // 6. Determine final status with proper logic
       const hasNewLayout = hasLocalContent || isOurTemplateStructure;
       const contentCount = Math.max(localContentCount, shopifyContentCount);
       
-      // Hide draft mode if content is published to Shopify with our template
-      const finalHasDraftContent = hasDraftContent && !isOurTemplateStructure;
+      // Clear draft mode if content is published to Shopify with our template
+      if (isOurTemplateStructure && hasDraftContent) {
+        hasDraftContent = false;
+      }
 
       const result: ContentStatusResult = {
         hasShopifyContent,
         hasNewLayout,
-        hasDraftContent: finalHasDraftContent,
+        hasDraftContent,
         contentCount,
         isOurTemplateStructure
       };
@@ -142,7 +149,7 @@ class ProductStatusService {
       // 7. Update database status cache
       await storage.updateProductStatus(productId, {
         hasNewLayout,
-        hasDraftContent: finalHasDraftContent,
+        hasDraftContent,
         hasShopifyContent,
         contentCount: contentCount.toString(),
         isOurTemplateStructure,
@@ -196,21 +203,23 @@ class ProductStatusService {
       const batch = batches[batchIndex];
       console.log(`Processing status batch ${batchIndex + 1}/${batches.length} with ${batch.length} products`);
       
-      // Add delay between batches
+      // Add delay between batches to avoid rate limits
       if (batchIndex > 0) {
-        await this.delay(1000); // 1 second delay between batches
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
       }
       
-      // Process batch items with delays
-      for (let i = 0; i < batch.length; i++) {
-        const productId = batch[i];
-        
-        if (i > 0) {
-          await this.delay(300); // 300ms delay between individual requests
+      // Process batch items in parallel for efficiency
+      const batchPromises = batch.map(async (productId, index) => {
+        // Small delay between individual items in batch
+        if (index > 0) {
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
         
-        results[productId] = await this.getProductContentStatus(productId);
-      }
+        const status = await this.getProductContentStatus(productId);
+        results[productId] = status;
+      });
+      
+      await Promise.all(batchPromises);
     }
 
     console.log(`Completed batch status check for ${productIds.length} products`);
@@ -232,6 +241,7 @@ class ProductStatusService {
 
   // Clear draft status when content is published to Shopify
   async clearDraftStatusOnPublish(productId: string): Promise<void> {
+    console.log(`Clearing draft status for product ${productId} after Shopify publish`);
     await storage.updateProductStatus(productId, {
       hasDraftContent: false,
       hasShopifyContent: true,
