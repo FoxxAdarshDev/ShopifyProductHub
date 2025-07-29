@@ -36,19 +36,22 @@ class ProductStatusService {
 
     const isNewLayout = hasContainerClass && hasDataSkuAttributes && hasTabStructure;
 
-    // Count content sections if it's our template
+    // Count content sections (regardless of template detection for better visibility)
     let contentCount = 0;
+    if (html.includes('id="description"')) contentCount++;
+    if (html.includes('id="features"')) contentCount++;
+    if (html.includes('id="applications"')) contentCount++;
+    if (html.includes('id="specifications"')) contentCount++;
+    if (html.includes('data-section="documentation"')) contentCount++;
+    if (html.includes('data-section="videos"')) contentCount++;
+    if (html.includes('data-section="safety-guidelines"')) contentCount++;
+    if (html.includes('data-section="sterilization-method"')) contentCount++;
+    if (html.includes('data-section="compatible-container"')) contentCount++;
+    if (html.includes('data-section="sku-nomenclature"')) contentCount++;
+
+    // Debug logging when content is detected (remove after verification)
     if (isNewLayout) {
-      if (html.includes('id="description"')) contentCount++;
-      if (html.includes('id="features"')) contentCount++;
-      if (html.includes('id="applications"')) contentCount++;
-      if (html.includes('id="specifications"')) contentCount++;
-      if (html.includes('data-section="documentation"')) contentCount++;
-      if (html.includes('data-section="videos"')) contentCount++;
-      if (html.includes('data-section="safety-guidelines"')) contentCount++;
-      if (html.includes('data-section="sterilization-method"')) contentCount++;
-      if (html.includes('data-section="compatible-container"')) contentCount++;
-      if (html.includes('data-section="sku-nomenclature"')) contentCount++;
+      console.log(`✅ New Layout detected in HTML: ${contentCount} sections found`);
     }
 
     return { isNewLayout, contentCount };
@@ -57,30 +60,35 @@ class ProductStatusService {
   // Get comprehensive status for a single product (database-first)
   async getProductContentStatus(productId: string): Promise<ContentStatusResult> {
     try {
-      // 1. First check database cache
-      const dbStatus = await storage.getProductStatus(productId);
-      if (dbStatus && this.isRecentStatus(dbStatus.lastShopifyCheck)) {
-        console.log(`Using cached database status for product ${productId}`);
-        return {
-          hasShopifyContent: dbStatus.hasShopifyContent || false,
-          hasNewLayout: dbStatus.hasNewLayout || false,
-          hasDraftContent: dbStatus.hasDraftContent || false,
-          contentCount: parseInt(dbStatus.contentCount || '0'),
-          isOurTemplateStructure: dbStatus.isOurTemplateStructure || false
-        };
-      }
+      // Check if we should skip caches for fresh data (temporarily for verification)
+      const skipCaches = false; // Set to true for debugging specific issues
 
-      // 2. Check memory cache
-      const cached = contentStatusCache.get(productId);
-      if (cached) {
-        console.log(`Using memory cache for product ${productId}`);
-        return {
-          hasShopifyContent: cached.hasShopifyContent,
-          hasNewLayout: cached.hasNewLayout,
-          hasDraftContent: cached.hasDraftContent,
-          contentCount: cached.contentCount,
-          isOurTemplateStructure: true // Memory cache implies checked structure
-        };
+      // 1. Check database cache (unless skipping caches)
+      if (!skipCaches) {
+        const dbStatus = await storage.getProductStatus(productId);
+        if (dbStatus && this.isRecentStatus(dbStatus.lastShopifyCheck)) {
+          console.log(`Using cached database status for product ${productId}`);
+          return {
+            hasShopifyContent: dbStatus.hasShopifyContent || false,
+            hasNewLayout: dbStatus.hasNewLayout || false,
+            hasDraftContent: dbStatus.hasDraftContent || false,
+            contentCount: parseInt(dbStatus.contentCount || '0'),
+            isOurTemplateStructure: dbStatus.isOurTemplateStructure || false
+          };
+        }
+        
+        // 2. Check memory cache
+        const cached = contentStatusCache.get(productId);
+        if (cached) {
+          console.log(`Using memory cache for product ${productId}`);
+          return {
+            hasShopifyContent: cached.hasShopifyContent,
+            hasNewLayout: cached.hasNewLayout,
+            hasDraftContent: cached.hasDraftContent,
+            contentCount: cached.contentCount,
+            isOurTemplateStructure: true
+          };
+        }
       }
 
       // 3. Check local database for content and drafts (fast, no API call)
@@ -99,13 +107,15 @@ class ProductStatusService {
       let hasDraftContent = draftContent.length > 0;
       const draftContentCount = draftContent.length;
 
-      // 5. Smart Shopify checking with rate limit protection
+      // 5. Smart Shopify checking with rate limit protection  
       let hasShopifyContent = false;
       let isOurTemplateStructure = false;
       let shopifyContentCount = 0;
+      
+      console.log(`🔍 Starting Shopify content check for product ${productId}`);
 
-      // Only check Shopify if we don't have complete local data
-      const needsShopifyCheck = !hasLocalContent && !hasDraftContent;
+      // Check Shopify if we don't have local content OR if we're forcing fresh checks
+      const needsShopifyCheck = skipCaches || (!hasLocalContent);
       
       if (needsShopifyCheck) {
         try {
@@ -120,10 +130,10 @@ class ProductStatusService {
         } catch (shopifyError: any) {
           if (shopifyError.message.includes('429')) {
             console.warn(`Rate limited for product ${productId}, using database data only`);
-            // Use database data when rate limited
-            hasShopifyContent = dbStatus?.hasShopifyContent || false;
-            isOurTemplateStructure = dbStatus?.isOurTemplateStructure || false;
-            shopifyContentCount = parseInt(dbStatus?.contentCount || '0');
+            // Use fallback values when rate limited
+            hasShopifyContent = false;
+            isOurTemplateStructure = false;
+            shopifyContentCount = 0;
           } else {
             console.error(`Shopify error for product ${productId}:`, shopifyError);
           }
@@ -141,6 +151,11 @@ class ProductStatusService {
         contentCount = shopifyContentCount;
       } else if (hasDraftContent) {
         contentCount = draftContentCount;
+      }
+      
+      // Debug logging for draft content count issues
+      if (hasDraftContent && contentCount === 0) {
+        console.log(`⚠️ Draft content detected but count is 0 for product ${productId}. draftContentCount: ${draftContentCount}`);
       }
       
       // Clear draft mode if content is published to Shopify with our template
