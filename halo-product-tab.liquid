@@ -429,28 +429,28 @@
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-start !important;
-  padding: 20px !important;
-  background: #f8fafc !important;
+  padding: 24px !important;
+  background: #ffffff !important; /* Clean white background */
   border-radius: 12px !important;
-  border: 1px solid #e2e8f0 !important;
+  border: 2px solid #e5e7eb !important; /* Slightly stronger border */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important; /* Minimal shadow */
 }
 
 .halo-tab-content #videos iframe {
   width: 100% !important;
-  height: 400px !important; /* Full height for better appearance */
+  height: 450px !important; /* Increased height for better appearance */
   aspect-ratio: 16/9 !important;
-  border-radius: 16px !important;
-  border: 3px solid #e2e8f0 !important;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
-  margin: 0 !important; /* Remove margin since it's in wrapper */
+  border-radius: 12px !important; /* Reduced border radius */
+  border: 2px solid #d1d5db !important; /* Light border */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important; /* Light shadow only */
+  margin: 0 !important;
   display: block !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
 }
 
 .halo-tab-content #videos iframe:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
-  border-color: #3b82f6 !important;
+  border-color: #9ca3af !important; /* Subtle hover effect */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; /* Light hover shadow */
 }
 
 /* Mobile responsive */
@@ -536,14 +536,14 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Fixed: Enhanced YouTube Section Styling */
+/* Fixed: Clean YouTube Section Styling - Removed Shadows */
 .youtube-channel-section {
   margin-top: 32px !important;
   padding: 28px !important;
-  border: 2px solid #e2e8f0 !important;
-  border-radius: 16px !important;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #f8fafc !important; /* Removed gradient */
+  /* Removed box-shadow */
   width: 100% !important;
 }
 
@@ -602,10 +602,10 @@
 }
 
 .subscribe-section-title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #374151 !important;
-  margin-bottom: 12px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  margin-bottom: 16px !important;
   text-align: center !important;
 }
 
@@ -613,7 +613,27 @@
   font-size: 14px !important;
   color: #6b7280 !important;
   text-align: center !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important;
+  margin-top: 16px !important;
+}
+
+/* Enhanced YouTube branding in sidebar */
+.video-subscribe-wrapper .youtube-logo-container {
+  margin-bottom: 16px !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.video-subscribe-wrapper .youtube-icon {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 16px !important;
+  margin-right: 8px !important;
+}
+
+.video-subscribe-wrapper .brand-name {
+  font-size: 14px !important;
+  font-weight: 600 !important;
 }
 
 .youtube-description {
@@ -787,13 +807,20 @@
 
     // Function to create 80/20 video layout with subscribe button
     function createVideoLayout(originalContent) {
-      // Create wrapper container
+      // Remove any existing YouTube channel sections to avoid duplicates
+      const cleanContent = originalContent.replace(/<div class="youtube-channel-section">[\s\S]*?<\/div>/g, '');
+      
+      // Create wrapper container with clean content
       const videoWrapper = `
         <div class="video-content-wrapper">
-          ${originalContent}
+          ${cleanContent}
         </div>
         <div class="video-subscribe-wrapper">
           <div class="subscribe-section-title">Subscribe to Our Channel</div>
+          <div class="youtube-logo-container">
+            <div class="youtube-icon">▶</div>
+            <div class="brand-name">Foxx Life Sciences</div>
+          </div>
           <div class="subscribe-button-container">
             <div class="g-ytsubscribe" data-channelid="UCfTcuV6zESARyzKfG2T6YFg" data-layout="full" data-count="hidden"></div>
           </div>
