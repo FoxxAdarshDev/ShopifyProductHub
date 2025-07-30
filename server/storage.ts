@@ -27,6 +27,7 @@ export interface IStorage {
   getProductBySku(sku: string): Promise<Product | undefined>;
   getProductByShopifyId(shopifyId: string): Promise<Product | undefined>;
   searchProductsBySku(partialSku: string): Promise<Product[]>;
+  getAllProducts(): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product>;
 
@@ -91,6 +92,10 @@ export class DatabaseStorage implements IStorage {
 
   async searchProductsBySku(partialSku: string): Promise<Product[]> {
     return await db.select().from(products).where(like(products.sku, `${partialSku}%`));
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return await db.select().from(products);
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {

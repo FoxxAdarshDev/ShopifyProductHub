@@ -12,7 +12,8 @@ import {
   getBackgroundProcessingStatus, 
   stopBackgroundProcessing, 
   forceRefreshAllProducts,
-  forceRefreshLayoutDetection 
+  forceRefreshLayoutDetection,
+  getStatusCountsNow
 } from "./routes/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -772,6 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/stop-background-processing", stopBackgroundProcessing);
   app.post("/api/admin/force-refresh-all-products", forceRefreshAllProducts);
   app.post("/api/admin/force-refresh-layout-detection", forceRefreshLayoutDetection);
+  app.get("/api/admin/status-counts-now", getStatusCountsNow);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -177,3 +177,60 @@ export async function forceRefreshLayoutDetection(req: Request, res: Response) {
     res.status(500).json({ message: "Failed to refresh layout detection" });
   }
 }
+
+// Get immediate status counts from database
+export async function getStatusCountsNow(req: Request, res: Response) {
+  try {
+    console.log('📊 Getting immediate status counts from database');
+    
+    // Get all product status records
+    const allStatuses = await storage.getAllProductStatuses();
+    console.log(`Found ${allStatuses.length} products with status records`);
+    
+    // Count each category
+    let newLayoutCount = 0;
+    let draftModeCount = 0;
+    let shopifyContentCount = 0;
+    let noContentCount = 0;
+    
+    for (const status of allStatuses) {
+      if (status.hasNewLayout || status.isOurTemplateStructure) {
+        newLayoutCount++;
+      } else if (status.hasDraftContent) {
+        draftModeCount++;
+      } else if (status.hasShopifyContent) {
+        shopifyContentCount++;
+      } else {
+        noContentCount++;
+      }
+    }
+    
+    // Get total product count
+    const allProducts = await storage.getAllProducts();
+    const totalProducts = allProducts.length;
+    
+    // Calculate products without any status record (they are No Content)
+    const productsWithoutStatus = totalProducts - allStatuses.length;
+    noContentCount += productsWithoutStatus;
+    
+    const result = {
+      total: totalProducts,
+      shopifyContent: shopifyContentCount,
+      newLayout: newLayoutCount,
+      draftMode: draftModeCount,
+      noContent: noContentCount,
+      details: {
+        statusRecords: allStatuses.length,
+        productsWithoutStatus,
+        breakdown: 'New Layout (our template), Draft Mode (local unsaved), Shopify Content (standard), No Content (empty)'
+      }
+    };
+    
+    console.log('📊 Current database status counts:', result);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting status counts:', error);
+    res.status(500).json({ error: 'Failed to get status counts' });
+  }
+}
