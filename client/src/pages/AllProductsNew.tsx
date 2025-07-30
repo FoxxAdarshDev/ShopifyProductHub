@@ -99,24 +99,36 @@ export default function AllProductsNew() {
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
   });
 
-  // Search query for when user is searching
-  const { data: searchData, isLoading: searchLoading } = useQuery({
+  // Search query for when user is searching  
+  const { data: searchData, isLoading: searchLoading, error: searchError } = useQuery({
     queryKey: ["/api/products/search", debouncedSearchTerm],
     queryFn: async () => {
       if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
-        return { products: [] };
+        return { products: [], totalFound: 0 };
       }
+      console.log(`🔍 Frontend searching for: "${debouncedSearchTerm}"`);
       const response = await apiRequest("GET", `/api/products/search?q=${encodeURIComponent(debouncedSearchTerm)}`);
-      return response.json();
+      const data = await response.json();
+      console.log(`📋 Frontend search results:`, data);
+      return data;
     },
-    enabled: debouncedSearchTerm.length >= 2
+    enabled: debouncedSearchTerm.length >= 2,
+    staleTime: 30 * 1000, // Cache search results for 30 seconds
   });
 
   // Flatten all products from infinite query
   const allProducts = productPages?.pages.flatMap(page => page.products) || [];
 
   // Determine which products to show
-  const displayProducts = debouncedSearchTerm.length >= 2 ? (searchData?.products || []) : allProducts;
+  const isSearching = debouncedSearchTerm.length >= 2;
+  const displayProducts = isSearching ? (searchData?.products || []) : allProducts;
+  
+  // Debug logging
+  if (isSearching && searchData) {
+    console.log(`📊 Search mode: query="${debouncedSearchTerm}", found=${searchData.products?.length || 0} products`);
+  } else if (!isSearching) {
+    console.log(`📊 Browse mode: showing ${allProducts.length} products from infinite query`);
+  }
 
   // Content status checking function
   const checkContentStatus = useCallback(async (productIds: number[]) => {
@@ -412,6 +424,13 @@ export default function AllProductsNew() {
                 : "No products available with the selected filter"
               }
             </p>
+            {/* Debug info for searches */}
+            {debouncedSearchTerm.length >= 2 && searchData && (
+              <div className="mt-4 text-xs text-gray-500">
+                <p>Search returned: {searchData.totalFound || 0} results</p>
+                {searchError && <p className="text-red-500">Search error: {searchError.message}</p>}
+              </div>
+            )}
           </div>
         )}
 
