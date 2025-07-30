@@ -475,7 +475,7 @@ export default function AllProducts() {
                         Variants ({product.variants.length})
                       </h4>
                       <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {product.variants.slice(0, 3).map((variant) => (
+                        {product.variants.map((variant) => (
                           <div
                             key={variant.id}
                             className="flex items-center justify-between p-2 bg-slate-50 rounded text-sm"
@@ -493,12 +493,12 @@ export default function AllProducts() {
                             </div>
                           </div>
                         ))}
-                        {product.variants.length > 3 && (
-                          <div className="text-xs text-slate-500 text-center py-1">
-                            +{product.variants.length - 3} more variants...
-                          </div>
-                        )}
                       </div>
+                      {product.variants.length > 3 && (
+                        <div className="text-xs text-slate-500 mt-1">
+                          Total: {product.variants.length} variants
+                        </div>
+                      )}
                     </div>
 
                     {/* Content Status Badges */}

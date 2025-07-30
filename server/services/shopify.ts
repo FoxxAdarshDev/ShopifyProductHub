@@ -286,28 +286,28 @@ class ShopifyService {
         }
       }
 
-      // HYBRID APPROACH: Handle known SKUs that exist but aren't in paginated results
-      // This is a workaround for products that exist (confirmed by Product ID) but don't appear in normal search
-      const skuToProductIdMap: { [key: string]: string } = {
-        '12013-01': '7846012223704',
-        // Add more known mappings as needed
-      };
+      // HYBRID APPROACH: Build comprehensive SKU mapping from database or create from API
+      const skuToProductIdMap = await this.buildComprehensiveSkuMapping();
       
       const normalizedQuery = query.toLowerCase().trim();
-      console.log(`🔍 Checking hybrid SKU mapping for normalized query: "${normalizedQuery}"`);
-      console.log(`🔍 Available mappings:`, Object.keys(skuToProductIdMap));
+      console.log(`🔍 Checking comprehensive SKU mapping for normalized query: "${normalizedQuery}"`);
+      console.log(`🔍 Available mappings: ${Object.keys(skuToProductIdMap).length} total SKUs`);
       
       if (skuToProductIdMap[normalizedQuery]) {
-        console.log(`🎯 Found SKU mapping for "${query}" -> Product ID ${skuToProductIdMap[normalizedQuery]}`);
-        const mappedProduct = await this.getProductById(skuToProductIdMap[normalizedQuery]);
-        if (mappedProduct) {
-          console.log(`✅ Successfully retrieved product via SKU mapping: ${mappedProduct.title}`);
-          return [mappedProduct];
-        } else {
-          console.log(`❌ Failed to retrieve product via mapping, Product ID ${skuToProductIdMap[normalizedQuery]} not found`);
+        const productId = skuToProductIdMap[normalizedQuery];
+        console.log(`🎯 Found SKU mapping for "${query}" -> Product ID ${productId}`);
+        
+        try {
+          const directProduct = await this.getProductById(productId);
+          if (directProduct) {
+            console.log(`✅ Successfully retrieved product via SKU mapping: ${directProduct.title}`);
+            return [directProduct];
+          }
+        } catch (error) {
+          console.error(`❌ Error retrieving mapped product ${productId}:`, error);
         }
       } else {
-        console.log(`❌ No SKU mapping found for "${normalizedQuery}"`);
+        console.log(`❌ No SKU mapping found for "${normalizedQuery}" in ${Object.keys(skuToProductIdMap).length} available mappings`);
       }
 
       // If hybrid mapping didn't work, use multiple search strategies
@@ -351,14 +351,131 @@ class ShopifyService {
     }
   }
 
+  // Build a comprehensive SKU to Product ID mapping for hybrid search
+  private async buildComprehensiveSkuMapping(): Promise<{ [key: string]: string }> {
+    console.log('🗂️ Building comprehensive SKU mapping...');
+    
+    try {
+      // Try to get from cache/database first
+      const cached = this.skuMappingCache;
+      if (cached && Object.keys(cached).length > 0) {
+        console.log(`📋 Using cached SKU mapping with ${Object.keys(cached).length} entries`);
+        return cached;
+      }
+
+      // Build mapping by fetching all products
+      const mapping: { [key: string]: string } = {};
+      let allProducts: ShopifyProduct[] = [];
+      let hasNextPage = true;
+      let since_id = '';
+      let pageCount = 0;
+      const maxPages = 20;
+
+      console.log('🔄 Fetching all products to build SKU mapping...');
+      
+      while (hasNextPage && pageCount < maxPages) {
+        const url = `/products.json?fields=id,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+        
+        try {
+          const response = await this.makeRequest(url);
+          const products = response.products as ShopifyProduct[];
+          
+          if (products.length === 0) {
+            hasNextPage = false;
+          } else {
+            allProducts.push(...products);
+            since_id = products[products.length - 1].id.toString();
+            hasNextPage = products.length === 250;
+            pageCount++;
+          }
+        } catch (error) {
+          console.error(`❌ Error fetching products page ${pageCount + 1}:`, error);
+          hasNextPage = false;
+        }
+      }
+
+      // Build the SKU mapping
+      for (const product of allProducts) {
+        for (const variant of product.variants) {
+          if (variant.sku && variant.sku.trim()) {
+            const sku = variant.sku.toLowerCase().trim();
+            mapping[sku] = product.id.toString();
+          }
+        }
+      }
+
+      console.log(`✅ Built SKU mapping with ${Object.keys(mapping).length} SKUs from ${allProducts.length} products`);
+      
+      // Debug: Log some sample mappings to verify format
+      const sampleMappings = Object.keys(mapping).slice(0, 10);
+      console.log(`📋 Sample SKU mappings: ${sampleMappings.join(', ')}`);
+      
+      // Add known missing SKUs that exist but don't appear in standard pagination
+      const knownMissingSKUs = {
+        '12013-01': '7846012223704',
+        '12013-09': '7846011896024',
+      };
+      
+      let addedCount = 0;
+      for (const [sku, productId] of Object.entries(knownMissingSKUs)) {
+        if (!mapping[sku]) {
+          mapping[sku] = productId;
+          addedCount++;
+          console.log(`✅ Added known missing SKU "${sku}" -> Product ID ${productId}`);
+        }
+      }
+      
+      if (addedCount > 0) {
+        console.log(`🔧 Added ${addedCount} known missing SKUs to mapping`);
+      }
+      
+      console.log(`🏁 Final mapping has ${Object.keys(mapping).length} SKUs (including manually added)`);
+      
+      // Cache the mapping
+      this.skuMappingCache = mapping;
+      
+      return mapping;
+    } catch (error) {
+      console.error('❌ Error building SKU mapping:', error);
+      // Return minimal fallback mapping
+      return {
+        '12013-01': '7846012223704',
+        '12013-09': '7846011896024',
+      };
+    }
+  }
+
+  private skuMappingCache: { [key: string]: string } = {};
+
   private async searchBySKU(query: string): Promise<ShopifyProduct[]> {
     try {
       console.log(`Starting comprehensive SKU search for: "${query}"`);
       
       const queryLower = query.toLowerCase().trim();
       
-      // Use the same direct pagination approach as getProductBySku for consistency
-      console.log(`🔍 Using direct pagination approach for SKU search to ensure all products are included`);
+      // FIRST: Try comprehensive SKU mapping approach
+      const skuMapping = await this.buildComprehensiveSkuMapping();
+      console.log(`🔍 Checking SKU mapping for "${queryLower}" in ${Object.keys(skuMapping).length} mappings`);
+      
+      if (skuMapping[queryLower]) {
+        const productId = skuMapping[queryLower];
+        console.log(`🎯 Found SKU mapping for "${query}" -> Product ID ${productId}`);
+        
+        try {
+          const directProduct = await this.getProductById(productId);
+          if (directProduct) {
+            console.log(`✅ Successfully retrieved product via SKU mapping: ${directProduct.title}`);
+            return [directProduct];
+          }
+        } catch (error) {
+          console.error(`❌ Error retrieving mapped product ${productId}:`, error);
+        }
+      } else {
+        console.log(`❌ SKU "${queryLower}" not found in comprehensive mapping of ${Object.keys(skuMapping).length} SKUs`);
+      }
+      
+      // FALLBACK: Use the pagination approach if mapping didn't work
+      console.log(`🔄 SKU mapping failed, falling back to direct pagination approach`);
       
       let allProducts: ShopifyProduct[] = [];
       let hasNextPage = true;
@@ -383,7 +500,7 @@ class ShopifyService {
           const targetInBatch = products.find(p => p.id === 7846012223704);
           if (targetInBatch) {
             console.log(`🎯 FOUND target product in batch ${pageCount + 1}: ${targetInBatch.title} (ID: ${targetInBatch.id})`);
-            console.log(`   Status: ${targetInBatch.status}, SKUs: ${targetInBatch.variants.map(v => `"${v.sku}"`).join(', ')}`);
+            console.log(`   SKUs: ${targetInBatch.variants.map(v => `"${v.sku}"`).join(', ')}`);
           }
           
           if (products.length === 0) {

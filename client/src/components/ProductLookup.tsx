@@ -208,7 +208,7 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                               Variants ({product.variants.length})
                             </p>
                             <div className="space-y-1 max-h-24 overflow-y-auto">
-                              {product.variants.slice(0, 3).map((variant: any) => (
+                              {product.variants.map((variant: any) => (
                                 <div key={variant.id} className="flex justify-between items-center text-xs">
                                   <span className="font-mono bg-slate-100 px-2 py-1 rounded truncate">
                                     {variant.sku}
@@ -218,12 +218,12 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                                   </span>
                                 </div>
                               ))}
-                              {product.variants.length > 3 && (
-                                <p className="text-xs text-slate-500 italic">
-                                  +{product.variants.length - 3} more variants
-                                </p>
-                              )}
                             </div>
+                            {product.variants.length > 3 && (
+                              <p className="text-xs text-slate-500 mt-1">
+                                Total: {product.variants.length} variants
+                              </p>
+                            )}
                           </div>
                           
                           <div className="space-y-2">
@@ -264,8 +264,8 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                             {product.variants.length > 1 && (
                               <div className="mt-2">
                                 <p className="text-xs text-slate-500 mb-1">Quick select variant:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {product.variants.slice(0, 2).map((variant: any) => (
+                                <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                                  {product.variants.map((variant: any) => (
                                     <Button
                                       key={variant.id}
                                       variant="outline"
@@ -277,6 +277,11 @@ export default function ProductLookup({ onProductFound }: ProductLookupProps) {
                                     </Button>
                                   ))}
                                 </div>
+                                {product.variants.length > 2 && (
+                                  <p className="text-xs text-slate-500 mt-1">
+                                    Total: {product.variants.length} variants
+                                  </p>
+                                )}
                               </div>
                             )}
                           </div>

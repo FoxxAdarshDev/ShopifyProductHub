@@ -774,6 +774,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/force-refresh-all-products", forceRefreshAllProducts);
   app.post("/api/admin/force-refresh-layout-detection", forceRefreshLayoutDetection);
   app.get("/api/admin/status-counts-now", getStatusCountsNow);
+  
+  // Debug endpoint to check available SKUs
+  app.get("/api/admin/available-skus", async (req, res) => {
+    try {
+      const shopifyService = require("./services/shopify").shopifyService;
+      const skuMapping = await (shopifyService as any).buildComprehensiveSkuMapping();
+      const availableSkus = Object.keys(skuMapping).sort();
+      
+      // Filter for specific patterns if requested
+      const pattern = req.query.pattern as string;
+      let filteredSkus = availableSkus;
+      
+      if (pattern) {
+        filteredSkus = availableSkus.filter(sku => 
+          sku.toLowerCase().includes(pattern.toLowerCase())
+        );
+      }
+      
+      res.json({
+        totalSKUs: availableSkus.length,
+        filteredSKUs: filteredSkus.length,
+        pattern: pattern || 'all',
+        skus: filteredSkus.slice(0, 100), // Return first 100 for safety
+        sample: pattern ? filteredSkus.slice(0, 20) : availableSkus.slice(0, 20)
+      });
+    } catch (error) {
+      console.error('Error getting available SKUs:', error);
+      res.status(500).json({ error: 'Failed to get available SKUs' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
