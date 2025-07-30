@@ -11,7 +11,8 @@ import {
   startBackgroundProcessing, 
   getBackgroundProcessingStatus, 
   stopBackgroundProcessing, 
-  forceRefreshAllProducts 
+  forceRefreshAllProducts,
+  forceRefreshLayoutDetection 
 } from "./routes/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -75,34 +76,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all products with pagination
+  // Get all products with pagination and filtering
   app.get("/api/products/all", async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const comprehensive = req.query.comprehensive === 'true';
+      const filter = req.query.filter as string; // 'all', 'shopify', 'new-layout', 'draft-mode', 'none'
       
-      console.log(`Fetching products page ${page} with limit ${limit}, comprehensive: ${comprehensive}`);
+      console.log(`Fetching products page ${page} with limit ${limit}, comprehensive: ${comprehensive}, filter: ${filter}`);
       
-      if (comprehensive) {
-        // Fetch ALL products in the store for comprehensive search and filtering
+      if (comprehensive || filter) {
+        // Fetch ALL products for comprehensive mode or when filtering
         const allProducts = await shopifyService.getAllProductsComprehensive();
+        console.log(`Fetched ${allProducts.length} total products for comprehensive/filter mode`);
         
-        // Apply pagination to the comprehensive results
+        let filteredProducts = allProducts;
+        
+        // Apply server-side filtering if specified
+        if (filter && filter !== 'all') {
+          console.log(`Applying server-side filter: ${filter}`);
+          const { productStatusService } = await import('./services/productStatusService.js');
+          
+          // Get status for all products for filtering
+          const productStatuses = new Map();
+          for (const product of allProducts) {
+            try {
+              const status = await productStatusService.getProductContentStatus(product.id.toString());
+              productStatuses.set(product.id, status);
+            } catch (error) {
+              console.warn(`Failed to get status for product ${product.id}:`, error);
+            }
+          }
+          
+          // Filter products based on their content status
+          filteredProducts = allProducts.filter(product => {
+            const status = productStatuses.get(product.id);
+            if (!status) return filter === 'none';
+            
+            switch (filter) {
+              case 'shopify':
+                return status.hasShopifyContent;
+              case 'new-layout':
+                return status.hasNewLayout;
+              case 'draft-mode':
+                return status.hasDraftContent;
+              case 'none':
+                return !status.hasShopifyContent && !status.hasNewLayout;
+              default:
+                return true;
+            }
+          });
+          
+          console.log(`Filtered ${allProducts.length} products to ${filteredProducts.length} for filter: ${filter}`);
+        }
+        
+        // Apply pagination to the filtered results
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
-        const paginatedProducts = allProducts.slice(startIndex, endIndex);
-        const hasMore = endIndex < allProducts.length;
-        
-        console.log(`Comprehensive fetch: ${allProducts.length} total products, showing ${paginatedProducts.length} for page ${page}`);
+        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+        const hasMore = endIndex < filteredProducts.length;
         
         res.json({
           products: paginatedProducts,
           hasMore,
           page,
           totalFetched: paginatedProducts.length,
-          totalAvailable: allProducts.length,
-          comprehensive: true
+          totalAvailable: filteredProducts.length,
+          totalInStore: allProducts.length,
+          comprehensive: true,
+          filter: filter || 'all'
         });
       } else {
         // Standard pagination - fast loading for instant display
@@ -116,7 +159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasMore,
           page,
           totalFetched: products.length,
-          comprehensive: false
+          comprehensive: false,
+          filter: 'all'
         });
       }
     } catch (error) {
@@ -727,6 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/background-processing-status", getBackgroundProcessingStatus);
   app.post("/api/admin/stop-background-processing", stopBackgroundProcessing);
   app.post("/api/admin/force-refresh-all-products", forceRefreshAllProducts);
+  app.post("/api/admin/force-refresh-layout-detection", forceRefreshLayoutDetection);
 
   const httpServer = createServer(app);
   return httpServer;

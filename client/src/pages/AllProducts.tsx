@@ -69,13 +69,13 @@ export default function AllProducts() {
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Query for initial products (paginated, instant loading OR comprehensive when filtering)
+  // Query for initial products (paginated, instant loading OR comprehensive with server-side filtering)
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/products/all", currentPage, contentFilter],
     queryFn: async () => {
-      // Use comprehensive mode when filtering (except 'all'), regular pagination otherwise
+      // Use server-side filtering when filtering (except 'all'), regular pagination otherwise
       if (contentFilter !== 'all') {
-        const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true`);
+        const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true&filter=${contentFilter}`);
         return response.json();
       } else {
         // Fetch only current page for instant loading
@@ -102,14 +102,15 @@ export default function AllProducts() {
     setContentStatus(cachedStatus);
   }, [cache]);
 
-  // Update products when page data loads (paginated or comprehensive)
+  // Update products when page data loads (paginated or server-side filtered)
   useEffect(() => {
     if (data && data.products) {
       if (contentFilter !== 'all') {
-        // Comprehensive mode when filtering - replace all products
+        // Server-side filtered mode - replace all products (already filtered by server)
         setAllProducts(data.products);
         setTotalFetched(data.products.length);
-        setHasMore(false); // All products loaded for filtering
+        setHasMore(false); // All filtered products loaded
+        console.log(`Server-side filtered: ${data.products.length} products for filter: ${contentFilter}`);
       } else {
         // Regular pagination mode
         if (currentPage === 1) {
@@ -126,10 +127,12 @@ export default function AllProducts() {
       
       setIsLoadingMore(false);
 
-      // Check content status for current page products
-      console.log(`Checking content status for ${data.products.length} products (page ${currentPage}, filter: ${contentFilter})`);
-      const productIds = data.products.map((p: ShopifyProduct) => p.id);
-      checkContentStatus(productIds);
+      // Check content status for current page products (if not already server-filtered)
+      if (contentFilter === 'all') {
+        console.log(`Checking content status for ${data.products.length} products (page ${currentPage}, filter: ${contentFilter})`);
+        const productIds = data.products.map((p: ShopifyProduct) => p.id);
+        checkContentStatus(productIds);
+      }
     }
   }, [data, currentPage, contentFilter]);
 
@@ -193,32 +196,9 @@ export default function AllProducts() {
     }
   };
 
-  // Filter products based on content status
-  const filterProducts = (products: ShopifyProduct[]) => {
-    if (contentFilter === 'all') return products;
-    
-    return products.filter(product => {
-      const status = contentStatus[product.id];
-      if (!status) return contentFilter === 'none';
-      
-      switch (contentFilter) {
-        case 'shopify':
-          return status.hasShopifyContent;
-        case 'new-layout':
-          return status.hasNewLayout;
-        case 'draft-mode':
-          return status.hasDraftContent; // Draft mode = has draft content in database
-        case 'none':
-          return !status.hasShopifyContent && !status.hasNewLayout;
-        default:
-          return true;
-      }
-    });
-  };
-
-  // Determine which products to display
+  // Determine which products to display (no client-side filtering needed when using server-side filtering)
   const baseProducts = searchTerm.length >= 2 ? searchResults : allProducts;
-  const displayProducts = filterProducts(baseProducts);
+  const displayProducts = baseProducts; // Server already filtered when contentFilter !== 'all'
   const isShowingSearchResults = searchTerm.length >= 2;
 
   // Calculate counts for filter display using all loaded products

@@ -117,3 +117,63 @@ export async function forceRefreshAllProducts(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to force refresh all products' });
   }
 }
+
+// Force refresh all products to detect new layout templates
+export async function forceRefreshLayoutDetection(req: Request, res: Response) {
+  try {
+    console.log(`🔄 Starting forced layout detection refresh for ALL products`);
+    
+    const { shopifyService } = await import('../services/shopify.js');
+    
+    // Get ALL products in the store
+    const allProducts = await shopifyService.getAllProductsComprehensive();
+    console.log(`Found ${allProducts.length} total products to check`);
+    
+    let updatedCount = 0;
+    let newLayoutFound = 0;
+    
+    // Process in batches to avoid overwhelming the API
+    const batchSize = 5;
+    for (let i = 0; i < allProducts.length; i += batchSize) {
+      const batch = allProducts.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allProducts.length / batchSize)} (${batch.length} products)`);
+      
+      const promises = batch.map(async (product: any) => {
+        try {
+          // Force fresh check by temporarily bypassing cache
+          const status = await productStatusService.getProductContentStatus(product.id.toString());
+          updatedCount++;
+          
+          if (status.hasNewLayout) {
+            newLayoutFound++;
+            console.log(`✅ New Layout detected: ${product.title} (ID: ${product.id})`);
+          }
+          
+          return { productId: product.id, status };
+        } catch (error) {
+          console.warn(`Failed to check product ${product.id}:`, error);
+          return null;
+        }
+      });
+      
+      await Promise.all(promises);
+      
+      // Small delay between batches to respect rate limits
+      if (i + batchSize < allProducts.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    console.log(`🎉 Layout detection refresh complete: ${updatedCount} products checked, ${newLayoutFound} new layouts found`);
+    
+    res.json({
+      message: "Layout detection refresh completed",
+      totalProducts: allProducts.length,
+      productsChecked: updatedCount,
+      newLayoutsFound: newLayoutFound
+    });
+  } catch (error) {
+    console.error("Force refresh layout detection error:", error);
+    res.status(500).json({ message: "Failed to refresh layout detection" });
+  }
+}
