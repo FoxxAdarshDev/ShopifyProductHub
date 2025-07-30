@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useProductStatusCache } from "@/hooks/useProductStatusCache";
-import { useStatusCounts } from "@/hooks/useStatusCounts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,24 +55,23 @@ export default function AllProductsNew() {
   const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
   const [contentFilter, setContentFilter] = useState<'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none'>('all');
   const { toast } = useToast();
-  const { cache, updateCache, getStats } = useProductStatusCache();
-  const { data: statusCounts } = useStatusCounts();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Get store count for display
+  // Get store count for display - reduced caching
   const { data: countData } = useQuery({
     queryKey: ["/api/products/count"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/products/count`);
       return response.json();
     },
-    staleTime: 10 * 60 * 1000, // Cache count for 10 minutes
+    staleTime: 60 * 1000, // Cache for 1 minute to prevent rate limiting
+    gcTime: 5 * 60 * 1000, // Keep in memory for 5 minutes
   });
 
-  // Infinite query for product batches using cursor-based pagination
+  // Infinite query for product batches using cursor-based pagination - NO CACHING
   const {
     data: productPages,
     fetchNextPage,
@@ -84,14 +81,20 @@ export default function AllProductsNew() {
     error,
     refetch
   } = useInfiniteQuery({
-    queryKey: ["/api/products/infinite", contentFilter],
+    queryKey: ["/api/products/infinite", contentFilter], // Stable key without timestamp
     queryFn: async ({ pageParam }) => {
       const url = pageParam 
-        ? `/api/products/batch?since_id=${pageParam}&limit=20`
-        : `/api/products/batch?limit=20`;
+        ? `/api/products/batch?since_id=${pageParam}&limit=5`
+        : `/api/products/batch?limit=5`;
       
       console.log(`🔄 Frontend fetching: ${url}`);
       console.log(`🎯 Page param for this request: ${pageParam || 'initial'}`);
+      
+      // Add delay to prevent rate limiting
+      if (pageParam) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay for subsequent pages
+      }
+      
       const response = await apiRequest("GET", url);
       const data = await response.json();
       console.log(`📦 Frontend received: ${data.products?.length || 0} products, hasMore: ${data.hasMore}, nextCursor: ${data.nextCursor}`);
@@ -102,11 +105,13 @@ export default function AllProductsNew() {
       return lastPage.hasMore && lastPage.nextCursor ? lastPage.nextCursor : undefined;
     },
     initialPageParam: undefined as string | undefined,
-    staleTime: 0, // Don't cache - always fetch fresh data
-    gcTime: 5 * 60 * 1000, // Keep data for 5 minutes in memory but always refetch
+    staleTime: 30 * 1000, // Cache for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in memory for 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't auto-refetch on mount
   });
 
-  // Search query for when user is searching  
+  // Search query for when user is searching - with reasonable caching
   const { data: searchData, isLoading: searchLoading, error: searchError } = useQuery({
     queryKey: ["/api/products/search", debouncedSearchTerm],
     queryFn: async () => {
@@ -121,6 +126,7 @@ export default function AllProductsNew() {
     },
     enabled: debouncedSearchTerm.length >= 2,
     staleTime: 30 * 1000, // Cache search results for 30 seconds
+    gcTime: 2 * 60 * 1000, // Keep in memory for 2 minutes
   });
 
   // Flatten all products from infinite query and remove duplicates
@@ -155,7 +161,7 @@ export default function AllProductsNew() {
     console.log(`📊 Browse mode: showing ${allProducts.length} products from infinite query`);
   }
 
-  // Content status checking function
+  // Content status checking function - NO CACHING
   const checkContentStatus = useCallback(async (productIds: number[]) => {
     if (productIds.length === 0) return;
     
@@ -165,15 +171,12 @@ export default function AllProductsNew() {
       });
       const statusData = await response.json();
       
-      // Update local content status
+      // Update local content status only
       setContentStatus(prev => ({ ...prev, ...statusData }));
-      
-      // Update cache
-      updateCache(statusData);
     } catch (error) {
       console.error("Failed to check content status:", error);
     }
-  }, [updateCache]);
+  }, []);
 
   // Check content status for displayed products
   useEffect(() => {
@@ -192,20 +195,7 @@ export default function AllProductsNew() {
     }));
   };
 
-  // Initialize cached status data
-  useEffect(() => {
-    const cachedStatus: Record<string, ContentStatus> = {};
-    Object.keys(cache).forEach(productId => {
-      const status = cache[productId];
-      cachedStatus[productId] = {
-        hasShopifyContent: status.hasShopifyContent,
-        hasNewLayout: status.hasNewLayout,
-        hasDraftContent: status.hasDraftContent,
-        contentCount: status.contentCount
-      };
-    });
-    setContentStatus(cachedStatus);
-  }, [cache]);
+  // No cached status initialization needed - using direct API calls only
 
   // Intersection observer for infinite scroll
   useEffect(() => {
@@ -264,8 +254,25 @@ export default function AllProductsNew() {
     return <Badge variant="outline" className="text-gray-600">Content: Not Added</Badge>;
   };
 
-  // Get stats for display
-  const stats = getStats();
+  // Get stats for display - NO CACHING, direct calculation
+  const calculateStats = () => {
+    const total = Object.keys(contentStatus).length;
+    let newLayout = 0;
+    let draftMode = 0; 
+    let shopifyContent = 0;
+    let noContent = 0;
+
+    Object.values(contentStatus).forEach(status => {
+      if (status.hasNewLayout) newLayout++;
+      else if (status.hasDraftContent) draftMode++;
+      else if (status.hasShopifyContent) shopifyContent++;
+      else noContent++;
+    });
+
+    return { total, newLayout, draftMode, shopifyContent, noContent };
+  };
+
+  const stats = calculateStats();
   const totalProducts = countData?.totalInStore || 0;
   const totalSkus = countData?.totalSkuCount || 0;
   const loadedCount = displayProducts.length;
@@ -477,41 +484,64 @@ export default function AllProductsNew() {
           </div>
         )}
 
-        {/* Infinite Scroll Loader */}
+        {/* Infinite Scroll Loader - Enhanced */}
         {!searchLoading && debouncedSearchTerm.length < 2 && (
-          <div ref={loadMoreRef} className="flex justify-center py-6">
+          <div ref={loadMoreRef} className="flex flex-col items-center py-6 space-y-4">
             {isFetchingNextPage ? (
               <div className="flex items-center">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Loading more products...</span>
+                <span className="ml-2 text-gray-600">Loading next 5 products...</span>
               </div>
             ) : hasNextPage ? (
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => {
-                    console.log(`🔄 Manual load more clicked: hasNextPage=${hasNextPage}, isFetchingNextPage=${isFetchingNextPage}`);
-                    fetchNextPage();
-                  }} 
-                  variant="outline"
-                  className="px-8"
-                >
-                  Load More Products
-                </Button>
-                <Button 
-                  onClick={() => {
-                    console.log(`🔄 Reset pagination cache and refetch`);
-                    refetch();
-                  }} 
-                  variant="secondary"
-                  className="px-4"
-                >
-                  Reset
-                </Button>
+              <div className="flex flex-col items-center space-y-2">
+                <p className="text-sm text-gray-600">
+                  Loaded {allProducts.length} of {totalProducts} products
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      console.log(`🔄 Manual load more clicked: hasNextPage=${hasNextPage}, isFetchingNextPage=${isFetchingNextPage}`);
+                      fetchNextPage();
+                    }} 
+                    variant="outline"
+                    className="px-8"
+                  >
+                    Load Next 5 Products
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      console.log(`🔄 Auto-load next 10 batches (50 products)`);
+                      // Auto-load next 10 batches
+                      for(let i = 0; i < 10 && hasNextPage; i++) {
+                        setTimeout(() => fetchNextPage(), i * 500);
+                      }
+                    }} 
+                    variant="default"
+                    className="px-6"
+                  >
+                    Load Next 50
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      console.log(`🔄 Reset pagination and start fresh`);
+                      refetch();
+                    }} 
+                    variant="secondary"
+                    className="px-4"
+                  >
+                    Reset
+                  </Button>
+                </div>
               </div>
             ) : allProducts.length > 0 ? (
-              <p className="text-gray-500 text-sm">
-                All products loaded ({allProducts.length} total)
-              </p>
+              <div className="text-center">
+                <p className="text-gray-500 text-sm font-semibold">
+                  ✅ All products loaded ({allProducts.length} total)
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Showing all {totalProducts} products from store
+                </p>
+              </div>
             ) : null}
           </div>
         )}
