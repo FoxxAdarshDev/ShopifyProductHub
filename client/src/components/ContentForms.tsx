@@ -127,13 +127,18 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     updateContent(tabType, field, updated);
   };
 
-  // Parse table data from various formats (Excel, Google Sheets, HTML)
+  // Parse table data from various formats (Excel, Google Sheets, HTML, Lists)
   const parseTableData = (pastedData: string) => {
     if (!pastedData.trim()) return [];
 
     // Check if it's HTML table format
     if (pastedData.includes('<table') || pastedData.includes('<tr') || pastedData.includes('<td')) {
       return parseHTMLTable(pastedData);
+    }
+
+    // Check if it's HTML list format (ul/li)
+    if (pastedData.includes('<ul') || pastedData.includes('<li')) {
+      return parseHTMLList(pastedData);
     }
 
     // Check if it's tab-separated or CSV format (Excel/Google Sheets)
@@ -164,6 +169,74 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
         if (item && value) {
           specifications.push({ item, value });
+        }
+      }
+    });
+
+    return specifications;
+  };
+
+  const parseHTMLList = (htmlData: string) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlData, 'text/html');
+    const listItems = doc.querySelectorAll('li');
+    const specifications: { item: string; value: string }[] = [];
+
+    listItems.forEach((li) => {
+      const text = li.textContent?.trim() || '';
+      if (!text) return;
+
+      // Pattern 1: "Property: Value" or "Property - Value"
+      let match = text.match(/^([^:]+):\s*(.+)$/);
+      if (!match) {
+        match = text.match(/^([^-]+)-\s*(.+)$/);
+      }
+      
+      // Pattern 2: "Property (Value)" - e.g., "Min. Temperature (Celsius): -40"
+      if (!match) {
+        match = text.match(/^([^(]+)\s*\([^)]*\):\s*(.+)$/);
+      }
+      
+      // Pattern 3: "Property Value" with first word as property (fallback)
+      if (!match) {
+        const words = text.split(/\s+/);
+        if (words.length >= 2) {
+          // Try to find natural break points
+          if (text.includes(' Finish: ')) {
+            match = text.match(/^(.*?\s+Finish):\s*(.+)$/);
+          } else if (text.includes(' Temperature ')) {
+            match = text.match(/^(.*?\s+Temperature[^:]*?):\s*(.+)$/);
+          } else if (text.includes(' Option: ')) {
+            match = text.match(/^(.*?\s+Option):\s*(.+)$/);
+          } else if (text.includes(' Ability: ')) {
+            match = text.match(/^(.*?\s+Ability):\s*(.+)$/);
+          } else if (text.includes(' Type: ')) {
+            match = text.match(/^(.*?\s+Type):\s*(.+)$/);
+          } else {
+            // Look for pattern where first 1-3 words are property
+            const propertyMatch = text.match(/^(\w+(?:\s+\w+){0,2}):\s*(.+)$/);
+            if (propertyMatch) {
+              match = propertyMatch;
+            }
+          }
+        }
+      }
+
+      if (match && match[1] && match[2]) {
+        const item = match[1].trim();
+        const value = match[2].trim();
+        if (item && value) {
+          specifications.push({ item, value });
+        }
+      } else if (text.length > 0) {
+        // If we can't parse it cleanly, check if it looks like a simple property-value pair
+        const colonIndex = text.indexOf(':');
+        if (colonIndex > 0 && colonIndex < text.length - 1) {
+          const item = text.substring(0, colonIndex).trim();
+          const value = text.substring(colonIndex + 1).trim();
+          if (item && value) {
+            specifications.push({ item, value });
+          }
         }
       }
     });
@@ -245,7 +318,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
 
     // Check if text contains HTML list elements
     if (cleanText.includes('<li>') || cleanText.includes('<ul>') || cleanText.includes('<ol>')) {
-      return parseHTMLList(cleanText);
+      return parseHTMLListAsStrings(cleanText);
     }
 
     // Split by line breaks first (handles copy-paste from sheets/documents)
@@ -273,7 +346,7 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
     return [singleLine];
   };
 
-  const parseHTMLList = (htmlText: string): string[] => {
+  const parseHTMLListAsStrings = (htmlText: string): string[] => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
     const listItems = doc.querySelectorAll('li');
@@ -830,6 +903,13 @@ Color   White with white pull tab
 
 HTML Table:
 <table><tr><td>Material</td><td>Polycarbonate</td></tr></table>
+
+HTML List (ul/li):
+<ul>
+<li>Material: Polysulfone</li>
+<li>Material Finish: Natural</li>
+<li>Color: Amber Tint</li>
+</ul>
 
 CSV Format:
 Material,Polycarbonate USP Class VI
