@@ -222,6 +222,24 @@ export default function AllProductsNew() {
     }
   }, [refreshBadges]);
 
+  // Automatically start background status checker when page loads
+  useEffect(() => {
+    startBackgroundStatusChecker();
+  }, []); // Run once when component mounts
+
+  // Function to start background status checker automatically
+  const startBackgroundStatusChecker = async () => {
+    try {
+      console.log("🚀 Starting background status checker from frontend...");
+      const response = await apiRequest("POST", "/api/admin/start-full-status-check");
+      const result = await response.json();
+      console.log("✅ Background status checker started:", result.message);
+    } catch (error) {
+      console.warn("⚠️ Background status checker may already be running:", error);
+      // Don't show error to user - this is automatic background functionality
+    }
+  };
+
   // Load cached badges immediately when products change
   useEffect(() => {
     if (displayProducts.length > 0) {

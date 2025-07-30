@@ -67,5 +67,17 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start background status checker automatically on server startup
+    setImmediate(async () => {
+      try {
+        log("🚀 Starting automatic background status checker...");
+        const { backgroundStatusChecker } = await import('./backgroundStatusChecker.js');
+        await backgroundStatusChecker.startBackgroundCheck();
+        log("✅ Background status checker started automatically");
+      } catch (error) {
+        log("❌ Failed to start background status checker:", String(error));
+      }
+    });
   });
 })();

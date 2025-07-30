@@ -120,7 +120,23 @@ export default function AllProducts() {
       };
     });
     setContentStatus(cachedStatus);
+    
+    // Start background status checker automatically when page loads
+    startBackgroundStatusChecker();
   }, [cache]);
+
+  // Function to start background status checker
+  const startBackgroundStatusChecker = async () => {
+    try {
+      console.log("🚀 Starting background status checker from frontend...");
+      const response = await apiRequest("POST", "/api/admin/start-full-status-check");
+      const result = await response.json();
+      console.log("✅ Background status checker started:", result.message);
+    } catch (error) {
+      console.warn("⚠️ Background status checker may already be running:", error);
+      // Don't show error to user - this is automatic background functionality
+    }
+  };
 
   // Update total count from API
   useEffect(() => {
