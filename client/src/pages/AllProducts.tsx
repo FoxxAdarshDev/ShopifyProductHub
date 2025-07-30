@@ -143,6 +143,13 @@ export default function AllProducts() {
     if (serverFilteredData && serverFilteredData.products) {
       setFilteredProducts(serverFilteredData.products);
       console.log(`Server filtering complete: ${serverFilteredData.products.length} products for filter: ${contentFilter}`);
+      
+      // Check content status for server-filtered products
+      const productIds = serverFilteredData.products.map((p: ShopifyProduct) => p.id);
+      if (productIds.length > 0) {
+        console.log(`Checking content status for ${productIds.length} server-filtered products`);
+        checkContentStatus(productIds);
+      }
     }
   }, [serverFilteredData, contentFilter]);
 
@@ -504,11 +511,17 @@ export default function AllProducts() {
                           Draft Mode
                         </Badge>
                       )}
-                      {!contentStatus[product.id]?.hasShopifyContent && !contentStatus[product.id]?.hasNewLayout && (
+                      {!contentStatus[product.id]?.hasShopifyContent && !contentStatus[product.id]?.hasNewLayout && !contentStatus[product.id]?.hasDraftContent && (
                         <Badge variant="outline" className="text-xs">
                           <Package className="w-3 h-3 mr-1" />
                           Content: Not Added
                         </Badge>
+                      )}
+                      {/* Debug info (visible only when contentFilter is active) */}
+                      {contentFilter !== 'all' && (
+                        <div className="text-xs text-gray-500 font-mono">
+                          Status: {contentStatus[product.id] ? JSON.stringify(contentStatus[product.id]) : 'undefined'}
+                        </div>
                       )}
                     </div>
 
