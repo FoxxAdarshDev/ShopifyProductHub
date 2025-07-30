@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Package, ChevronRight, Loader2, Filter, ShoppingCart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
+import { useProductStatusCache } from "@/hooks/useProductStatusCache";
 
 // Debounce hook for search
 const useDebounce = (value: string, delay: number) => {
@@ -57,6 +58,9 @@ export default function AllProductsNew() {
   const { toast } = useToast();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  
+  // Use product status cache for immediate badge display
+  const { cache, updateCache, getStatus, getStats } = useProductStatusCache();
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -161,22 +165,44 @@ export default function AllProductsNew() {
     console.log(`📊 Browse mode: showing ${allProducts.length} products from infinite query`);
   }
 
-  // Content status checking function - NO CACHING
+  // Content status checking function with caching for immediate display
   const checkContentStatus = useCallback(async (productIds: number[]) => {
     if (productIds.length === 0) return;
     
+    // First, load cached status for immediate display
+    const cachedStatuses: Record<string, ContentStatus> = {};
+    productIds.forEach(id => {
+      const cached = getStatus(id.toString());
+      if (cached) {
+        cachedStatuses[id.toString()] = cached;
+      }
+    });
+    
+    // Update local state with cached data for immediate display
+    if (Object.keys(cachedStatuses).length > 0) {
+      console.log(`📋 Loaded ${Object.keys(cachedStatuses).length} cached statuses for immediate display`);
+      setContentStatus(prev => ({ ...prev, ...cachedStatuses }));
+    }
+    
     try {
+      // Fetch fresh data in the background
       const response = await apiRequest("POST", "/api/products/content-status", {
         productIds: productIds.map(id => id.toString())
       });
-      const statusData = await response.json();
+      const freshStatusData = await response.json();
       
-      // Update local content status only
-      setContentStatus(prev => ({ ...prev, ...statusData }));
+      // Update local content status with fresh data
+      setContentStatus(prev => ({ ...prev, ...freshStatusData }));
+      
+      // Update cache with fresh data
+      updateCache(freshStatusData);
+      
+      console.log(`📋 Updated ${Object.keys(freshStatusData).length} product statuses from backend`);
     } catch (error) {
       console.error("Failed to check content status:", error);
+      // Keep showing cached data if API fails
     }
-  }, []);
+  }, [getStatus, updateCache]);
 
   // Check content status for displayed products
   useEffect(() => {
@@ -254,22 +280,32 @@ export default function AllProductsNew() {
     return <Badge variant="outline" className="text-gray-600">Content: Not Added</Badge>;
   };
 
-  // Get stats for display - NO CACHING, direct calculation
+  // Get stats for display with caching for immediate display
   const calculateStats = () => {
-    const total = Object.keys(contentStatus).length;
-    let newLayout = 0;
-    let draftMode = 0; 
-    let shopifyContent = 0;
-    let noContent = 0;
+    // First try to get cached stats for immediate display
+    const cacheStats = getStats();
+    const currentStats = {
+      total: Object.keys(contentStatus).length,
+      newLayout: 0,
+      draftMode: 0, 
+      shopifyContent: 0,
+      noContent: 0
+    };
 
     Object.values(contentStatus).forEach(status => {
-      if (status.hasNewLayout) newLayout++;
-      else if (status.hasDraftContent) draftMode++;
-      else if (status.hasShopifyContent) shopifyContent++;
-      else noContent++;
+      if (status.hasNewLayout) currentStats.newLayout++;
+      else if (status.hasDraftContent) currentStats.draftMode++;
+      else if (status.hasShopifyContent) currentStats.shopifyContent++;
+      else currentStats.noContent++;
     });
 
-    return { total, newLayout, draftMode, shopifyContent, noContent };
+    // Use cached stats if available and current stats are empty/small
+    if (cacheStats.total > currentStats.total) {
+      console.log(`📊 Using cached stats (${cacheStats.total}) over current stats (${currentStats.total})`);
+      return cacheStats;
+    }
+    
+    return currentStats;
   };
 
   const stats = calculateStats();
