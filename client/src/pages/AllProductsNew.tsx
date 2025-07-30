@@ -190,6 +190,38 @@ export default function AllProductsNew() {
     }
   }, [displayProducts, updateCache]);
 
+  // Start full status check for all Shopify products
+  const startFullStatusCheck = useCallback(async () => {
+    try {
+      console.log(`🔍 Starting full status check for all Shopify products`);
+      const response = await apiRequest("POST", "/api/admin/start-full-status-check", {});
+      const result = await response.json();
+      console.log(`✅ Full status check started:`, result.message);
+      
+      // Start polling for progress
+      const interval = setInterval(async () => {
+        try {
+          const statusResponse = await apiRequest("GET", "/api/admin/full-status-check-status", {});
+          const status = await statusResponse.json();
+          console.log(`🔍 Full check progress: ${status.progress}% (${status.checkedProducts}/${status.totalProducts})`);
+          
+          if (!status.isRunning) {
+            clearInterval(interval);
+            console.log(`✅ Full status check completed!`);
+            // Refresh badges to show updated data
+            refreshBadges();
+          }
+        } catch (error) {
+          console.error("Failed to get status check progress:", error);
+          clearInterval(interval);
+        }
+      }, 5000); // Check every 5 seconds
+      
+    } catch (error) {
+      console.error("Failed to start full status check:", error);
+    }
+  }, [refreshBadges]);
+
   // Load cached badges immediately when products change
   useEffect(() => {
     if (displayProducts.length > 0) {
@@ -352,6 +384,14 @@ export default function AllProductsNew() {
               className="h-6 px-2 text-xs"
             >
               Refresh Badges
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={startFullStatusCheck}
+              className="h-6 px-2 text-xs"
+            >
+              Check All Products
             </Button>
           </div>
         </div>

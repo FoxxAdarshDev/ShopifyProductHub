@@ -963,6 +963,41 @@ async function fetchProductsBatch(productIds: string[], shopifyService: any, sto
   app.post("/api/admin/force-refresh-all-products", forceRefreshAllProducts);
   app.post("/api/admin/force-refresh-layout-detection", forceRefreshLayoutDetection);
   app.get("/api/admin/status-counts-now", getStatusCountsNow);
+
+  // Background status checker endpoints - check ALL Shopify products directly
+  app.post("/api/admin/start-full-status-check", async (req, res) => {
+    try {
+      const { backgroundStatusChecker } = await import('./backgroundStatusChecker.js');
+      backgroundStatusChecker.startBackgroundCheck();
+      res.json({ message: "Full status check started for all Shopify products", status: backgroundStatusChecker.getStatus() });
+    } catch (error) {
+      console.error("Failed to start full status check:", error);
+      res.status(500).json({ message: "Failed to start full status check" });
+    }
+  });
+
+  app.get("/api/admin/full-status-check-status", async (req, res) => {
+    try {
+      const { backgroundStatusChecker } = await import('./backgroundStatusChecker.js');
+      const status = backgroundStatusChecker.getStatus();
+      const progress = backgroundStatusChecker.getProgress();
+      res.json({ ...status, progress });
+    } catch (error) {
+      console.error("Failed to get full status check status:", error);
+      res.status(500).json({ message: "Failed to get status" });
+    }
+  });
+
+  app.post("/api/admin/stop-full-status-check", async (req, res) => {
+    try {
+      const { backgroundStatusChecker } = await import('./backgroundStatusChecker.js');
+      backgroundStatusChecker.stopBackgroundCheck();
+      res.json({ message: "Full status check stopped", status: backgroundStatusChecker.getStatus() });
+    } catch (error) {
+      console.error("Failed to stop full status check:", error);
+      res.status(500).json({ message: "Failed to stop full status check" });
+    }
+  });
   
   // Debug endpoint to check available SKUs
   app.get("/api/admin/available-skus", async (req, res) => {
