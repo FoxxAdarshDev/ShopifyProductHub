@@ -69,20 +69,33 @@ export default function AllProducts() {
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Query for initial products (paginated, instant loading OR comprehensive with server-side filtering)
+  // State for instant frontend filtering
+  const [filteredProducts, setFilteredProducts] = useState<ShopifyProduct[]>([]);
+  const [isServerFiltering, setIsServerFiltering] = useState(false);
+
+  // Query for initial products (paginated, instant loading)
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/products/all", currentPage, contentFilter],
+    queryKey: ["/api/products/all", currentPage],
     queryFn: async () => {
-      // Use server-side filtering when filtering (except 'all'), regular pagination otherwise
-      if (contentFilter !== 'all') {
-        const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true&filter=${contentFilter}`);
-        return response.json();
-      } else {
-        // Fetch only current page for instant loading
-        const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
-        return response.json();
-      }
+      // Always use regular pagination for instant display
+      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
+      return response.json();
     }
+  });
+
+  // Separate query for server-side filtering (runs in background)
+  const { data: serverFilteredData } = useQuery({
+    queryKey: ["/api/products/filter", contentFilter],
+    queryFn: async () => {
+      if (contentFilter === 'all') return null;
+      
+      setIsServerFiltering(true);
+      const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true&filter=${contentFilter}`);
+      const result = await response.json();
+      setIsServerFiltering(false);
+      return result;
+    },
+    enabled: contentFilter !== 'all'
   });
 
 
@@ -102,39 +115,36 @@ export default function AllProducts() {
     setContentStatus(cachedStatus);
   }, [cache]);
 
-  // Update products when page data loads (paginated or server-side filtered)
+  // Update products when page data loads (regular pagination only)
   useEffect(() => {
     if (data && data.products) {
-      if (contentFilter !== 'all') {
-        // Server-side filtered mode - replace all products (already filtered by server)
+      // Regular pagination mode
+      if (currentPage === 1) {
+        // First page - replace products
         setAllProducts(data.products);
         setTotalFetched(data.products.length);
-        setHasMore(false); // All filtered products loaded
-        console.log(`Server-side filtered: ${data.products.length} products for filter: ${contentFilter}`);
       } else {
-        // Regular pagination mode
-        if (currentPage === 1) {
-          // First page - replace products
-          setAllProducts(data.products);
-          setTotalFetched(data.products.length);
-        } else {
-          // Subsequent pages - append products
-          setAllProducts(prev => [...prev, ...data.products]);
-          setTotalFetched(prev => prev + data.products.length);
-        }
-        setHasMore(data.hasMore);
+        // Subsequent pages - append products
+        setAllProducts(prev => [...prev, ...data.products]);
+        setTotalFetched(prev => prev + data.products.length);
       }
-      
+      setHasMore(data.hasMore);
       setIsLoadingMore(false);
 
-      // Check content status for current page products (if not already server-filtered)
-      if (contentFilter === 'all') {
-        console.log(`Checking content status for ${data.products.length} products (page ${currentPage}, filter: ${contentFilter})`);
-        const productIds = data.products.map((p: ShopifyProduct) => p.id);
-        checkContentStatus(productIds);
-      }
+      // Check content status for current page products
+      console.log(`Checking content status for ${data.products.length} products (page ${currentPage})`);
+      const productIds = data.products.map((p: ShopifyProduct) => p.id);
+      checkContentStatus(productIds);
     }
-  }, [data, currentPage, contentFilter]);
+  }, [data, currentPage]);
+
+  // Update filtered products when server filtering completes
+  useEffect(() => {
+    if (serverFilteredData && serverFilteredData.products) {
+      setFilteredProducts(serverFilteredData.products);
+      console.log(`Server filtering complete: ${serverFilteredData.products.length} products for filter: ${contentFilter}`);
+    }
+  }, [serverFilteredData, contentFilter]);
 
   // Reset to page 1 when filter changes
   useEffect(() => {
@@ -196,9 +206,44 @@ export default function AllProducts() {
     }
   };
 
-  // Determine which products to display (no client-side filtering needed when using server-side filtering)
+  // Client-side filtering for instant results using cached data
+  const getFilteredProductsFromCache = (products: ShopifyProduct[]) => {
+    if (contentFilter === 'all') return products;
+    
+    return products.filter(product => {
+      const status = contentStatus[product.id];
+      if (!status) return contentFilter === 'none';
+      
+      switch (contentFilter) {
+        case 'shopify':
+          return status.hasShopifyContent;
+        case 'new-layout':
+          return status.hasNewLayout;
+        case 'draft-mode':
+          return status.hasDraftContent;
+        case 'none':
+          return !status.hasShopifyContent && !status.hasNewLayout;
+        default:
+          return true;
+      }
+    });
+  };
+
+  // Determine which products to display with instant frontend filtering + server filtering
   const baseProducts = searchTerm.length >= 2 ? searchResults : allProducts;
-  const displayProducts = baseProducts; // Server already filtered when contentFilter !== 'all'
+  
+  let displayProducts: ShopifyProduct[];
+  if (contentFilter !== 'all') {
+    // Use server-filtered results if available, otherwise use instant client-side filtering
+    if (serverFilteredData && serverFilteredData.products) {
+      displayProducts = serverFilteredData.products;
+    } else {
+      // Instant client-side filtering using cached status data
+      displayProducts = getFilteredProductsFromCache(baseProducts);
+    }
+  } else {
+    displayProducts = baseProducts;
+  }
   const isShowingSearchResults = searchTerm.length >= 2;
 
   // Calculate counts for filter display using all loaded products
@@ -378,6 +423,12 @@ export default function AllProducts() {
                 <SelectItem value="none">No Content ({noContentCount})</SelectItem>
               </SelectContent>
             </Select>
+            {isServerFiltering && (
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                Refining results...
+              </div>
+            )}
           </div>
         </div>
       </div>
