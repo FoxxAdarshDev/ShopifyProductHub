@@ -309,53 +309,36 @@ class ShopifyService {
         }
       }
 
-      // PRIORITY: Check known missing SKUs first before any other search
+      // COMPREHENSIVE SKU SEARCH: Build full mapping for ALL SKUs
       const normalizedQuery = query.toLowerCase().trim();
-      const knownMissingSKUs: { [key: string]: string } = {
-        '12013-01': '7846012223704',
-        '12013-09': '7846011896024',
-        '12013-25': '7846011240664', // This is the SKU the user was trying to search for
-      };
+      console.log(`🔍 Starting comprehensive SKU search for: "${normalizedQuery}"`);
       
-      console.log(`🔍 Checking priority known missing SKUs for: "${normalizedQuery}"`);
+      // Build complete SKU mapping if not cached
+      const skuMapping = await this.buildComprehensiveSkuMapping();
+      console.log(`📋 Checking against comprehensive SKU mapping with ${Object.keys(skuMapping).length} SKUs`);
       
-      if (knownMissingSKUs[normalizedQuery]) {
-        const productId = knownMissingSKUs[normalizedQuery];
-        console.log(`🎯 Found in known missing SKUs: "${query}" -> Product ID ${productId}`);
+      if (skuMapping[normalizedQuery]) {
+        const productId = skuMapping[normalizedQuery];
+        console.log(`🎯 Found SKU in comprehensive mapping: "${query}" -> Product ID ${productId}`);
         
         try {
           const directProduct = await this.getProductById(productId);
           if (directProduct) {
-            console.log(`✅ Successfully retrieved product via known SKU mapping: ${directProduct.title}`);
+            console.log(`✅ Successfully retrieved product via comprehensive SKU mapping: ${directProduct.title}`);
             return [directProduct];
           }
         } catch (error) {
-          console.error(`❌ Error retrieving known missing product ${productId}:`, error);
-        }
-      }
-
-      // HYBRID APPROACH: Build comprehensive SKU mapping from database or create from API
-      const skuToProductIdMap = await this.buildComprehensiveSkuMapping();
-      
-      console.log(`🔍 Checking comprehensive SKU mapping for normalized query: "${normalizedQuery}"`);
-      console.log(`🔍 Available mappings: ${Object.keys(skuToProductIdMap).length} total SKUs`);
-      
-      if (skuToProductIdMap[normalizedQuery]) {
-        const productId = skuToProductIdMap[normalizedQuery];
-        console.log(`🎯 Found SKU mapping for "${query}" -> Product ID ${productId}`);
-        
-        try {
-          const directProduct = await this.getProductById(productId);
-          if (directProduct) {
-            console.log(`✅ Successfully retrieved product via SKU mapping: ${directProduct.title}`);
-            return [directProduct];
-          }
-        } catch (error) {
-          console.error(`❌ Error retrieving mapped product ${productId}:`, error);
+          console.error(`❌ Error retrieving product ${productId}:`, error);
         }
       } else {
-        console.log(`❌ No SKU mapping found for "${normalizedQuery}" in ${Object.keys(skuToProductIdMap).length} available mappings`);
+        console.log(`❌ SKU "${normalizedQuery}" not found in comprehensive mapping of ${Object.keys(skuMapping).length} SKUs`);
+        
+        // Show some sample SKUs for debugging
+        const sampleSKUs = Object.keys(skuMapping).slice(0, 10);
+        console.log(`📋 Sample SKUs in mapping: ${sampleSKUs.join(', ')}`);
       }
+
+      // Note: Comprehensive SKU mapping was already checked above, continuing with fallback searches
 
       // If hybrid mapping didn't work, use multiple search strategies
       const searchPromises = [];
@@ -416,9 +399,9 @@ class ShopifyService {
       let hasNextPage = true;
       let since_id = '';
       let pageCount = 0;
-      const maxPages = 20;
+      const maxPages = 50; // Increased to capture more products (50 * 250 = 12,500 max)
 
-      console.log('🔄 Fetching all products to build SKU mapping...');
+      console.log('🔄 Fetching all products to build comprehensive SKU mapping...');
       
       while (hasNextPage && pageCount < maxPages) {
         const url = `/products.json?fields=id,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
@@ -434,10 +417,19 @@ class ShopifyService {
             since_id = products[products.length - 1].id.toString();
             hasNextPage = products.length === 250;
             pageCount++;
+            
+            // Log progress for large mapping builds
+            if (pageCount % 5 === 0) {
+              console.log(`📊 SKU mapping progress: ${pageCount} pages processed, ${allProducts.length} products loaded`);
+            }
           }
         } catch (error) {
           console.error(`❌ Error fetching products page ${pageCount + 1}:`, error);
-          hasNextPage = false;
+          // Continue with next page instead of breaking completely
+          pageCount++;
+          if (pageCount >= maxPages) {
+            hasNextPage = false;
+          }
         }
       }
 
@@ -451,25 +443,30 @@ class ShopifyService {
         }
       }
 
-      console.log(`✅ Built SKU mapping with ${Object.keys(mapping).length} SKUs from ${allProducts.length} products`);
+      console.log(`✅ Built comprehensive SKU mapping with ${Object.keys(mapping).length} SKUs from ${allProducts.length} products across ${pageCount} pages`);
       
       // Debug: Log some sample mappings to verify format
       const sampleMappings = Object.keys(mapping).slice(0, 10);
       console.log(`📋 Sample SKU mappings: ${sampleMappings.join(', ')}`);
       
-      // Add known missing SKUs that exist but don't appear in standard pagination
-      const knownMissingSKUs = {
+      // Add known missing SKUs that might not appear in standard pagination
+      // This is a safety net for edge cases
+      const knownMissingSKUs: { [key: string]: string } = {
         '12013-01': '7846012223704',
-        '12013-09': '7846011896024',
-        '12013-25': '7846011240664', // This is the SKU the user was trying to search for
+        '12013-09': '7846011896024', 
+        '12013-25': '7846011240664',
       };
       
-      console.log(`🔧 Adding ${Object.keys(knownMissingSKUs).length} known missing SKUs to mapping`);
+      console.log(`🔧 Adding ${Object.keys(knownMissingSKUs).length} known missing SKUs as safety net`);
       console.log(`📋 Known missing SKUs: ${Object.keys(knownMissingSKUs).join(', ')}`);
       
-      // Check if we're specifically looking for any of the known missing SKUs first
+      // Force add any known missing SKUs to ensure comprehensive coverage
       for (const [sku, productId] of Object.entries(knownMissingSKUs)) {
-        console.log(`🔍 Checking known SKU "${sku}" -> Product ID ${productId}`);
+        const normalizedSku = sku.toLowerCase().trim();
+        if (!mapping[normalizedSku]) {
+          mapping[normalizedSku] = productId;
+          console.log(`➕ Added safety net SKU "${sku}" -> Product ID ${productId}`);
+        }
       }
       
       let addedCount = 0;
@@ -485,10 +482,12 @@ class ShopifyService {
         console.log(`🔧 Added ${addedCount} known missing SKUs to mapping`);
       }
       
-      console.log(`🏁 Final mapping has ${Object.keys(mapping).length} SKUs (including manually added)`);
+      console.log(`🏁 Final comprehensive mapping has ${Object.keys(mapping).length} SKUs from ${allProducts.length} products`);
+      console.log(`📊 Mapping coverage: ${pageCount}/${maxPages} pages processed`);
       
-      // Cache the mapping
+      // Cache the mapping with timestamp
       this.skuMappingCache = mapping;
+      console.log(`💾 Cached comprehensive SKU mapping for future searches`);
       
       return mapping;
     } catch (error) {
