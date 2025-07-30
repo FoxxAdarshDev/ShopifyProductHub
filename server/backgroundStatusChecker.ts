@@ -139,26 +139,25 @@ class BackgroundStatusChecker {
 
   private async getAllShopifyProductIds(): Promise<number[]> {
     try {
-      console.log("🔍 Fetching all products using same batch API as frontend...");
+      console.log("🔍 Comprehensive fetch: Getting ALL products from Shopify store (targeting 1146 products)...");
       const allProductIds: number[] = [];
       let hasMore = true;
       let since_id: string | undefined = undefined;
       let batchCount = 0;
-      const maxBatches = 250; // Safety limit to prevent infinite loops
+      const TARGET_PRODUCTS = 1146; // Known store total
+      const maxBatches = Math.ceil(TARGET_PRODUCTS / 250) + 10; // Allow extra batches for safety
       
-      while (hasMore && batchCount < maxBatches) {
+      while (hasMore && batchCount < maxBatches && allProductIds.length < TARGET_PRODUCTS) {
         try {
-          // Use same batch API as frontend
-          const url = since_id 
-            ? `/products.json?limit=20&since_id=${since_id}&fields=id`
-            : `/products.json?limit=20&fields=id`;
+          batchCount++;
+          console.log(`📦 Comprehensive batch ${batchCount}/${maxBatches}: fetching products${since_id ? ` since ${since_id}` : ''} (current: ${allProductIds.length}/${TARGET_PRODUCTS})`);
           
-          console.log(`📦 Background checker batch ${batchCount + 1}: fetching products${since_id ? ` since ${since_id}` : ''}`);
-          const response = await this.shopifyService.getProductsBatch(20, since_id); // Use existing public method
-          const products = response.products;
+          // Fetch 250 products per batch for efficiency (max allowed by Shopify)
+          const batchSize = 250;
+          const products = await this.shopifyService.getProductsBatch(batchSize, since_id);
           
           if (!products || products.length === 0) {
-            console.log(`⏹️ No more products found, stopping at batch ${batchCount + 1}`);
+            console.log(`⏹️ No more products found at batch ${batchCount}, stopping comprehensive fetch`);
             hasMore = false;
             break;
           }
@@ -166,27 +165,46 @@ class BackgroundStatusChecker {
           const productIds = products.map((p: any) => p.id);
           allProductIds.push(...productIds);
           since_id = products[products.length - 1].id.toString();
-          batchCount++;
           
-          console.log(`📦 Background checker batch ${batchCount}: got ${products.length} products (total: ${allProductIds.length})`);
+          console.log(`📦 Comprehensive batch ${batchCount}: got ${products.length} products (total: ${allProductIds.length}/${TARGET_PRODUCTS})`);
           
-          // Check if we have more products to fetch
-          hasMore = response.hasMore;
+          // Check if we got fewer products than requested (indicates end of data)
+          hasMore = products.length === batchSize;
           
-          // Small delay between batches to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Check if we've reached the target
+          if (allProductIds.length >= TARGET_PRODUCTS) {
+            console.log(`🎯 Reached target of ${TARGET_PRODUCTS} products, stopping fetch`);
+            hasMore = false;
+          }
+          
+          // Conservative delay between large batches to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
         } catch (batchError) {
-          console.error(`❌ Error fetching batch ${batchCount + 1}:`, batchError);
-          // Don't break completely, just stop trying more batches
-          break;
+          console.error(`❌ Error fetching comprehensive batch ${batchCount}:`, batchError);
+          // Wait longer before retry
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Don't give up immediately, try a few more times
+          if (batchCount < 3) {
+            console.log(`🔄 Retrying batch ${batchCount} after error...`);
+            batchCount--; // Retry this batch
+            continue;
+          } else {
+            break;
+          }
         }
       }
       
-      console.log(`✅ Background checker found ${allProductIds.length} total products using batch API (${batchCount} batches)`);
+      console.log(`✅ Comprehensive fetch complete: ${allProductIds.length} total products from ${batchCount} batches (target was ${TARGET_PRODUCTS})`);
+      
+      if (allProductIds.length < TARGET_PRODUCTS * 0.8) {
+        console.warn(`⚠️ Warning: Only found ${allProductIds.length} products, expected around ${TARGET_PRODUCTS}. May need API permission review.`);
+      }
+      
       return allProductIds;
     } catch (error) {
-      console.error("❌ Error fetching all products with batch API:", error);
+      console.error("❌ Error during comprehensive product fetch:", error);
       return [];
     }
   }
