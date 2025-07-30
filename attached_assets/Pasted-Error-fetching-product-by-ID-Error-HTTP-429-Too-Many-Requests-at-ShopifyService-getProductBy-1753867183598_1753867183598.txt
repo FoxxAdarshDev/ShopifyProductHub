@@ -1,0 +1,84 @@
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 0)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 8888644960472, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 0)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7846029689048, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 1)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7846029459672, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 2)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7846013796568, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 4)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7846017368280, using database data only
+Processing batch 61/67 (5 products)
+Processing batch 10/67 (5 products)
+🔍 Starting Shopify content check for product 8888645910744
+🔍 Starting Shopify content check for product 8888645976280
+🔍 Starting Shopify content check for product 8888645877976
+🔍 Starting Shopify content check for product 8888646074584
+🔍 Starting Shopify content check for product 8888645419224
+🔍 Starting Shopify content check for product 7846019399896
+🔍 Starting Shopify content check for product 7846015828184
+🔍 Starting Shopify content check for product 7846019236056
+🔍 Starting Shopify content check for product 7846016221400
+🔍 Starting Shopify content check for product 7846021300440
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 0)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 8888645419224, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 1)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7846019399896, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 3)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7846019236056, using database data only
+Error fetching product by ID: Error: HTTP 429: Too Many Requests
+    at ShopifyService.getProductById (/home/runner/workspace/server/services/shopify.ts:85:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ProductStatusService.getProductContentStatus (/home/runner/workspace/server/services/productStatusService.ts:131:34)
+    at async <anonymous> (/home/runner/workspace/server/routes/admin.ts:144:26)
+    at async Promise.all (index 2)
+    at async forceRefreshLayoutDetection (/home/runner/workspace/server/routes/admin.ts:159:7)
+Rate limited for product 7

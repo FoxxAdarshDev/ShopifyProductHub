@@ -15,33 +15,38 @@ interface ContentStatusResult {
 }
 
 class ProductStatusService {
-  // Detect if HTML content contains our new layout structure
+  // Enhanced detection algorithm for new layout structure
   private detectNewLayoutFromHTML(html: string): { isNewLayout: boolean; contentCount: number } {
     if (!html || html.trim() === '') {
       return { isNewLayout: false, contentCount: 0 };
     }
 
-    // Check for our template structure markers
-    const hasContainerClass = html.includes('class="container"');
+    // Primary detection: Look for data-sku attribute (most reliable indicator)
     const hasDataSkuAttributes = html.includes('data-sku=');
     
-    // Check for specific tab structures
-    const hasTabStructure = 
+    // Secondary detection: Container class with our specific structure
+    const hasContainerClass = html.includes('class="container"');
+    
+    // Tertiary detection: Tab structure indicators
+    const hasTabContent = html.includes('tab-content');
+    const hasTabIds = 
       html.includes('id="description"') || 
       html.includes('id="features"') || 
       html.includes('id="applications"') ||
-      html.includes('id="specifications"') ||
-      html.includes('data-section="documentation"') ||
-      html.includes('data-section="videos"');
+      html.includes('id="specifications"');
+    
+    // Enhanced detection: Look for additional data attributes
+    const hasDataSection = html.includes('data-section=');
+    
+    // Primary criteria: data-sku is the strongest indicator of our template
+    const isNewLayout = hasDataSkuAttributes && (hasContainerClass || hasTabContent || hasTabIds || hasDataSection);
 
-    const isNewLayout = hasContainerClass && hasDataSkuAttributes && hasTabStructure;
-
-    // Count content sections (regardless of template detection for better visibility)
+    // Count all possible content sections
     let contentCount = 0;
-    if (html.includes('id="description"')) contentCount++;
-    if (html.includes('id="features"')) contentCount++;
-    if (html.includes('id="applications"')) contentCount++;
-    if (html.includes('id="specifications"')) contentCount++;
+    if (html.includes('id="description"') || html.includes('data-section="description"')) contentCount++;
+    if (html.includes('id="features"') || html.includes('data-section="features"')) contentCount++;
+    if (html.includes('id="applications"') || html.includes('data-section="applications"')) contentCount++;
+    if (html.includes('id="specifications"') || html.includes('data-section="specifications"')) contentCount++;
     if (html.includes('data-section="documentation"')) contentCount++;
     if (html.includes('data-section="videos"')) contentCount++;
     if (html.includes('data-section="safety-guidelines"')) contentCount++;
@@ -49,9 +54,11 @@ class ProductStatusService {
     if (html.includes('data-section="compatible-container"')) contentCount++;
     if (html.includes('data-section="sku-nomenclature"')) contentCount++;
 
-    // Debug logging when content is detected (remove after verification)
+    // Enhanced logging for debugging
     if (isNewLayout) {
-      console.log(`✅ New Layout detected in HTML: ${contentCount} sections found`);
+      console.log(`🎯 ENHANCED: New Layout detected for product - data-sku: ${hasDataSkuAttributes}, container: ${hasContainerClass}, sections: ${contentCount}`);
+    } else if (hasDataSkuAttributes) {
+      console.log(`⚠️ PARTIAL: Found data-sku but missing other indicators - container: ${hasContainerClass}, tabContent: ${hasTabContent}, tabIds: ${hasTabIds}`);
     }
 
     return { isNewLayout, contentCount };
