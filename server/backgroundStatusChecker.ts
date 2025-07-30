@@ -60,12 +60,15 @@ class BackgroundStatusChecker {
     this.abortController = new AbortController();
 
     try {
-      // Get all product IDs directly from Shopify store
-      console.log("🔍 Fetching all product IDs from Shopify store...");
+      // Get all accessible product IDs from Shopify store
+      console.log("🔍 Fetching all accessible product IDs from Shopify store...");
       const allProductIds = await this.getAllShopifyProductIds();
+      
+      // Also get the total count for reference
+      const totalCount = await this.shopifyService.getProductCount();
       this.status.totalProducts = allProductIds.length;
       
-      console.log(`🔍 Starting background status check for ${this.status.totalProducts} Shopify products`);
+      console.log(`🔍 Starting background status check for ${this.status.totalProducts} accessible products (${totalCount} total in store - some may be private/draft)`);
 
       // Process products in batches of 5 for much faster processing
       const BATCH_SIZE = 5;
