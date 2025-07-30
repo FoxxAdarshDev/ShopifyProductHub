@@ -89,50 +89,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📊 Found ${allStatuses.length} product entries in status table`);
       
       // Get unique product IDs from status table
-      const uniqueProductIds = [...new Set(allStatuses.map(s => s.shopifyProductId).filter(id => id && id !== 'null'))];
+      const uniqueProductIds = Array.from(new Set(allStatuses.map(s => s.shopifyProductId).filter(id => id && id !== 'null')));
       console.log(`🎯 Found ${uniqueProductIds.length} unique product IDs to fetch`);
       
-      // Fetch products by their IDs from Shopify (in very small batches to avoid rate limits)
-      const allProducts = [];
-      const batchSize = 2; // Very small batches to avoid rate limits
-      const maxProducts = Math.min(uniqueProductIds.length, 320); // Try to fetch all products
-      const delayBetweenRequests = 2000; // 2 second delay between batches
+      // First, return cached products immediately if available, then update in background
+      let cachedProducts: any[] = [];
+      try {
+        // Check if we have any database products to return immediately
+        const dbProducts = await storage.getAllProducts();
+        if (dbProducts.length > 0) {
+          cachedProducts = dbProducts.map(dbProduct => ({
+            id: parseInt(dbProduct.shopifyId),
+            title: dbProduct.title,
+            body_html: dbProduct.description || '',
+            handle: dbProduct.sku.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            variants: [{
+              id: parseInt(dbProduct.shopifyId) * 1000 + 1,
+              sku: dbProduct.sku,
+              price: '0.00'
+            }]
+          }));
+          console.log(`💾 Found ${cachedProducts.length} cached products to return immediately`);
+        }
+      } catch (error) {
+        console.warn('Failed to get cached products:', error);
+      }
       
-      console.log(`🚀 Fetching ${maxProducts} products from Shopify in batches of ${batchSize} with ${delayBetweenRequests}ms delays...`);
-      
-      for (let i = 0; i < maxProducts && allProducts.length < 100; i += batchSize) { // Stop at 100 successful fetches for now
-        const batch = uniqueProductIds.slice(i, i + batchSize);
-        console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(maxProducts/batchSize)} with ${batch.length} products`);
+      // If we have cached products, return them immediately and start background fetch
+      if (cachedProducts.length > 0) {
+        console.log(`🚀 Returning ${cachedProducts.length} cached products immediately`);
         
-        // Process products sequentially within each batch to avoid overwhelming the API
-        const batchProducts = [];
-        for (const productId of batch) {
+        // Start background fetch for fresh data (don't await)
+        setImmediate(async () => {
           try {
-            const product = await shopifyService.getProductById(productId);
-            if (product) {
-              batchProducts.push(product);
-            }
+            console.log(`🔄 Starting background fetch for fresh product data...`);
+            const freshProducts = await fetchProductsBatch(uniqueProductIds.slice(0, 50), shopifyService, storage);
+            console.log(`✅ Background fetch completed: ${freshProducts.length} fresh products`);
           } catch (error) {
-            if (error.message.includes('429')) {
-              console.warn(`⚠️ Rate limit hit for product ${productId}, skipping for now...`);
-              // Don't wait too long on rate limits during initial load
-            } else {
-              console.warn(`Failed to fetch product ${productId}:`, error.message);
-            }
+            console.warn('Background fetch failed:', error);
           }
-          
-          // Small delay between individual requests
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
+        });
         
-        allProducts.push(...batchProducts);
-        console.log(`✅ Batch complete: ${batchProducts.length}/${batch.length} products fetched successfully`);
-        console.log(`📊 Total products fetched so far: ${allProducts.length}`);
-        
-        // Longer delay between batches to avoid rate limiting
-        if (i + batchSize < maxProducts && allProducts.length < 100) {
-          await new Promise(resolve => setTimeout(resolve, delayBetweenRequests));
-        }
+        var allProducts = cachedProducts;
+      } else {
+        // No cached products, do a quick fetch of first batch
+        console.log(`🚀 No cached products, fetching first batch quickly...`);
+        var allProducts = await fetchProductsBatch(uniqueProductIds.slice(0, 20), shopifyService, storage);
+        console.log(`✅ Quick fetch completed: ${allProducts.length} products`);
       }
       
       console.log(`🎉 Successfully fetched ${allProducts.length} products from Shopify!`);
@@ -196,6 +199,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch products" });
     }
   });
+
+// Helper function to fetch products in batches
+async function fetchProductsBatch(productIds: string[], shopifyService: any, storage: any): Promise<any[]> {
+  const allProducts = [];
+  const batchSize = 5; // Reasonable batch size
+  const maxProducts = Math.min(productIds.length, 50); // Limit for quick response
+  
+  for (let i = 0; i < maxProducts; i += batchSize) {
+    const batch = productIds.slice(i, i + batchSize);
+    
+    // Process batch in parallel but with small delay
+    const batchPromises = batch.map(async (productId, index) => {
+      try {
+        // Small staggered delay within batch
+        await new Promise(resolve => setTimeout(resolve, index * 200));
+        const product = await shopifyService.getProductById(productId);
+        
+        // Cache successful fetches to database
+        if (product) {
+          try {
+            await storage.createProduct({
+              id: `cached-${product.id}`,
+              shopifyId: product.id.toString(),
+              sku: product.variants?.[0]?.sku || '',
+              title: product.title,
+              description: product.body_html
+            });
+          } catch (cacheError) {
+            // Ignore cache errors - product might already exist
+          }
+        }
+        
+        return product;
+      } catch (error: any) {
+        if (error?.message?.includes('429')) {
+          console.warn(`Rate limit hit for product ${productId}, skipping...`);
+        }
+        return null;
+      }
+    });
+    
+    const batchResults = await Promise.all(batchPromises);
+    const validProducts = batchResults.filter(p => p !== null);
+    allProducts.push(...validProducts);
+    
+    // Short delay between batches
+    if (i + batchSize < maxProducts) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  
+  return allProducts;
+}
 
   // Global search across all products
   app.get("/api/products/search", async (req, res) => {
