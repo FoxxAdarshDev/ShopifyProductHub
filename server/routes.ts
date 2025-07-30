@@ -92,36 +92,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uniqueProductIds = [...new Set(allStatuses.map(s => s.shopifyProductId).filter(id => id && id !== 'null'))];
       console.log(`🎯 Found ${uniqueProductIds.length} unique product IDs to fetch`);
       
-      // Fetch products by their IDs from Shopify (in small batches to avoid rate limits)
+      // Fetch products by their IDs from Shopify (in very small batches to avoid rate limits)
       const allProducts = [];
-      const batchSize = 10;
-      const maxProducts = Math.min(uniqueProductIds.length, 100); // Start with first 100 to test
+      const batchSize = 2; // Very small batches to avoid rate limits
+      const maxProducts = Math.min(uniqueProductIds.length, 320); // Try to fetch all products
+      const delayBetweenRequests = 2000; // 2 second delay between batches
       
-      console.log(`🚀 Fetching ${maxProducts} products from Shopify in batches of ${batchSize}...`);
+      console.log(`🚀 Fetching ${maxProducts} products from Shopify in batches of ${batchSize} with ${delayBetweenRequests}ms delays...`);
       
-      for (let i = 0; i < maxProducts; i += batchSize) {
+      for (let i = 0; i < maxProducts && allProducts.length < 100; i += batchSize) { // Stop at 100 successful fetches for now
         const batch = uniqueProductIds.slice(i, i + batchSize);
         console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(maxProducts/batchSize)} with ${batch.length} products`);
         
-        const batchPromises = batch.map(async (productId) => {
+        // Process products sequentially within each batch to avoid overwhelming the API
+        const batchProducts = [];
+        for (const productId of batch) {
           try {
             const product = await shopifyService.getProductById(productId);
-            return product;
+            if (product) {
+              batchProducts.push(product);
+            }
           } catch (error) {
-            console.warn(`Failed to fetch product ${productId}:`, error);
-            return null;
+            if (error.message.includes('429')) {
+              console.warn(`⚠️ Rate limit hit for product ${productId}, skipping for now...`);
+              // Don't wait too long on rate limits during initial load
+            } else {
+              console.warn(`Failed to fetch product ${productId}:`, error.message);
+            }
           }
-        });
+          
+          // Small delay between individual requests
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
         
-        const batchResults = await Promise.all(batchPromises);
-        const validProducts = batchResults.filter(p => p !== null);
-        allProducts.push(...validProducts);
+        allProducts.push(...batchProducts);
+        console.log(`✅ Batch complete: ${batchProducts.length}/${batch.length} products fetched successfully`);
+        console.log(`📊 Total products fetched so far: ${allProducts.length}`);
         
-        console.log(`✅ Batch complete: ${validProducts.length}/${batch.length} products fetched successfully`);
-        
-        // Small delay between batches to avoid rate limiting
-        if (i + batchSize < maxProducts) {
-          await new Promise(resolve => setTimeout(resolve, 200));
+        // Longer delay between batches to avoid rate limiting
+        if (i + batchSize < maxProducts && allProducts.length < 100) {
+          await new Promise(resolve => setTimeout(resolve, delayBetweenRequests));
         }
       }
       
