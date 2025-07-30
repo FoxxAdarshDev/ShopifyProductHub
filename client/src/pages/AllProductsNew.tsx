@@ -89,11 +89,15 @@ export default function AllProductsNew() {
         ? `/api/products/batch?since_id=${pageParam}&limit=20`
         : `/api/products/batch?limit=20`;
       
+      console.log(`🔄 Frontend fetching: ${url}`);
       const response = await apiRequest("GET", url);
-      return response.json();
+      const data = await response.json();
+      console.log(`📦 Frontend received: ${data.products?.length || 0} products, hasMore: ${data.hasMore}, nextCursor: ${data.nextCursor}`);
+      return data;
     },
     getNextPageParam: (lastPage) => {
-      return lastPage.hasMore ? lastPage.nextCursor : undefined;
+      console.log(`🔍 getNextPageParam: hasMore=${lastPage.hasMore}, nextCursor=${lastPage.nextCursor}`);
+      return lastPage.hasMore && lastPage.nextCursor ? lastPage.nextCursor : undefined;
     },
     initialPageParam: undefined as string | undefined,
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
@@ -184,6 +188,7 @@ export default function AllProductsNew() {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          console.log(`🚀 Intersection observer triggered: fetching next page`);
           fetchNextPage();
         }
       },
@@ -444,7 +449,10 @@ export default function AllProductsNew() {
               </div>
             ) : hasNextPage ? (
               <Button 
-                onClick={() => fetchNextPage()} 
+                onClick={() => {
+                  console.log(`🔄 Manual load more clicked: hasNextPage=${hasNextPage}, isFetchingNextPage=${isFetchingNextPage}`);
+                  fetchNextPage();
+                }} 
                 variant="outline"
                 className="px-8"
               >
