@@ -69,13 +69,19 @@ export default function AllProducts() {
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Query for initial products (paginated, instant loading)
+  // Query for initial products (paginated, instant loading OR comprehensive when filtering)
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/products/all", currentPage],
+    queryKey: ["/api/products/all", currentPage, contentFilter],
     queryFn: async () => {
-      // Fetch only current page for instant loading
-      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
-      return response.json();
+      // Use comprehensive mode when filtering (except 'all'), regular pagination otherwise
+      if (contentFilter !== 'all') {
+        const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true`);
+        return response.json();
+      } else {
+        // Fetch only current page for instant loading
+        const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
+        return response.json();
+      }
     }
   });
 
@@ -96,28 +102,43 @@ export default function AllProducts() {
     setContentStatus(cachedStatus);
   }, [cache]);
 
-  // Update products when page data loads (paginated)
+  // Update products when page data loads (paginated or comprehensive)
   useEffect(() => {
     if (data && data.products) {
-      if (currentPage === 1) {
-        // First page - replace products
+      if (contentFilter !== 'all') {
+        // Comprehensive mode when filtering - replace all products
         setAllProducts(data.products);
         setTotalFetched(data.products.length);
+        setHasMore(false); // All products loaded for filtering
       } else {
-        // Subsequent pages - append products
-        setAllProducts(prev => [...prev, ...data.products]);
-        setTotalFetched(prev => prev + data.products.length);
+        // Regular pagination mode
+        if (currentPage === 1) {
+          // First page - replace products
+          setAllProducts(data.products);
+          setTotalFetched(data.products.length);
+        } else {
+          // Subsequent pages - append products
+          setAllProducts(prev => [...prev, ...data.products]);
+          setTotalFetched(prev => prev + data.products.length);
+        }
+        setHasMore(data.hasMore);
       }
       
-      setHasMore(data.hasMore);
       setIsLoadingMore(false);
 
       // Check content status for current page products
-      console.log(`Checking content status for ${data.products.length} products (page ${currentPage})`);
+      console.log(`Checking content status for ${data.products.length} products (page ${currentPage}, filter: ${contentFilter})`);
       const productIds = data.products.map((p: ShopifyProduct) => p.id);
       checkContentStatus(productIds);
     }
-  }, [data, currentPage]);
+  }, [data, currentPage, contentFilter]);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [contentFilter]);
 
   useEffect(() => {
     if (error) {
@@ -362,7 +383,10 @@ export default function AllProducts() {
           {/* Content Filter */}
           <div className="flex items-center gap-3">
             <Filter className="w-4 h-4 text-slate-500" />
-            <Select value={contentFilter} onValueChange={(value: 'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none') => setContentFilter(value)}>
+            <Select value={contentFilter} onValueChange={(value: 'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none') => {
+              setContentFilter(value);
+              setCurrentPage(1); // Reset pagination when filter changes
+            }}>
               <SelectTrigger className="w-48" data-testid="select-content-filter">
                 <SelectValue placeholder="Filter by content" />
               </SelectTrigger>
@@ -504,8 +528,8 @@ export default function AllProducts() {
             ))}
           </div>
 
-          {/* Load More Button - only show when not searching */}
-          {hasMore && !isShowingSearchResults && (
+          {/* Load More Button - only show when not searching and not filtering */}
+          {hasMore && !isShowingSearchResults && contentFilter === 'all' && (
             <div className="text-center">
               <Button
                 onClick={loadMore}
@@ -528,7 +552,7 @@ export default function AllProducts() {
             </div>
           )}
 
-          {!hasMore && totalFetched > 0 && !isShowingSearchResults && (
+          {!hasMore && totalFetched > 0 && !isShowingSearchResults && contentFilter === 'all' && (
             <div className="text-center py-6">
               <p className="text-slate-500">
                 All products loaded ({totalFetched} total)
