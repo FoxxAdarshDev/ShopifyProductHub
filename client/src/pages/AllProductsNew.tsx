@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -81,7 +81,8 @@ export default function AllProductsNew() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    error
+    error,
+    refetch
   } = useInfiniteQuery({
     queryKey: ["/api/products/infinite", contentFilter],
     queryFn: async ({ pageParam }) => {
@@ -90,6 +91,7 @@ export default function AllProductsNew() {
         : `/api/products/batch?limit=20`;
       
       console.log(`🔄 Frontend fetching: ${url}`);
+      console.log(`🎯 Page param for this request: ${pageParam || 'initial'}`);
       const response = await apiRequest("GET", url);
       const data = await response.json();
       console.log(`📦 Frontend received: ${data.products?.length || 0} products, hasMore: ${data.hasMore}, nextCursor: ${data.nextCursor}`);
@@ -100,7 +102,8 @@ export default function AllProductsNew() {
       return lastPage.hasMore && lastPage.nextCursor ? lastPage.nextCursor : undefined;
     },
     initialPageParam: undefined as string | undefined,
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    staleTime: 0, // Don't cache - always fetch fresh data
+    gcTime: 5 * 60 * 1000, // Keep data for 5 minutes in memory but always refetch
   });
 
   // Search query for when user is searching  
@@ -120,8 +123,26 @@ export default function AllProductsNew() {
     staleTime: 30 * 1000, // Cache search results for 30 seconds
   });
 
-  // Flatten all products from infinite query
-  const allProducts = productPages?.pages.flatMap(page => page.products) || [];
+  // Flatten all products from infinite query and remove duplicates
+  const allProducts = useMemo(() => {
+    if (!productPages) return [];
+    
+    const products = productPages.pages.flatMap(page => page.products) || [];
+    
+    // Remove duplicates by product ID
+    const uniqueProducts = products.filter((product, index, array) => {
+      return array.findIndex(p => p.id === product.id) === index;
+    });
+    
+    console.log(`🧹 Deduplication: ${products.length} total → ${uniqueProducts.length} unique products`);
+    if (productPages.pages.length > 0) {
+      console.log(`📊 Pages in infinite query: ${productPages.pages.length}`);
+      productPages.pages.forEach((page, index) => {
+        console.log(`  Page ${index + 1}: ${page.products?.length || 0} products, cursor: ${page.nextCursor || 'none'}`);
+      });
+    }
+    return uniqueProducts;
+  }, [productPages]);
 
   // Determine which products to show
   const isSearching = debouncedSearchTerm.length >= 2;
@@ -448,16 +469,28 @@ export default function AllProductsNew() {
                 <span className="ml-2 text-gray-600">Loading more products...</span>
               </div>
             ) : hasNextPage ? (
-              <Button 
-                onClick={() => {
-                  console.log(`🔄 Manual load more clicked: hasNextPage=${hasNextPage}, isFetchingNextPage=${isFetchingNextPage}`);
-                  fetchNextPage();
-                }} 
-                variant="outline"
-                className="px-8"
-              >
-                Load More Products
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    console.log(`🔄 Manual load more clicked: hasNextPage=${hasNextPage}, isFetchingNextPage=${isFetchingNextPage}`);
+                    fetchNextPage();
+                  }} 
+                  variant="outline"
+                  className="px-8"
+                >
+                  Load More Products
+                </Button>
+                <Button 
+                  onClick={() => {
+                    console.log(`🔄 Reset pagination cache and refetch`);
+                    refetch();
+                  }} 
+                  variant="secondary"
+                  className="px-4"
+                >
+                  Reset
+                </Button>
+              </div>
             ) : allProducts.length > 0 ? (
               <p className="text-gray-500 text-sm">
                 All products loaded ({allProducts.length} total)
