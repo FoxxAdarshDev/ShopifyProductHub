@@ -176,6 +176,46 @@ export default function AllProductsNew() {
     console.log(`📊 Browse mode: showing ${allProducts.length} products from infinite query`);
   }
 
+  // Automatic badge loading for displayed products
+  useEffect(() => {
+    if (displayProducts.length === 0) return;
+    
+    // Get products that don't have status data yet
+    const productsNeedingStatus = displayProducts.filter((product: ShopifyProduct) => {
+      const status = contentStatus[product.id.toString()] || getStatus(product.id.toString());
+      return !status;
+    });
+    
+    if (productsNeedingStatus.length === 0) return;
+    
+    // Fetch status for products without badges
+    const fetchProductStatus = async () => {
+      try {
+        const productIds = productsNeedingStatus.map((p: ShopifyProduct) => p.id);
+        console.log(`🔄 Auto-fetching badges for ${productIds.length} products without status`);
+        
+        const response = await apiRequest("POST", "/api/products/content-status", {
+          productIds: productIds.map((id: number) => id.toString())
+        });
+        const freshStatusData = await response.json();
+        
+        // Update badges with fresh data
+        setContentStatus(prev => ({ ...prev, ...freshStatusData }));
+        
+        // Update badge cache
+        updateCache(freshStatusData);
+        
+        console.log(`📋 Auto-loaded ${Object.keys(freshStatusData).length} badge statuses`);
+      } catch (error) {
+        console.error("Failed to auto-load badge status:", error);
+      }
+    };
+    
+    // Debounce the fetch to avoid too many requests
+    const timeoutId = setTimeout(fetchProductStatus, 500);
+    return () => clearTimeout(timeoutId);
+  }, [displayProducts, contentStatus, getStatus, updateCache]);
+
   // Manual badge refresh function (call when needed, not automatically)
   const refreshBadges = useCallback(async () => {
     if (displayProducts.length === 0) return;
@@ -321,21 +361,33 @@ export default function AllProductsNew() {
     }
   }, [error, toast]);
 
-  // Get content status badge
-  const getContentStatusBadge = (productId: number) => {
-    const status = contentStatus[productId.toString()];
-    if (!status) return null;
+  // Get individual product status badge with real-time updates
+  const getProductStatusBadge = (productId: number) => {
+    // First check cached status from contentStatus
+    const cachedStatus = contentStatus[productId.toString()];
+    
+    // Also check the product status cache for real-time updates
+    const cacheStatus = getStatus(productId.toString());
+    
+    // Use the most recent status data available
+    const status = cacheStatus || cachedStatus;
+    
+    if (!status) {
+      // If no status available, show loading/default state
+      return <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200 text-xs">Checking...</Badge>;
+    }
 
+    // Return badge based on priority: New Layout > Draft Mode > Shopify Content > No Content
     if (status.hasNewLayout) {
-      return <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300">New Layout</Badge>;
+      return <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-xs font-medium">New Layout</Badge>;
     }
     if (status.hasDraftContent) {
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300">Draft Mode</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300 text-xs font-medium">Draft Mode</Badge>;
     }
     if (status.hasShopifyContent) {
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">Shopify Content</Badge>;
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300 text-xs font-medium">Shopify Content</Badge>;
     }
-    return <Badge variant="outline" className="text-gray-600">Content: Not Added</Badge>;
+    return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 text-xs">No Content</Badge>;
   };
 
   // Get stats for display - prioritize server status counts for accuracy
@@ -494,9 +546,11 @@ export default function AllProductsNew() {
                     <CardTitle className="text-lg leading-tight line-clamp-2">
                       {product.title}
                     </CardTitle>
-                    {getContentStatusBadge(product.id)}
                   </div>
-                  <p className="text-sm text-gray-600">Product ID: {product.id}</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-sm text-gray-600">Product ID: {product.id}</p>
+                    {getProductStatusBadge(product.id)}
+                  </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
