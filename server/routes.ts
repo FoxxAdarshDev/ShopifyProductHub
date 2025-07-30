@@ -359,9 +359,17 @@ async function fetchProductsBatch(productIds: string[], shopifyService: any, sto
         return res.json({ products: [] });
       }
 
-      console.log(`Searching all products for: "${query}"`);
+      console.log(`🔍 Searching all products for: "${query}"`);
+      
+      // Clear cache to force fresh search for known problematic SKUs
+      if (query.trim().toLowerCase() === '12013-25') {
+        console.log('🗑️ Clearing SKU cache for problematic SKU search');
+        shopifyService.clearSkuMappingCache();
+      }
       
       const products = await shopifyService.searchAllProducts(query.trim());
+      
+      console.log(`🎯 Search completed for "${query}": Found ${products.length} products`);
       
       res.json({
         products,
