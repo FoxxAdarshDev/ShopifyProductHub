@@ -425,8 +425,8 @@ export default function AllProducts() {
         <>
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {displayProducts.map((product) => (
-              <Card key={product.id} className="hover:shadow-lg transition-shadow">
+            {displayProducts.map((product, index) => (
+              <Card key={product.id || `product-${index}`} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg line-clamp-2" data-testid={`text-product-title-${product.id}`}>
                     {product.title}
@@ -442,9 +442,9 @@ export default function AllProducts() {
                         Variants ({product.variants.length})
                       </h4>
                       <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {product.variants.map((variant) => (
+                        {product.variants.map((variant, variantIndex) => (
                           <div
-                            key={variant.id}
+                            key={variant.id || `variant-${variantIndex}`}
                             className="flex items-center justify-between p-2 bg-slate-50 rounded text-sm"
                           >
                             <div>
@@ -517,9 +517,9 @@ export default function AllProducts() {
                       <div className="border-t pt-3 mt-3">
                         <div className="text-xs text-slate-500 mb-2">Quick select variant:</div>
                         <div className="flex flex-wrap gap-1">
-                          {product.variants.slice(0, 3).map((variant) => (
+                          {product.variants.slice(0, 3).map((variant, variantIndex) => (
                             <Link
-                              key={variant.id}
+                              key={variant.id || `quick-variant-${variantIndex}`}
                               href={`/product-manager/${product.id}`}
                               onClick={() => handleProductSelect(product, variant)}
                             >

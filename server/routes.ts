@@ -98,17 +98,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if we have any database products to return immediately
         const dbProducts = await storage.getAllProducts();
         if (dbProducts.length > 0) {
-          cachedProducts = dbProducts.map(dbProduct => ({
-            id: parseInt(dbProduct.shopifyId),
-            title: dbProduct.title,
-            body_html: dbProduct.description || '',
-            handle: dbProduct.sku.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-            variants: [{
-              id: parseInt(dbProduct.shopifyId) * 1000 + 1,
-              sku: dbProduct.sku,
-              price: '0.00'
-            }]
-          }));
+          cachedProducts = dbProducts
+            .filter(dbProduct => dbProduct.shopifyId && dbProduct.shopifyId !== 'null')
+            .map((dbProduct, index) => ({
+              id: parseInt(dbProduct.shopifyId) || (999000 + index), // Ensure valid ID
+              title: dbProduct.title || 'Untitled Product',
+              body_html: dbProduct.description || '',
+              handle: (dbProduct.sku || `product-${index}`).toLowerCase().replace(/[^a-z0-9]/g, '-'),
+              variants: [{
+                id: (parseInt(dbProduct.shopifyId) || (999000 + index)) * 1000 + 1,
+                sku: dbProduct.sku || '',
+                price: '0.00'
+              }]
+            }));
           console.log(`💾 Found ${cachedProducts.length} cached products to return immediately`);
         }
       } catch (error) {
@@ -119,11 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cachedProducts.length > 0) {
         console.log(`🚀 Returning ${cachedProducts.length} cached products immediately`);
         
-        // Start background fetch for fresh data (don't await)
+        // Start VERY SLOW background fetch for fresh data (don't await)
         setImmediate(async () => {
           try {
-            console.log(`🔄 Starting background fetch for fresh product data...`);
-            const freshProducts = await fetchProductsBatch(uniqueProductIds.slice(0, 50), shopifyService, storage);
+            console.log(`🔄 Starting SLOW background fetch for fresh product data...`);
+            const freshProducts = await fetchProductsBatch(uniqueProductIds.slice(0, 20), shopifyService, storage);
             console.log(`✅ Background fetch completed: ${freshProducts.length} fresh products`);
           } catch (error) {
             console.warn('Background fetch failed:', error);
@@ -200,56 +202,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-// Helper function to fetch products in batches
+// Helper function to fetch products in very conservative batches to avoid rate limits
 async function fetchProductsBatch(productIds: string[], shopifyService: any, storage: any): Promise<any[]> {
   const allProducts = [];
-  const batchSize = 5; // Reasonable batch size
-  const maxProducts = Math.min(productIds.length, 50); // Limit for quick response
+  const maxProducts = Math.min(productIds.length, 100); // Reasonable limit
   
-  for (let i = 0; i < maxProducts; i += batchSize) {
-    const batch = productIds.slice(i, i + batchSize);
+  console.log(`🐌 Starting SLOW fetch of ${maxProducts} products to avoid rate limits...`);
+  
+  // Process products ONE BY ONE with generous delays
+  for (let i = 0; i < maxProducts; i++) {
+    const productId = productIds[i];
     
-    // Process batch in parallel but with small delay
-    const batchPromises = batch.map(async (productId, index) => {
-      try {
-        // Small staggered delay within batch
-        await new Promise(resolve => setTimeout(resolve, index * 200));
-        const product = await shopifyService.getProductById(productId);
+    try {
+      console.log(`📦 Fetching product ${i + 1}/${maxProducts}: ${productId}`);
+      const product = await shopifyService.getProductById(productId);
+      
+      if (product) {
+        allProducts.push(product);
         
         // Cache successful fetches to database
-        if (product) {
-          try {
-            await storage.createProduct({
-              id: `cached-${product.id}`,
-              shopifyId: product.id.toString(),
-              sku: product.variants?.[0]?.sku || '',
-              title: product.title,
-              description: product.body_html
-            });
-          } catch (cacheError) {
-            // Ignore cache errors - product might already exist
-          }
+        try {
+          await storage.createProduct({
+            id: `cached-${product.id}`,
+            shopifyId: product.id.toString(),
+            sku: product.variants?.[0]?.sku || '',
+            title: product.title,
+            description: product.body_html
+          });
+        } catch (cacheError) {
+          // Ignore cache errors - product might already exist
         }
         
-        return product;
-      } catch (error: any) {
-        if (error?.message?.includes('429')) {
-          console.warn(`Rate limit hit for product ${productId}, skipping...`);
-        }
-        return null;
+        console.log(`✅ Product ${i + 1} fetched successfully: ${product.title}`);
       }
-    });
-    
-    const batchResults = await Promise.all(batchPromises);
-    const validProducts = batchResults.filter(p => p !== null);
-    allProducts.push(...validProducts);
-    
-    // Short delay between batches
-    if (i + batchSize < maxProducts) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error: any) {
+      if (error?.message?.includes('429')) {
+        console.warn(`⚠️ Rate limit hit for product ${productId}, waiting longer...`);
+        // Wait much longer on rate limits
+        await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second wait
+      } else {
+        console.warn(`Failed to fetch product ${productId}:`, error.message);
+      }
     }
+    
+    // Generous delay between EVERY request to avoid rate limits
+    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds between each request
   }
   
+  console.log(`🎉 Slow batch fetch completed: ${allProducts.length}/${maxProducts} products fetched`);
   return allProducts;
 }
 
