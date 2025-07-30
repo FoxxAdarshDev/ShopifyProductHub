@@ -81,16 +81,26 @@ class ShopifyService {
     }
   }
 
-  // Get products in efficient batches using Shopify pagination
-  async getProductsBatch(limit: number = 5, page: number = 1): Promise<any[]> {
+  // Get products in efficient batches using cursor-based pagination (modern Shopify API)
+  async getProductsBatch(limit: number = 5, since_id?: string): Promise<{ products: any[], hasMore: boolean }> {
     try {
-      console.log(`📦 Fetching ${limit} products from Shopify (page ${page})`);
-      const response = await this.makeRequest(`/products.json?limit=${limit}&page=${page}`);
-      console.log(`✅ Fetched ${response.products?.length || 0} products from batch`);
-      return response.products || [];
+      const url = since_id 
+        ? `/products.json?limit=${limit}&since_id=${since_id}&fields=id,title,body_html,handle,variants`
+        : `/products.json?limit=${limit}&fields=id,title,body_html,handle,variants`;
+      
+      console.log(`📦 Fetching ${limit} products from Shopify${since_id ? ` (since_id: ${since_id})` : ''}`);
+      const response = await this.makeRequest(url);
+      const products = response.products || [];
+      
+      console.log(`✅ Fetched ${products.length} products from batch`);
+      
+      return {
+        products,
+        hasMore: products.length === limit
+      };
     } catch (error) {
-      console.warn(`Failed to fetch products batch (page ${page}):`, error);
-      return [];
+      console.warn(`Failed to fetch products batch:`, error);
+      return { products: [], hasMore: false };
     }
   }
 

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ProductManager from "@/pages/ProductManager";
 import AllProducts from "@/pages/AllProducts";
+import AllProductsNew from "@/pages/AllProductsNew";
 import DraftModeProducts from "@/pages/DraftModeProducts";
 import NewLayoutProducts from "@/pages/NewLayoutProducts";
 import NotFound from "@/pages/not-found";
@@ -16,11 +17,11 @@ function Router() {
       <Sidebar />
       <main className="flex-1">
         <Switch>
-          <Route path="/" component={AllProducts} />
+          <Route path="/" component={AllProductsNew} />
           <Route path="/product-manager" component={ProductManager} />
           <Route path="/product-manager/:productId" component={ProductManager} />
           <Route path="/products/:productId" component={ProductManager} />
-          <Route path="/all-products" component={AllProducts} />
+          <Route path="/all-products" component={AllProductsNew} />
           <Route path="/draft-mode" component={DraftModeProducts} />
           <Route path="/new-layout" component={NewLayoutProducts} />
           <Route component={NotFound} />
