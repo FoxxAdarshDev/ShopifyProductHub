@@ -1031,6 +1031,23 @@ async function fetchProductsBatch(productIds: string[], shopifyService: any, sto
     }
   });
 
+  // Test comprehensive fetch endpoint
+  app.get("/api/admin/test-comprehensive-fetch", async (req, res) => {
+    try {
+      console.log("🧪 Testing comprehensive fetch method...");
+      const products = await shopifyService.getAllProductsComprehensive();
+      res.json({ 
+        message: "Comprehensive fetch test completed", 
+        totalProducts: products.length,
+        expectedTotal: 1146,
+        success: products.length >= 1000 // Consider success if we get at least 1000 products
+      });
+    } catch (error) {
+      console.error('Error testing comprehensive fetch:', error);
+      res.status(500).json({ error: 'Failed to test comprehensive fetch' });
+    }
+  });
+
   // Debug endpoint to check available SKUs
   app.get("/api/admin/available-skus", async (req, res) => {
     try {

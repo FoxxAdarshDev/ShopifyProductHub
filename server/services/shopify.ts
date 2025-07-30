@@ -226,46 +226,148 @@ class ShopifyService {
 
   async getAllProductsComprehensive(): Promise<ShopifyProduct[]> {
     try {
-      console.log('Starting comprehensive fetch of ALL products in store');
+      console.log('🚀 Starting comprehensive fetch of ALL products in store');
+      
+      // First, get the total count to know how many we should expect
+      const countResponse = await this.makeRequest('/products/count.json', {}, 6);
+      const expectedTotal = countResponse.count;
+      console.log(`🎯 Store has ${expectedTotal} total products to fetch`);
       
       const results: ShopifyProduct[] = [];
-      let hasNextPage = true;
-      let since_id = '';
       let totalFetched = 0;
       let pageCount = 0;
-      const maxPages = 50; // Safety limit (50 pages * 250 products = 12,500 products max)
+      const maxPages = Math.ceil(expectedTotal / 250) + 5; // Dynamic limit based on expected count + buffer
       
-      while (hasNextPage && pageCount < maxPages) {
+      // Strategy 1: Try cursor-based pagination first
+      console.log('📄 Attempting cursor-based pagination...');
+      let since_id = '';
+      let hasNextPage = true;
+      
+      while (hasNextPage && pageCount < maxPages && totalFetched < expectedTotal) {
         try {
           const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
-          const response = await this.makeRequest(url, {}, 6); // Lower priority for background bulk operations
+          const response = await this.makeRequest(url, {}, 6);
           const products = response.products as ShopifyProduct[];
           
+          pageCount++;
+          totalFetched += products.length;
+          console.log(`📄 Page ${pageCount}: Fetched ${products.length} products (total: ${totalFetched}/${expectedTotal})`);
+          
           if (products.length === 0) {
+            console.log(`⏹️  No more products found with cursor pagination`);
             hasNextPage = false;
             break;
           }
           
-          pageCount++;
-          totalFetched += products.length;
-          console.log(`Page ${pageCount}: Fetched ${products.length} products (total: ${totalFetched})`);
-          
           results.push(...products);
-          
-          // Set up for next page
           since_id = products[products.length - 1].id.toString();
-          hasNextPage = products.length === 250; // Continue if we got a full batch
+          
+          // Continue if we got a full batch AND haven't reached expected total
+          if (products.length < 250) {
+            console.log(`📋 Cursor pagination appears to be complete: only ${products.length} products in last batch`);
+            hasNextPage = false;
+          }
           
         } catch (fetchError) {
-          console.error(`Error fetching page ${pageCount + 1}:`, fetchError);
+          console.error(`❌ Error fetching page ${pageCount + 1}:`, fetchError);
           break;
         }
       }
+      
+      // Strategy 2: If we didn't get all products, try different approaches to fill gaps
+      if (totalFetched < expectedTotal) {
+        console.log(`🔄 Got ${totalFetched}/${expectedTotal} products with cursor. Trying alternative strategies...`);
+        
+        const existingIds = new Set(results.map(p => p.id));
+        
+        // Strategy 2a: Try different field combinations (sometimes affects pagination)
+        console.log(`🔄 Trying minimal fields strategy...`);
+        let minimalCursor = '';
+        let minimalPageCount = 0;
+        
+        while (minimalPageCount < 20 && totalFetched < expectedTotal) {
+          try {
+            const url = `/products.json?fields=id&limit=250${minimalCursor ? `&since_id=${minimalCursor}` : ''}`;
+            const response = await this.makeRequest(url, {}, 6);
+            const minimalProducts = response.products as { id: number }[];
+            
+            if (minimalProducts.length === 0) break;
+            
+            // Get full product data for new products only
+            const newProductIds = minimalProducts
+              .filter(p => !existingIds.has(p.id))
+              .map(p => p.id);
+            
+            if (newProductIds.length > 0) {
+              console.log(`📄 Minimal fetch page ${minimalPageCount + 1}: Found ${newProductIds.length} new product IDs`);
+              
+              // Fetch full product data for new products in small batches
+              for (let i = 0; i < newProductIds.length; i += 10) {
+                const batchIds = newProductIds.slice(i, i + 10);
+                const batchPromises = batchIds.map(id => 
+                  this.makeRequest(`/products/${id}.json?fields=id,title,body_html,handle,variants`, {}, 6)
+                    .then(response => response.product)
+                    .catch(error => {
+                      console.warn(`Failed to fetch product ${id}:`, error.message);
+                      return null;
+                    })
+                );
+                
+                const batchProducts = (await Promise.all(batchPromises)).filter(p => p !== null);
+                results.push(...batchProducts);
+                totalFetched += batchProducts.length;
+                batchProducts.forEach(p => existingIds.add(p.id));
+                
+                if (totalFetched >= expectedTotal) break;
+              }
+            }
+            
+            minimalCursor = minimalProducts[minimalProducts.length - 1].id.toString();
+            minimalPageCount++;
+            
+            if (minimalProducts.length < 250) break;
+            
+          } catch (fetchError) {
+            console.error(`❌ Error with minimal fields strategy:`, fetchError);
+            break;
+          }
+        }
+        
+        // Strategy 2b: Try reverse chronological order if still missing products
+        if (totalFetched < expectedTotal && totalFetched > 0) {
+          console.log(`🔄 Trying reverse chronological order...`);
+          
+          // Get the oldest product ID we have and work backwards
+          const oldestProductId = Math.min(...results.map(p => p.id));
+          
+          try {
+            // Try fetching products created before our oldest product
+            const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250&created_at_max=${new Date(2020, 0, 1).toISOString()}`;
+            const response = await this.makeRequest(url, {}, 6);
+            const oldProducts = response.products as ShopifyProduct[];
+            
+            const newOldProducts = oldProducts.filter(p => !existingIds.has(p.id));
+            if (newOldProducts.length > 0) {
+              console.log(`📄 Reverse fetch: Found ${newOldProducts.length} older products`);
+              results.push(...newOldProducts);
+              totalFetched += newOldProducts.length;
+            }
+            
+          } catch (fetchError) {
+            console.warn(`⚠️  Reverse fetch failed:`, fetchError);
+          }
+        }
+      }
 
-      console.log(`Comprehensive fetch completed: ${totalFetched} total products fetched across ${pageCount} pages`);
+      console.log(`✅ Comprehensive fetch completed: ${totalFetched}/${expectedTotal} products fetched`);
+      
+      if (totalFetched < expectedTotal) {
+        console.warn(`⚠️  Only fetched ${totalFetched} out of ${expectedTotal} expected products. Some products may be missing.`);
+      }
+      
       return results;
     } catch (error) {
-      console.error('Error in comprehensive product fetch:', error);
+      console.error('❌ Error in comprehensive product fetch:', error);
       return [];
     }
   }
