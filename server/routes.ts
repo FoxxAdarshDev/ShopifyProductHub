@@ -105,15 +105,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           comprehensive: true
         });
       } else {
-        // Standard pagination
+        // Standard pagination - fast loading for instant display
         const products = await shopifyService.getAllProducts(page, limit);
         const hasMore = products.length === limit;
+        
+        console.log(`Standard pagination: page ${page}, fetched ${products.length} products, hasMore: ${hasMore}`);
         
         res.json({
           products,
           hasMore,
           page,
-          totalFetched: products.length
+          totalFetched: products.length,
+          comprehensive: false
         });
       }
     } catch (error) {

@@ -69,12 +69,12 @@ export default function AllProducts() {
   const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Query for initial products (fetch ALL products from start)
+  // Query for initial products (paginated, instant loading)
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/products/all", "comprehensive"],
+    queryKey: ["/api/products/all", currentPage],
     queryFn: async () => {
-      // Fetch ALL products with comprehensive mode for accurate counts
-      const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true`);
+      // Fetch only current page for instant loading
+      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
       return response.json();
     }
   });
@@ -96,20 +96,28 @@ export default function AllProducts() {
     setContentStatus(cachedStatus);
   }, [cache]);
 
-  // Update products when ALL data loads (comprehensive fetch)
+  // Update products when page data loads (paginated)
   useEffect(() => {
     if (data && data.products) {
-      setAllProducts(data.products);
-      setTotalFetched(data.products.length);
-      setHasMore(false); // All products loaded at once
+      if (currentPage === 1) {
+        // First page - replace products
+        setAllProducts(data.products);
+        setTotalFetched(data.products.length);
+      } else {
+        // Subsequent pages - append products
+        setAllProducts(prev => [...prev, ...data.products]);
+        setTotalFetched(prev => prev + data.products.length);
+      }
+      
+      setHasMore(data.hasMore);
       setIsLoadingMore(false);
 
-      // Check content status for ALL products (single backend request)
-      console.log(`Checking content status for ${data.products.length} total products in store (single backend request)`);
-      const allProductIds = data.products.map((p: ShopifyProduct) => p.id);
-      checkContentStatus(allProductIds);
+      // Check content status for current page products
+      console.log(`Checking content status for ${data.products.length} products (page ${currentPage})`);
+      const productIds = data.products.map((p: ShopifyProduct) => p.id);
+      checkContentStatus(productIds);
     }
-  }, [data]);
+  }, [data, currentPage]);
 
   useEffect(() => {
     if (error) {
