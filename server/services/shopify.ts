@@ -95,70 +95,64 @@ class ShopifyService {
 
   async getProductBySku(sku: string): Promise<ShopifyProduct | null> {
     try {
-      console.log(`Searching Shopify for SKU: ${sku}`);
+      console.log(`Searching Shopify for SKU: ${sku} using comprehensive search`);
       
-      // Search through all products, using pagination if necessary
-      let allProducts: ShopifyProduct[] = [];
-      let hasNextPage = true;
-      let since_id = '';
-      let pageCount = 0;
-      const maxPages = 10; // Safety limit to prevent infinite loops
-      
-      while (hasNextPage && pageCount < maxPages) {
-        const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
-        const response = await this.makeRequest(url);
-        const products = response.products as ShopifyProduct[];
-        
-        if (products.length === 0) {
-          hasNextPage = false;
-        } else {
-          allProducts = allProducts.concat(products);
-          since_id = products[products.length - 1].id.toString();
-          hasNextPage = products.length === 250; // If we got 250, there might be more
-          pageCount++;
-        }
-      }
-      
-      console.log(`Found ${allProducts.length} total products in Shopify store across ${pageCount} pages`);
+      // Use the same comprehensive approach as getAllProductsComprehensive()
+      const allProducts = await this.getAllProductsComprehensive();
+      console.log(`Comprehensive SKU search: Got ${allProducts.length} total products to search through`);
+      // Normalize search term for better matching
+      const skuLower = sku.toLowerCase().trim();
       
       // First try exact match
       let product = allProducts.find(p => 
         p.variants.some(v => {
-          if (v.sku && v.sku.includes(sku.substring(0, 8))) { // Log potential matches
-            console.log(`Checking variant SKU: "${v.sku}" against search SKU: "${sku}"`);
+          if (!v.sku) return false;
+          const variantSkuLower = v.sku.toLowerCase().trim();
+          if (variantSkuLower === skuLower) {
+            console.log(`Exact SKU match found: "${v.sku}" for product "${p.title}" (ID: ${p.id})`);
+            return true;
           }
-          return v.sku === sku;
+          return false;
         })
       );
 
-      // If no exact match, try fuzzy matching (remove trailing numbers, hyphens, etc.)
+      // If no exact match, try fuzzy matching (contains, partial matches)
       if (!product) {
-        const baseSku = sku.replace(/-\d*$/, ''); // Remove trailing -1, -2, etc.
-        console.log(`No exact match found, trying fuzzy search with base SKU: "${baseSku}"`);
+        console.log(`No exact match found for "${sku}", trying fuzzy matching`);
         
         product = allProducts.find(p => 
           p.variants.some(v => {
-            if (v.sku && v.sku.startsWith(baseSku)) {
-              console.log(`Fuzzy match found: "${v.sku}" matches base "${baseSku}"`);
+            if (!v.sku) return false;
+            const variantSkuLower = v.sku.toLowerCase().trim();
+            
+            // Check if either contains the other (for partial matches)
+            if (variantSkuLower.includes(skuLower) || skuLower.includes(variantSkuLower)) {
+              console.log(`Fuzzy SKU match found: "${v.sku}" contains or matches "${sku}" for product "${p.title}" (ID: ${p.id})`);
               return true;
             }
+            
+            // Check without trailing numbers/variants (e.g., "12013-00" vs "12013-00-1")
+            const baseSku = sku.replace(/-\d*$/, '');
+            const baseVariantSku = v.sku.replace(/-\d*$/, '');
+            if (baseSku.toLowerCase() === baseVariantSku.toLowerCase()) {
+              console.log(`Base SKU match found: "${v.sku}" base matches "${sku}" base for product "${p.title}" (ID: ${p.id})`);
+              return true;
+            }
+            
             return false;
           })
         );
       }
 
       if (product) {
-        console.log(`Found matching product: ${product.title} with ID: ${product.id}`);
+        console.log(`✅ Comprehensive SKU search successful: Found "${product.title}" (ID: ${product.id}) for SKU "${sku}"`);
       } else {
-        console.log(`No product found with SKU: ${sku}`);
+        console.log(`❌ Comprehensive SKU search failed: No product found with SKU "${sku}"`);
         
-        // Log similar SKUs for debugging
+        // Log sample SKUs for debugging
         const allSkus = allProducts.flatMap(p => p.variants.map(v => v.sku)).filter(Boolean);
-        const similarSkus = allSkus.filter(s => s && (s.includes('66P') || s.includes('700437') || s.includes('FLS')));
-        console.log(`Similar SKUs found:`, similarSkus.slice(0, 10));
-        if (similarSkus.length === 0) {
-          console.log(`Random sample of available SKUs:`, allSkus.slice(0, 10));
-        }
+        console.log(`Searched through ${allSkus.length} total SKUs in ${allProducts.length} products`);
+        console.log(`Sample of available SKUs:`, allSkus.slice(0, 10));
       }
 
       return product || null;
