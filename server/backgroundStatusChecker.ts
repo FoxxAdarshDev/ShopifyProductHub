@@ -67,33 +67,39 @@ class BackgroundStatusChecker {
       
       console.log(`🔍 Starting background status check for ${this.status.totalProducts} Shopify products`);
 
-      // Process each product individually with delays to avoid rate limiting
-      for (let i = 0; i < allProductIds.length; i++) {
+      // Process products in batches of 5 for much faster processing
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < allProductIds.length; i += BATCH_SIZE) {
         if (this.abortController.signal.aborted) {
           console.log("🛑 Background check aborted");
           break;
         }
 
-        const productId = allProductIds[i];
-        this.status.currentProductId = productId.toString();
+        const batch = allProductIds.slice(i, i + BATCH_SIZE);
+        const batchStart = i + 1;
+        const batchEnd = Math.min(i + BATCH_SIZE, allProductIds.length);
+        
+        this.status.currentProductId = batch.map(id => id.toString()).join(', ');
         this.status.checkedProducts = i;
 
         try {
-          console.log(`🔍 Background check: ${i + 1}/${this.status.totalProducts} - Product ${productId}`);
+          console.log(`🔍 Background check batch: ${batchStart}-${batchEnd}/${this.status.totalProducts} - Products [${batch.join(', ')}]`);
           
-          // Check status for this product directly from Shopify + database
-          await this.checkSingleProductStatus(productId);
+          // Check status for this batch of products
+          await this.checkProductBatchStatus(batch);
           
-          // Small delay between checks to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 300));
+          this.status.checkedProducts = batchEnd;
+          
+          // Delay between batches to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
         } catch (error) {
-          const errorMsg = `Product ${productId}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const errorMsg = `Batch ${batchStart}-${batchEnd}: ${error instanceof Error ? error.message : 'Unknown error'}`;
           this.status.errors.push(errorMsg);
-          console.error(`❌ Background check error for product ${productId}:`, error);
+          console.error(`❌ Background check error for batch ${batchStart}-${batchEnd}:`, error);
           
           // Longer delay after error
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
 
@@ -141,27 +147,90 @@ class BackgroundStatusChecker {
     }
   }
 
-  private async checkSingleProductStatus(productId: number): Promise<void> {
+  private async checkProductBatchStatus(productIds: number[]): Promise<void> {
     try {
-      // Get product from Shopify using queue system
-      const product = await this.shopifyService.getProductById(productId.toString());
-      if (!product) return;
-
-      // Check if HTML has new layout structure  
-      const hasNewLayout = detectNewLayoutFromHTML(product.body_html || '');
+      console.log(`📦 Processing batch of ${productIds.length} products...`);
       
-      // Get current status using the productStatusService
-      const statusResult = await this.productStatusService.getBatchProductStatus([productId.toString()]);
-      const status = statusResult[productId.toString()] || { hasDraftContent: false, hasNewLayout: false, hasShopifyContent: false, contentCount: 0 };
+      // Get all products in this batch from Shopify
+      const batchPromises = productIds.map(async (productId) => {
+        try {
+          const product = await this.shopifyService.getProductById(productId.toString());
+          return { productId, product };
+        } catch (error) {
+          console.warn(`⚠️ Failed to get product ${productId}:`, error);
+          return { productId, product: null };
+        }
+      });
       
-      // Update the status with fresh Shopify data
-      const hasShopifyContent = (product.body_html && product.body_html.length > 100) || false;
+      const batchResults = await Promise.all(batchPromises);
       
-      console.log(`📊 Product ${productId}: Layout=${hasNewLayout}, Shopify Content=${hasShopifyContent}, Draft=${status.hasDraftContent}`);
+      // Get current status for all products in batch
+      const statusResult = await this.productStatusService.getBatchProductStatus(
+        productIds.map(id => id.toString())
+      );
+      
+      // Process each product in the batch
+      const updates: Array<{ productId: string; hasNewLayout: boolean; hasShopifyContent: boolean; hasDraftContent: boolean; contentCount: string }> = [];
+      
+      for (const { productId, product } of batchResults) {
+        if (!product) continue;
+        
+        // Check if HTML has new layout structure  
+        const hasNewLayout = detectNewLayoutFromHTML(product.body_html || '');
+        
+        // Get current status
+        const status = statusResult[productId.toString()] || { 
+          hasDraftContent: false, 
+          hasNewLayout: false, 
+          hasShopifyContent: false, 
+          contentCount: '0' 
+        };
+        
+        // Update the status with fresh Shopify data
+        const hasShopifyContent = (product.body_html && product.body_html.length > 100) || false;
+        
+        // Prepare update data
+        updates.push({
+          productId: productId.toString(),
+          hasNewLayout,
+          hasShopifyContent, 
+          hasDraftContent: status.hasDraftContent,
+          contentCount: hasNewLayout ? '1' : (hasShopifyContent ? '1' : '0')
+        });
+        
+        console.log(`📊 Product ${productId}: Layout=${hasNewLayout}, Shopify Content=${hasShopifyContent}, Draft=${status.hasDraftContent}`);
+      }
+      
+      // Batch update the database with all status changes
+      if (updates.length > 0) {
+        await this.batchUpdateProductStatus(updates);
+        console.log(`✅ Updated status for ${updates.length} products in database`);
+      }
       
     } catch (error) {
-      console.error(`❌ Error checking product ${productId}:`, error);
+      console.error(`❌ Error checking product batch:`, error);
       throw error;
+    }
+  }
+
+  private async batchUpdateProductStatus(updates: Array<{ productId: string; hasNewLayout: boolean; hasShopifyContent: boolean; hasDraftContent: boolean; contentCount: string }>): Promise<void> {
+    try {
+      // Import storage here to avoid circular dependency
+      const { storage } = await import('./storage.js');
+      
+      for (const update of updates) {
+        await storage.updateProductStatus(update.productId, {
+          hasNewLayout: update.hasNewLayout,
+          hasShopifyContent: update.hasShopifyContent,
+          hasDraftContent: update.hasDraftContent,
+          contentCount: update.contentCount,
+          lastShopifyCheck: new Date(),
+          isOurTemplateStructure: update.hasNewLayout
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error updating product status in database:', error);
+      // Don't throw - continue processing even if database update fails
     }
   }
 }
