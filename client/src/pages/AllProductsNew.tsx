@@ -183,6 +183,15 @@ export default function AllProductsNew() {
     }
   }, [displayProducts, checkContentStatus]);
 
+  // Handle product selection for navigation
+  const handleProductSelect = (product: ShopifyProduct, variant?: ShopifyVariant) => {
+    // Store the selected product data for the ProductManager
+    sessionStorage.setItem('selectedProduct', JSON.stringify({
+      product,
+      selectedVariant: variant || product.variants?.[0] // Use the provided variant or default to first variant
+    }));
+  };
+
   // Initialize cached status data
   useEffect(() => {
     const cachedStatus: Record<string, ContentStatus> = {};
@@ -408,13 +417,18 @@ export default function AllProductsNew() {
                       <h5 className="text-xs font-medium text-gray-600 mb-1">Quick select variant:</h5>
                       <div className="flex flex-wrap gap-1">
                         {product.variants.slice(0, 3).map((variant) => (
-                          <Badge 
+                          <Link
                             key={variant.id}
-                            variant="outline" 
-                            className="text-xs cursor-pointer hover:bg-gray-100"
+                            href={`/product-manager/${product.id}`}
+                            onClick={() => handleProductSelect(product, variant)}
                           >
-                            {variant.sku || variant.title}
-                          </Badge>
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs cursor-pointer hover:bg-gray-100"
+                            >
+                              {variant.sku || variant.title}
+                            </Badge>
+                          </Link>
                         ))}
                         {product.variants.length > 3 && (
                           <Badge variant="outline" className="text-xs">
@@ -426,10 +440,13 @@ export default function AllProductsNew() {
                   )}
 
                   {/* Action Button */}
-                  <Link href={`/product/${product.id}`}>
+                  <Link 
+                    href={`/product-manager/${product.id}`}
+                    onClick={() => handleProductSelect(product, product.variants?.[0])}
+                  >
                     <Button className="w-full" variant="default">
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      Select Product
+                      Select Product{product.variants?.[0]?.sku ? ` (${product.variants[0].sku})` : ''}
                       <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
                   </Link>

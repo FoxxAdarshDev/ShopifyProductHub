@@ -399,7 +399,7 @@ export default function AllProducts() {
     // Store the selected product data for the ProductManager
     sessionStorage.setItem('selectedProduct', JSON.stringify({
       product,
-      selectedVariant: variant
+      selectedVariant: variant || product.variants[0] // Use the provided variant or default to first variant
     }));
   };
 
@@ -608,14 +608,14 @@ export default function AllProducts() {
                       <Link
                         href={`/product-manager/${product.id}`}
                         className="flex-1"
-                        onClick={() => handleProductSelect(product)}
+                        onClick={() => handleProductSelect(product, product.variants[0])}
                       >
                         <Button 
                           className="w-full"
                           data-testid={`button-select-product-${product.id}`}
                         >
                           <ChevronRight className="w-4 h-4 mr-1" />
-                          Select Product
+                          Select Product{product.variants[0]?.sku ? ` (${product.variants[0].sku})` : ''}
                         </Button>
                       </Link>
                     </div>
