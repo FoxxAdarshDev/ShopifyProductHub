@@ -129,53 +129,35 @@ class BackgroundStatusChecker {
   }
 
   private async getAllShopifyProductIds(): Promise<number[]> {
-    const productIds: number[] = [];
-    let page = 1;
-    const limit = 250; // Max per page
-    
-    while (true) {
-      try {
-        const products = await this.shopifyService.getProducts(limit, page);
-        if (products.length === 0) break;
-        
-        products.forEach((product: any) => productIds.push(product.id));
-        
-        if (products.length < limit) break; // Last page
-        page++;
-        
-        // Small delay between page requests
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
-        console.error(`❌ Error fetching products page ${page}:`, error);
-        break;
-      }
+    try {
+      console.log("🔍 Fetching all products from Shopify using comprehensive method...");
+      const products = await this.shopifyService.getAllProductsComprehensive();
+      const productIds = products.map(product => product.id);
+      console.log(`✅ Found ${productIds.length} products in Shopify store`);
+      return productIds;
+    } catch (error) {
+      console.error("❌ Error fetching all products:", error);
+      return [];
     }
-    
-    return productIds;
   }
 
   private async checkSingleProductStatus(productId: number): Promise<void> {
     try {
-      // Get product from Shopify
-      const product = await this.shopifyService.getProductById(productId);
+      // Get product from Shopify using queue system
+      const product = await this.shopifyService.getProductById(productId.toString());
       if (!product) return;
 
-      // Check if HTML has new layout structure
+      // Check if HTML has new layout structure  
       const hasNewLayout = detectNewLayoutFromHTML(product.body_html || '');
       
-      // Check if product has draft content in database
-      const hasDraftContent = await this.productStatusService.hasDraftContent(productId.toString());
+      // Get current status using the productStatusService
+      const statusResult = await this.productStatusService.getBatchProductStatus([productId.toString()]);
+      const status = statusResult[productId.toString()] || { hasDraftContent: false, hasNewLayout: false, hasShopifyContent: false, contentCount: 0 };
       
-      // Determine status
+      // Update the status with fresh Shopify data
       const hasShopifyContent = (product.body_html && product.body_html.length > 100) || false;
       
-      // Update database with current status
-      await this.productStatusService.updateProductStatus(productId.toString(), {
-        hasNewLayout,
-        hasDraftContent,
-        hasShopifyContent,
-        lastChecked: new Date()
-      });
+      console.log(`📊 Product ${productId}: Layout=${hasNewLayout}, Shopify Content=${hasShopifyContent}, Draft=${status.hasDraftContent}`);
       
     } catch (error) {
       console.error(`❌ Error checking product ${productId}:`, error);

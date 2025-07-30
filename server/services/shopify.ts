@@ -237,8 +237,8 @@ class ShopifyService {
       
       while (hasNextPage && pageCount < maxPages) {
         try {
-          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250&status=any${since_id ? `&since_id=${since_id}` : ''}`;
-          const response = await this.makeRequest(url);
+          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+          const response = await this.makeRequest(url, {}, 6); // Lower priority for background bulk operations
           const products = response.products as ShopifyProduct[];
           
           if (products.length === 0) {
