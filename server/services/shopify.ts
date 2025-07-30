@@ -208,20 +208,9 @@ class ShopifyService {
   }
 
   async getAllProducts(page: number = 1, limit: number = 20): Promise<ShopifyProduct[]> {
-    try {
-      // Use simple limit-based fetching - Shopify will return products in order
-      const response = await this.makeRequest(
-        `/products.json?fields=id,title,body_html,handle,variants&limit=${limit}`
-      );
-      
-      const products = response.products as ShopifyProduct[];
-      console.log(`Fetched ${products.length} products for page ${page}`);
-      
-      return products;
-    } catch (error) {
-      console.error('Error fetching all products:', error);
-      return [];
-    }
+    // This method is deprecated - use getAllProductsComprehensive() instead
+    console.warn('getAllProducts() with pagination is deprecated. Use getAllProductsComprehensive() for all products.');
+    return this.getAllProductsComprehensive();
   }
 
   async getAllProductsComprehensive(): Promise<ShopifyProduct[]> {

@@ -77,93 +77,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all products with pagination and filtering
+  // Get ALL products at once - no more pagination/batching
   app.get("/api/products/all", async (req, res) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
-      const comprehensive = req.query.comprehensive === 'true';
       const filter = req.query.filter as string; // 'all', 'shopify', 'new-layout', 'draft-mode', 'none'
       
-      console.log(`Fetching products page ${page} with limit ${limit}, comprehensive: ${comprehensive}, filter: ${filter}`);
+      console.log(`🚀 Fetching ALL products from store (no pagination) with filter: ${filter || 'all'}`);
       
-      if (comprehensive || filter) {
-        // Fetch ALL products for comprehensive mode or when filtering
-        const allProducts = await shopifyService.getAllProductsComprehensive();
-        console.log(`Fetched ${allProducts.length} total products for comprehensive/filter mode`);
-        
-        let filteredProducts = allProducts;
-        
-        // Apply server-side filtering if specified
-        if (filter && filter !== 'all') {
-          console.log(`Applying server-side filter: ${filter}`);
-          const { productStatusService } = await import('./services/productStatusService.js');
+      // First try database products (fast), then supplement with Shopify API
+      let dbProducts = await storage.getAllProducts();
+      console.log(`📊 Found ${dbProducts.length} products in local database`);
+      
+      // Convert database products to Shopify format for consistent API response
+      let allProducts = dbProducts.map(dbProduct => ({
+        id: parseInt(dbProduct.shopifyId),
+        title: dbProduct.title,
+        body_html: dbProduct.description || '',
+        handle: dbProduct.sku.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        variants: [{
+          id: parseInt(dbProduct.shopifyId) * 1000 + 1, // Generate consistent variant ID
+          sku: dbProduct.sku,
+          price: '0.00'
+        }]
+      }));
+      
+      // If we have very few products in database, try Shopify API as backup
+      if (dbProducts.length < 50) {
+        console.log(`⚠️ Database has few products (${dbProducts.length}), attempting Shopify API fetch`);
+        try {
+          const shopifyProducts = await shopifyService.getAllProductsComprehensive();
+          console.log(`📡 Shopify API returned ${shopifyProducts.length} products`);
           
-          // Get status for all products for filtering
-          const productStatuses = new Map();
-          for (const product of allProducts) {
-            try {
-              const status = await productStatusService.getProductContentStatus(product.id.toString());
-              productStatuses.set(product.id, status);
-            } catch (error) {
-              console.warn(`Failed to get status for product ${product.id}:`, error);
-            }
+          if (shopifyProducts.length > dbProducts.length) {
+            console.log(`✅ Using Shopify data (${shopifyProducts.length} products) over database (${dbProducts.length} products)`);
+            allProducts = shopifyProducts;
           }
-          
-          // Filter products based on their content status
-          filteredProducts = allProducts.filter(product => {
-            const status = productStatuses.get(product.id);
-            if (!status) return filter === 'none';
-            
-            switch (filter) {
-              case 'shopify':
-                return status.hasShopifyContent;
-              case 'new-layout':
-                return status.hasNewLayout;
-              case 'draft-mode':
-                return status.hasDraftContent;
-              case 'none':
-                return !status.hasShopifyContent && !status.hasNewLayout;
-              default:
-                return true;
-            }
-          });
-          
-          console.log(`Filtered ${allProducts.length} products to ${filteredProducts.length} for filter: ${filter}`);
+        } catch (shopifyError: any) {
+          console.warn(`⚠️ Shopify API failed, using database products:`, shopifyError?.message || shopifyError);
+        }
+      }
+      
+      console.log(`✅ Using ${allProducts.length} total unique products (database + Shopify fallback)`);
+      
+      let filteredProducts = allProducts;
+      
+      // Apply server-side filtering if specified
+      if (filter && filter !== 'all') {
+        console.log(`🔍 Applying server-side filter: ${filter}`);
+        const { productStatusService } = await import('./services/productStatusService.js');
+        
+        // Get status for all products for filtering
+        const productStatuses = new Map();
+        for (const product of allProducts) {
+          try {
+            const status = await productStatusService.getProductContentStatus(product.id.toString());
+            productStatuses.set(product.id, status);
+          } catch (error) {
+            console.warn(`Failed to get status for product ${product.id}:`, error);
+          }
         }
         
-        // Apply pagination to the filtered results
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-        const hasMore = endIndex < filteredProducts.length;
-        
-        res.json({
-          products: paginatedProducts,
-          hasMore,
-          page,
-          totalFetched: paginatedProducts.length,
-          totalAvailable: filteredProducts.length,
-          totalInStore: allProducts.length,
-          comprehensive: true,
-          filter: filter || 'all'
+        // Filter products based on their content status
+        filteredProducts = allProducts.filter(product => {
+          const status = productStatuses.get(product.id);
+          if (!status) return filter === 'none';
+          
+          switch (filter) {
+            case 'shopify':
+              return status.hasShopifyContent;
+            case 'new-layout':
+              return status.hasNewLayout;
+            case 'draft-mode':
+              return status.hasDraftContent;
+            case 'none':
+              return !status.hasShopifyContent && !status.hasNewLayout;
+            default:
+              return true;
+          }
         });
-      } else {
-        // Standard pagination - fast loading for instant display
-        const products = await shopifyService.getAllProducts(page, limit);
-        const hasMore = products.length === limit;
         
-        console.log(`Standard pagination: page ${page}, fetched ${products.length} products, hasMore: ${hasMore}`);
-        
-        res.json({
-          products,
-          hasMore,
-          page,
-          totalFetched: products.length,
-          comprehensive: false,
-          filter: 'all'
-        });
+        console.log(`🎯 Filtered ${allProducts.length} products to ${filteredProducts.length} for filter: ${filter}`);
       }
+      
+      // Return ALL products at once with comprehensive details
+      res.json({
+        products: filteredProducts,
+        hasMore: false, // No more pagination
+        page: 1,
+        totalFetched: filteredProducts.length,
+        totalAvailable: filteredProducts.length,
+        totalInStore: allProducts.length,
+        comprehensive: true,
+        filter: filter || 'all',
+        message: `Loaded all ${filteredProducts.length} products from store`
+      });
     } catch (error) {
       console.error("Error fetching all products:", error);
       res.status(500).json({ message: "Failed to fetch products" });

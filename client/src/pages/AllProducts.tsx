@@ -53,12 +53,8 @@ interface ContentStatus {
 
 export default function AllProducts() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [allProducts, setAllProducts] = useState<ShopifyProduct[]>([]);
   const [searchResults, setSearchResults] = useState<ShopifyProduct[]>([]);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalFetched, setTotalFetched] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
   const [contentFilter, setContentFilter] = useState<'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none'>('all');
@@ -66,34 +62,28 @@ export default function AllProducts() {
   const { cache, updateCache, getStats } = useProductStatusCache();
   const { data: statusCounts } = useStatusCounts();
 
-  const productsPerPage = 20;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // State for instant frontend filtering
-  const [filteredProducts, setFilteredProducts] = useState<ShopifyProduct[]>([]);
-  const [isServerFiltering, setIsServerFiltering] = useState(false);
-
-  // Query for initial products (paginated, instant loading)
+  // Query to fetch ALL products at once - no more pagination
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/products/all", currentPage],
+    queryKey: ["/api/products/all"],
     queryFn: async () => {
-      // Always use regular pagination for instant display
-      const response = await apiRequest("GET", `/api/products/all?page=${currentPage}&limit=${productsPerPage}`);
+      console.log("🚀 Fetching ALL products from store at once");
+      const response = await apiRequest("GET", `/api/products/all`);
       return response.json();
-    }
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  // Separate query for server-side filtering (runs in background)
-  const { data: serverFilteredData } = useQuery({
+  // Separate query for server-side filtering (runs when filter changes)
+  const { data: serverFilteredData, isLoading: isServerFiltering } = useQuery({
     queryKey: ["/api/products/filter", contentFilter],
     queryFn: async () => {
       if (contentFilter === 'all') return null;
       
-      setIsServerFiltering(true);
-      const response = await apiRequest("GET", `/api/products/all?page=1&limit=12500&comprehensive=true&filter=${contentFilter}`);
-      const result = await response.json();
-      setIsServerFiltering(false);
-      return result;
+      console.log(`🔍 Applying server filter: ${contentFilter}`);
+      const response = await apiRequest("GET", `/api/products/all?filter=${contentFilter}`);
+      return response.json();
     },
     enabled: contentFilter !== 'all'
   });
@@ -115,50 +105,34 @@ export default function AllProducts() {
     setContentStatus(cachedStatus);
   }, [cache]);
 
-  // Update products when page data loads (regular pagination only)
+  // Update products when data loads (ALL products at once)
   useEffect(() => {
     if (data && data.products) {
-      // Regular pagination mode
-      if (currentPage === 1) {
-        // First page - replace products
-        setAllProducts(data.products);
-        setTotalFetched(data.products.length);
-      } else {
-        // Subsequent pages - append products
-        setAllProducts(prev => [...prev, ...data.products]);
-        setTotalFetched(prev => prev + data.products.length);
-      }
-      setHasMore(data.hasMore);
-      setIsLoadingMore(false);
+      console.log(`✅ Loaded ${data.products.length} total products from store`);
+      setAllProducts(data.products);
 
-      // Check content status for current page products
-      console.log(`Checking content status for ${data.products.length} products (page ${currentPage})`);
+      // Check content status for ALL products
       const productIds = data.products.map((p: ShopifyProduct) => p.id);
-      checkContentStatus(productIds);
+      if (productIds.length > 0) {
+        console.log(`🔍 Checking content status for ${productIds.length} products`);
+        checkContentStatus(productIds);
+      }
     }
-  }, [data, currentPage]);
+  }, [data]);
 
   // Update filtered products when server filtering completes
   useEffect(() => {
     if (serverFilteredData && serverFilteredData.products) {
-      setFilteredProducts(serverFilteredData.products);
-      console.log(`Server filtering complete: ${serverFilteredData.products.length} products for filter: ${contentFilter}`);
+      console.log(`✅ Server filtering complete: ${serverFilteredData.products.length} products for filter: ${contentFilter}`);
       
       // Check content status for server-filtered products
       const productIds = serverFilteredData.products.map((p: ShopifyProduct) => p.id);
       if (productIds.length > 0) {
-        console.log(`Checking content status for ${productIds.length} server-filtered products`);
+        console.log(`🔍 Checking content status for ${productIds.length} server-filtered products`);
         checkContentStatus(productIds);
       }
     }
   }, [serverFilteredData, contentFilter]);
-
-  // Reset to page 1 when filter changes
-  useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [contentFilter]);
 
   useEffect(() => {
     if (error) {
@@ -167,7 +141,6 @@ export default function AllProducts() {
         description: "Failed to load products",
         variant: "destructive",
       });
-      setIsLoadingMore(false);
     }
   }, [error, toast]);
 
@@ -206,12 +179,7 @@ export default function AllProducts() {
     }
   }, [debouncedSearchTerm, searchLoading]);
 
-  const loadMore = () => {
-    if (!isLoadingMore && hasMore) {
-      setIsLoadingMore(true);
-      setCurrentPage(prev => prev + 1);
-    }
-  };
+  // No more pagination - all products loaded at once
 
   // Client-side filtering for instant results using cached data
   const getFilteredProductsFromCache = (products: ShopifyProduct[]) => {
@@ -426,7 +394,6 @@ export default function AllProducts() {
             <Filter className="w-4 h-4 text-slate-500" />
             <Select value={contentFilter} onValueChange={(value: 'all' | 'shopify' | 'new-layout' | 'draft-mode' | 'none') => {
               setContentFilter(value);
-              setCurrentPage(1); // Reset pagination when filter changes
             }}>
               <SelectTrigger className="w-48" data-testid="select-content-filter">
                 <SelectValue placeholder="Filter by content" />
@@ -575,34 +542,11 @@ export default function AllProducts() {
             ))}
           </div>
 
-          {/* Load More Button - only show when not searching and not filtering */}
-          {hasMore && !isShowingSearchResults && contentFilter === 'all' && (
-            <div className="text-center">
-              <Button
-                onClick={loadMore}
-                disabled={isLoadingMore}
-                size="lg"
-                data-testid="button-load-more"
-              >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading more...
-                  </>
-                ) : (
-                  <>
-                    Load More Products
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-
-          {!hasMore && totalFetched > 0 && !isShowingSearchResults && contentFilter === 'all' && (
+          {/* All products loaded at once - no pagination needed */}
+          {displayProducts.length > 0 && !isShowingSearchResults && (
             <div className="text-center py-6">
               <p className="text-slate-500">
-                All products loaded ({totalFetched} total)
+                Showing all {displayProducts.length} products from your store
               </p>
             </div>
           )}
