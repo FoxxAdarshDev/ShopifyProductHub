@@ -517,12 +517,6 @@ export default function AllProducts() {
                           Content: Not Added
                         </Badge>
                       )}
-                      {/* Debug info (visible only when contentFilter is active) */}
-                      {contentFilter !== 'all' && (
-                        <div className="text-xs text-gray-500 font-mono">
-                          Status: {contentStatus[product.id] ? JSON.stringify(contentStatus[product.id]) : 'undefined'}
-                        </div>
-                      )}
                     </div>
 
                     {/* Action Buttons */}
