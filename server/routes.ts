@@ -77,28 +77,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get store product count
+  // Get store product and SKU counts
   app.get("/api/products/count", async (req, res) => {
     try {
-      console.log(`📊 Getting total product count from store...`);
+      console.log(`📊 Getting total product and SKU count from store...`);
       
-      // Get total count from Shopify API
-      const totalCount = await shopifyService.getProductCount();
+      // Get total product count from Shopify API
+      const totalProductCount = await shopifyService.getProductCount();
+      
+      // Get total SKU count by fetching first batch of products to calculate
+      let totalSkuCount = 0;
+      try {
+        // Sample calculation from first 250 products to estimate total SKUs
+        const sampleBatch = await shopifyService.getProductsBatch(250);
+        const sampleProducts = sampleBatch.products;
+        
+        if (sampleProducts.length > 0) {
+          const avgSkuPerProduct = sampleProducts.reduce((acc, product) => {
+            return acc + (product.variants?.length || 1);
+          }, 0) / sampleProducts.length;
+          
+          totalSkuCount = Math.round(avgSkuPerProduct * totalProductCount);
+          
+          console.log(`📊 Sample: ${sampleProducts.length} products with avg ${avgSkuPerProduct.toFixed(1)} SKUs per product`);
+          console.log(`📊 Estimated total SKUs: ${totalSkuCount}`);
+        }
+      } catch (skuError) {
+        console.warn("Could not calculate SKU count:", skuError);
+        totalSkuCount = totalProductCount; // Fallback: assume 1 SKU per product
+      }
       
       // Also get count from our status table for comparison
       const allStatuses = await storage.getAllProductStatuses();
       const uniqueProductIds = Array.from(new Set(allStatuses.map(s => s.shopifyProductId).filter(id => id && id !== 'null')));
       
-      console.log(`🎯 Shopify store has ${totalCount} total products`);
+      console.log(`🎯 Shopify store has ${totalProductCount} total products`);
+      console.log(`🎯 Estimated ${totalSkuCount} total SKUs in store`);
       console.log(`💾 Database has ${uniqueProductIds.length} tracked products`);
       
       res.json({
-        totalInStore: totalCount,
+        totalInStore: totalProductCount,
+        totalSkuCount: totalSkuCount,
         trackedInDatabase: uniqueProductIds.length,
-        message: `Store contains ${totalCount} total products`
+        message: `Store contains ${totalProductCount} products with ~${totalSkuCount} SKUs`
       });
     } catch (error) {
-      console.error("Error getting product count:", error);
+      console.error("Error getting product/SKU count:", error);
       res.status(500).json({ message: "Failed to get product count" });
     }
   });

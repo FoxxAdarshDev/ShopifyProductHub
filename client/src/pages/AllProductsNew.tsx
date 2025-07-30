@@ -220,7 +220,13 @@ export default function AllProductsNew() {
   // Get stats for display
   const stats = getStats();
   const totalProducts = countData?.totalInStore || 0;
+  const totalSkus = countData?.totalSkuCount || 0;
   const loadedCount = displayProducts.length;
+  
+  // Calculate loaded SKU count from displayed products
+  const loadedSkuCount = displayProducts.reduce((acc: number, product: ShopifyProduct) => {
+    return acc + (product.variants?.length || 0);
+  }, 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -229,12 +235,19 @@ export default function AllProductsNew() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">All Products</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {debouncedSearchTerm.length >= 2 
-                ? `Showing ${loadedCount} search results for "${debouncedSearchTerm}"`
-                : `Showing ${loadedCount} of ${totalProducts} products in store`
-              }
-            </p>
+            <div className="text-gray-600 dark:text-gray-400 mt-1 space-y-1">
+              <p>
+                {debouncedSearchTerm.length >= 2 
+                  ? `Showing ${loadedCount} search results for "${debouncedSearchTerm}"`
+                  : `Showing ${loadedCount} of ${totalProducts} products in store`
+                }
+              </p>
+              {debouncedSearchTerm.length < 2 && (
+                <p className="text-sm">
+                  SKUs: {loadedSkuCount} of ~{totalSkus} total variants displayed
+                </p>
+              )}
+            </div>
           </div>
           
           {/* Status Summary */}
