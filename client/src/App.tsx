@@ -16,7 +16,7 @@ function Router() {
       <Sidebar />
       <main className="flex-1">
         <Switch>
-          <Route path="/" component={ProductManager} />
+          <Route path="/" component={AllProducts} />
           <Route path="/product-manager" component={ProductManager} />
           <Route path="/product-manager/:productId" component={ProductManager} />
           <Route path="/products/:productId" component={ProductManager} />

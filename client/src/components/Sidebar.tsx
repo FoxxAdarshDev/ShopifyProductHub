@@ -6,7 +6,6 @@ export default function Sidebar() {
   
   const menuItems = [
     { icon: Box, label: "Product Manager", href: "/product-manager" },
-    { icon: Grid3X3, label: "All Products", href: "/all-products" },
   ];
 
   const filteredViews = [
