@@ -61,6 +61,17 @@ export default function AllProductsNew() {
   
   // Use product status cache for immediate badge display
   const { cache, updateCache, getStatus, getStats } = useProductStatusCache();
+  
+  // Get real-time status counts from server
+  const { data: serverStatusCounts } = useQuery({
+    queryKey: ["/api/products/status-counts"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/products/status-counts");
+      return response.json();
+    },
+    staleTime: 30 * 1000, // Cache for 30 seconds
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds for live updates
+  });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -327,9 +338,26 @@ export default function AllProductsNew() {
     return <Badge variant="outline" className="text-gray-600">Content: Not Added</Badge>;
   };
 
-  // Get stats for display - prioritize cached badge stats for immediate display
+  // Get stats for display - prioritize server status counts for accuracy
   const calculateStats = () => {
+    // If we have server status counts, use those (most accurate)
+    if (serverStatusCounts) {
+      return {
+        total: serverStatusCounts.total || 0,
+        newLayout: serverStatusCounts.newLayout || 0,
+        draftMode: serverStatusCounts.draftMode || 0,
+        shopifyContent: serverStatusCounts.shopifyContent || 0,
+        noContent: serverStatusCounts.noContent || 0
+      };
+    }
+    
+    // Fallback to cached stats from product status cache
     const cacheStats = getStats();
+    if (cacheStats.total > 0) {
+      return cacheStats;
+    }
+    
+    // Final fallback to calculating from current contentStatus
     const currentStats = {
       total: Object.keys(contentStatus).length,
       newLayout: 0,
@@ -345,8 +373,7 @@ export default function AllProductsNew() {
       else currentStats.noContent++;
     });
 
-    // Use cached badge stats for immediate display, fallback to current
-    return cacheStats.total > 0 ? cacheStats : currentStats;
+    return currentStats;
   };
 
   const stats = calculateStats();

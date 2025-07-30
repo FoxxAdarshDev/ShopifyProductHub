@@ -139,13 +139,54 @@ class BackgroundStatusChecker {
 
   private async getAllShopifyProductIds(): Promise<number[]> {
     try {
-      console.log("🔍 Fetching all products from Shopify using comprehensive method...");
-      const products = await this.shopifyService.getAllProductsComprehensive();
-      const productIds = products.map(product => product.id);
-      console.log(`✅ Found ${productIds.length} products in Shopify store`);
-      return productIds;
+      console.log("🔍 Fetching all products using same batch API as frontend...");
+      const allProductIds: number[] = [];
+      let hasMore = true;
+      let since_id: string | undefined = undefined;
+      let batchCount = 0;
+      const maxBatches = 250; // Safety limit to prevent infinite loops
+      
+      while (hasMore && batchCount < maxBatches) {
+        try {
+          // Use same batch API as frontend
+          const url = since_id 
+            ? `/products.json?limit=20&since_id=${since_id}&fields=id`
+            : `/products.json?limit=20&fields=id`;
+          
+          console.log(`📦 Background checker batch ${batchCount + 1}: fetching products${since_id ? ` since ${since_id}` : ''}`);
+          const response = await this.shopifyService.getProductsBatch(20, since_id); // Use existing public method
+          const products = response.products;
+          
+          if (!products || products.length === 0) {
+            console.log(`⏹️ No more products found, stopping at batch ${batchCount + 1}`);
+            hasMore = false;
+            break;
+          }
+          
+          const productIds = products.map((p: any) => p.id);
+          allProductIds.push(...productIds);
+          since_id = products[products.length - 1].id.toString();
+          batchCount++;
+          
+          console.log(`📦 Background checker batch ${batchCount}: got ${products.length} products (total: ${allProductIds.length})`);
+          
+          // Check if we have more products to fetch
+          hasMore = response.hasMore;
+          
+          // Small delay between batches to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (batchError) {
+          console.error(`❌ Error fetching batch ${batchCount + 1}:`, batchError);
+          // Don't break completely, just stop trying more batches
+          break;
+        }
+      }
+      
+      console.log(`✅ Background checker found ${allProductIds.length} total products using batch API (${batchCount} batches)`);
+      return allProductIds;
     } catch (error) {
-      console.error("❌ Error fetching all products:", error);
+      console.error("❌ Error fetching all products with batch API:", error);
       return [];
     }
   }
