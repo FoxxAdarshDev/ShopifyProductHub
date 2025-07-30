@@ -600,6 +600,70 @@ async function fetchProductsBatch(productIds: string[], shopifyService: any, sto
     }
   });
 
+  // Get filtered products by status directly from database
+  app.get("/api/products/filtered", async (req, res) => {
+    try {
+      const filter = req.query.filter as string;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const search = req.query.search as string;
+      
+      console.log(`🔍 Getting filtered products: filter=${filter}, limit=${limit}, search=${search}`);
+      
+      let productStatuses: any[] = [];
+      
+      // Get products from database based on filter
+      switch (filter) {
+        case 'new-layout':
+          productStatuses = await storage.getNewLayoutProducts();
+          break;
+        case 'draft-mode':
+          productStatuses = await storage.getDraftModeProducts();
+          break;
+        default:
+          console.warn(`Unknown filter: ${filter}`);
+          return res.json({ products: [], hasMore: false, total: 0 });
+      }
+      
+      console.log(`📊 Found ${productStatuses.length} products with filter: ${filter}`);
+      
+      // Apply search filter if provided
+      if (search && search.trim()) {
+        const searchTerm = search.trim().toLowerCase();
+        // For now, we'll need to fetch the actual product data to search
+        // This is a limitation of having status separate from product data
+      }
+      
+      // Fetch actual Shopify product data for the found product IDs
+      const productIds = productStatuses.slice(0, limit).map(status => status.shopifyProductId);
+      console.log(`🔍 Fetching Shopify data for ${productIds.length} products`);
+      
+      const products = [];
+      for (const productId of productIds) {
+        try {
+          const product = await shopifyService.getProductById(productId);
+          if (product) {
+            products.push(product);
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch product ${productId}:`, error);
+        }
+      }
+      
+      console.log(`✅ Successfully fetched ${products.length} products for filter: ${filter}`);
+      
+      res.json({
+        products,
+        hasMore: productStatuses.length > limit,
+        total: productStatuses.length,
+        filter,
+        limit
+      });
+    } catch (error) {
+      console.error("Error getting filtered products:", error);
+      res.status(500).json({ message: "Failed to get filtered products" });
+    }
+  });
+
   // Check product content status for multiple products with database-first approach
   app.post("/api/products/content-status", async (req, res) => {
     try {

@@ -71,6 +71,8 @@ export interface IStorage {
     draftMode: number;
     noContent: number;
   }>;
+  getNewLayoutProducts(): Promise<ProductStatus[]>;
+  getDraftModeProducts(): Promise<ProductStatus[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -376,6 +378,16 @@ export class DatabaseStorage implements IStorage {
         noContent: 0
       };
     }
+  }
+
+  // Get products with New Layout status
+  async getNewLayoutProducts() {
+    return db.select().from(productStatus).where(eq(productStatus.hasNewLayout, true));
+  }
+
+  // Get products with Draft Mode status  
+  async getDraftModeProducts() {
+    return db.select().from(productStatus).where(eq(productStatus.hasDraftContent, true));
   }
 }
 

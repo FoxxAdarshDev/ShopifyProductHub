@@ -62,15 +62,15 @@ export default function NewLayoutProducts() {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Comprehensive fetch of all products
+  // Fetch filtered products directly from database
   const { data, isLoading: queryLoading, error } = useQuery({
-    queryKey: ["/api/products/all/comprehensive"],
+    queryKey: ["/api/products/filtered", "new-layout"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/products/all?comprehensive=true&limit=12500`);
+      const response = await apiRequest("GET", `/api/products/filtered?filter=new-layout&limit=100`);
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes (gcTime replaces cacheTime in v5)
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000 // 5 minutes
   });
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function NewLayoutProducts() {
 
   useEffect(() => {
     if (data && data.products) {
-      console.log(`NewLayoutProducts: Loaded ${data.products.length} products`);
+      console.log(`NewLayoutProducts: Loaded ${data.products.length} filtered products`);
       setAllProducts(data.products);
       // Check content status for all products
       const productIds = data.products.map((p: ShopifyProduct) => p.id);
