@@ -84,38 +84,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`🚀 Fetching ALL products from store (no pagination) with filter: ${filter || 'all'}`);
       
-      // First try database products (fast), then supplement with Shopify API
-      let dbProducts = await storage.getAllProducts();
-      console.log(`📊 Found ${dbProducts.length} products in local database`);
+      // Get all product IDs from the status table (which has all 320 products)
+      const allStatuses = await storage.getAllProductStatuses();
+      console.log(`📊 Found ${allStatuses.length} product entries in status table`);
       
-      // Convert database products to Shopify format for consistent API response
-      let allProducts = dbProducts.map(dbProduct => ({
-        id: parseInt(dbProduct.shopifyId),
-        title: dbProduct.title,
-        body_html: dbProduct.description || '',
-        handle: dbProduct.sku.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        variants: [{
-          id: parseInt(dbProduct.shopifyId) * 1000 + 1, // Generate consistent variant ID
-          sku: dbProduct.sku,
-          price: '0.00'
-        }]
-      }));
+      // Get unique product IDs from status table
+      const uniqueProductIds = [...new Set(allStatuses.map(s => s.shopifyProductId).filter(id => id && id !== 'null'))];
+      console.log(`🎯 Found ${uniqueProductIds.length} unique product IDs to fetch`);
       
-      // If we have very few products in database, try Shopify API as backup
-      if (dbProducts.length < 50) {
-        console.log(`⚠️ Database has few products (${dbProducts.length}), attempting Shopify API fetch`);
-        try {
-          const shopifyProducts = await shopifyService.getAllProductsComprehensive();
-          console.log(`📡 Shopify API returned ${shopifyProducts.length} products`);
-          
-          if (shopifyProducts.length > dbProducts.length) {
-            console.log(`✅ Using Shopify data (${shopifyProducts.length} products) over database (${dbProducts.length} products)`);
-            allProducts = shopifyProducts;
+      // Fetch products by their IDs from Shopify (in small batches to avoid rate limits)
+      const allProducts = [];
+      const batchSize = 10;
+      const maxProducts = Math.min(uniqueProductIds.length, 100); // Start with first 100 to test
+      
+      console.log(`🚀 Fetching ${maxProducts} products from Shopify in batches of ${batchSize}...`);
+      
+      for (let i = 0; i < maxProducts; i += batchSize) {
+        const batch = uniqueProductIds.slice(i, i + batchSize);
+        console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(maxProducts/batchSize)} with ${batch.length} products`);
+        
+        const batchPromises = batch.map(async (productId) => {
+          try {
+            const product = await shopifyService.getProductById(productId);
+            return product;
+          } catch (error) {
+            console.warn(`Failed to fetch product ${productId}:`, error);
+            return null;
           }
-        } catch (shopifyError: any) {
-          console.warn(`⚠️ Shopify API failed, using database products:`, shopifyError?.message || shopifyError);
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        const validProducts = batchResults.filter(p => p !== null);
+        allProducts.push(...validProducts);
+        
+        console.log(`✅ Batch complete: ${validProducts.length}/${batch.length} products fetched successfully`);
+        
+        // Small delay between batches to avoid rate limiting
+        if (i + batchSize < maxProducts) {
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
+      
+      console.log(`🎉 Successfully fetched ${allProducts.length} products from Shopify!`);
       
       console.log(`✅ Using ${allProducts.length} total unique products (database + Shopify fallback)`);
       
