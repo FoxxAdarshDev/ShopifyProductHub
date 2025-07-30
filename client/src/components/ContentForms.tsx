@@ -141,6 +141,11 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
       return parseHTMLList(pastedData);
     }
 
+    // Check if it's plain text list format (colon-separated lines)
+    if (pastedData.includes(':') && pastedData.includes('\n')) {
+      return parseTextSpecifications(pastedData);
+    }
+
     // Check if it's tab-separated or CSV format (Excel/Google Sheets)
     return parseDelimitedData(pastedData);
   };
@@ -237,6 +242,29 @@ export default function ContentForms({ selectedTabs, contentData, onContentChang
           if (item && value) {
             specifications.push({ item, value });
           }
+        }
+      }
+    });
+
+    return specifications;
+  };
+
+  const parseTextSpecifications = (textData: string) => {
+    const lines = textData.trim().split(/\r?\n/);
+    const specifications: { item: string; value: string }[] = [];
+
+    lines.forEach((line) => {
+      const text = line.trim();
+      if (!text) return;
+
+      // Look for colon-separated format: "Property: Value"
+      const colonIndex = text.indexOf(':');
+      if (colonIndex > 0 && colonIndex < text.length - 1) {
+        const item = text.substring(0, colonIndex).trim();
+        const value = text.substring(colonIndex + 1).trim();
+        
+        if (item && value) {
+          specifications.push({ item, value });
         }
       }
     });
@@ -910,6 +938,12 @@ HTML List (ul/li):
 <li>Material Finish: Natural</li>
 <li>Color: Amber Tint</li>
 </ul>
+
+Plain Text (colon-separated lines):
+Material: Polysulfone
+Material Finish: Natural
+Color: Amber Tint
+Min. Temperature (Celsius): -40
 
 CSV Format:
 Material,Polycarbonate USP Class VI
