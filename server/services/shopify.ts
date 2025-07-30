@@ -1,3 +1,5 @@
+import { shopifyApiQueue } from './apiQueue.js';
+
 interface ShopifyProduct {
   id: number;
   title: string;
@@ -11,8 +13,6 @@ interface ShopifyProduct {
 }
 
 class ShopifyService {
-  private readonly baseUrl: string;
-  private readonly accessToken: string;
   private readonly store: string;
 
   constructor() {
@@ -24,47 +24,33 @@ class ShopifyService {
     }
     
     this.store = shopifyStore;
-    this.baseUrl = `https://${shopifyStore}/admin/api/2023-10`;
-    this.accessToken = shopifyToken;
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
+  private async makeRequest(endpoint: string, options: RequestInit = {}, priority: number = 5) {
+    // Use the queue system for ALL Shopify API requests
+    return await shopifyApiQueue.addRequest(endpoint, options, priority);
+  }
+
+  private async makeGraphQLRequest(query: string, variables: any = {}): Promise<any> {
+    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
+    if (!shopifyToken) {
+      throw new Error('Missing Shopify access token');
+    }
+
+    const response = await fetch(`https://${this.store}/admin/api/2024-10/graphql.json`, {
+      method: 'POST',
       headers: {
-        'X-Shopify-Access-Token': this.accessToken,
         'Content-Type': 'application/json',
-        ...options.headers,
+        'X-Shopify-Access-Token': shopifyToken,
       },
+      body: JSON.stringify({
+        query,
+        variables
+      })
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      let errorMessage = `Shopify API error: ${response.status}`;
-      
-      try {
-        const errorJson = JSON.parse(errorText);
-        console.log('Shopify API error details:', JSON.stringify(errorJson, null, 2));
-        if (errorJson.errors) {
-          if (typeof errorJson.errors === 'object') {
-            errorMessage += ` - ${JSON.stringify(errorJson.errors)}`;
-          } else {
-            errorMessage += ` - ${errorJson.errors}`;
-          }
-        } else if (errorJson.error) {
-          errorMessage += ` - ${errorJson.error}`;
-        } else {
-          errorMessage += ` - ${JSON.stringify(errorJson)}`;
-        }
-        // Check for specific permission errors
-        if (errorText.includes('merchant approval') || errorText.includes('read_products')) {
-          errorMessage += '\n\nPlease ensure your Shopify private app has the "read_products" and "write_products" permissions enabled and approved by the store owner.';
-        }
-      } catch {
-        errorMessage += ` - ${errorText}`;
-      }
-      
-      throw new Error(errorMessage);
+      throw new Error(`GraphQL HTTP ${response.status}: ${response.statusText}`);
     }
 
     return response.json();
@@ -89,7 +75,7 @@ class ShopifyService {
         : `/products.json?limit=${limit}&fields=id,title,body_html,handle,variants`;
       
       console.log(`📦 Fetching ${limit} products from Shopify${since_id ? ` (since_id: ${since_id})` : ''}`);
-      const response = await this.makeRequest(url);
+      const response = await this.makeRequest(url, {}, 4); // Medium priority for batch operations
       const products = response.products || [];
       
       console.log(`✅ Fetched ${products.length} products from batch`);
@@ -106,23 +92,14 @@ class ShopifyService {
 
   async getProductById(productId: string): Promise<any> {
     try {
-      const response = await fetch(`https://${this.store}/admin/api/2024-10/products/${productId}.json`, {
-        headers: {
-          'X-Shopify-Access-Token': this.accessToken,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.product;
-    } catch (error) {
+      console.log(`🔍 Fetching product by ID: ${productId}`);
+      const response = await this.makeRequest(`/products/${productId}.json`, {}, 3); // High priority
+      return response.product;
+    } catch (error: any) {
       console.error('Error fetching product by ID:', error);
+      if (error.message.includes('404')) {
+        return null;
+      }
       throw error;
     }
   }
@@ -234,7 +211,7 @@ class ShopifyService {
             body_html: description
           }
         })
-      });
+      }, 2); // High priority for user-initiated updates
     } catch (error) {
       console.error('Error updating product description:', error);
       throw error;
@@ -755,24 +732,8 @@ class ShopifyService {
 
       console.log('Creating staged upload with variables:', JSON.stringify(variables, null, 2));
 
-      // Use the GraphQL endpoint directly with fetch (avoiding makeRequest for GraphQL)
-      const stagedResponse = await fetch(`https://${this.store}/admin/api/2024-10/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': this.accessToken,
-        },
-        body: JSON.stringify({
-          query: stagedUploadQuery,
-          variables: variables
-        })
-      });
-
-      if (!stagedResponse.ok) {
-        throw new Error(`HTTP ${stagedResponse.status}: ${stagedResponse.statusText}`);
-      }
-
-      const stagedResult = await stagedResponse.json();
+      // Use the GraphQL endpoint
+      const stagedResult = await this.makeGraphQLRequest(stagedUploadQuery, variables);
       console.log('Staged upload response:', JSON.stringify(stagedResult, null, 2));
 
       if (stagedResult.errors) {
@@ -848,23 +809,7 @@ class ShopifyService {
 
       console.log('Creating file record with variables:', JSON.stringify(fileVariables, null, 2));
 
-      const fileResponse = await fetch(`https://${this.store}/admin/api/2024-10/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': this.accessToken,
-        },
-        body: JSON.stringify({
-          query: fileCreateQuery,
-          variables: fileVariables
-        })
-      });
-
-      if (!fileResponse.ok) {
-        throw new Error(`File create HTTP ${fileResponse.status}: ${fileResponse.statusText}`);
-      }
-
-      const fileResult = await fileResponse.json();
+      const fileResult = await this.makeGraphQLRequest(fileCreateQuery, fileVariables);
       console.log('File create response:', JSON.stringify(fileResult, null, 2));
 
       if (fileResult.errors) {
@@ -931,23 +876,7 @@ class ShopifyService {
         }
       `;
 
-      const response = await fetch(`https://${this.store}/admin/api/2024-10/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': this.accessToken,
-        },
-        body: JSON.stringify({
-          query: fileQuery,
-          variables: { id: fileId }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const result = await this.makeGraphQLRequest(fileQuery, { id: fileId });
       
       if (result.errors) {
         throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);

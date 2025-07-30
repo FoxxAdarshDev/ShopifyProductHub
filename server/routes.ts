@@ -15,6 +15,7 @@ import {
   forceRefreshLayoutDetection,
   getStatusCountsNow
 } from "./routes/admin";
+import { shopifyApiQueue } from "./services/apiQueue.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Product lookup by SKU
@@ -999,6 +1000,37 @@ async function fetchProductsBatch(productIds: string[], shopifyService: any, sto
     }
   });
   
+  // Queue monitoring endpoint
+  app.get("/api/admin/queue-status", async (req, res) => {
+    try {
+      const queueStatus = shopifyApiQueue.getQueueStatus();
+      res.json({
+        message: "Shopify API Queue Status",
+        ...queueStatus,
+        uptime: Date.now() - (queueStatus.lastRequestTime || Date.now()),
+        description: {
+          queueSize: "Number of pending requests in queue",
+          processing: "Whether queue is currently processing requests",
+          lastRequestTime: "Timestamp of last processed request"
+        }
+      });
+    } catch (error) {
+      console.error('Error getting queue status:', error);
+      res.status(500).json({ error: 'Failed to get queue status' });
+    }
+  });
+
+  // Clear queue endpoint (emergency use)
+  app.post("/api/admin/clear-queue", async (req, res) => {
+    try {
+      shopifyApiQueue.clearQueue();
+      res.json({ message: "Queue cleared successfully" });
+    } catch (error) {
+      console.error('Error clearing queue:', error);
+      res.status(500).json({ error: 'Failed to clear queue' });
+    }
+  });
+
   // Debug endpoint to check available SKUs
   app.get("/api/admin/available-skus", async (req, res) => {
     try {
