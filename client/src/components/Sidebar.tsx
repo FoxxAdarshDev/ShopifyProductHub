@@ -5,7 +5,7 @@ export default function Sidebar() {
   const [location] = useLocation();
   
   const menuItems = [
-    { icon: Box, label: "Product Manager", href: "/product-manager" },
+    { icon: Grid3X3, label: "All Products", href: "/" },
   ];
 
   const filteredViews = [
@@ -20,7 +20,7 @@ export default function Sidebar() {
           {/* Main Navigation */}
           <div>
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-              Product Manager
+              Navigation
             </h3>
             <div className="space-y-1">
               {menuItems.map((item, index) => {
