@@ -165,52 +165,49 @@ export default function AllProductsNew() {
     console.log(`📊 Browse mode: showing ${allProducts.length} products from infinite query`);
   }
 
-  // Content status checking function with caching for immediate display
-  const checkContentStatus = useCallback(async (productIds: number[]) => {
-    if (productIds.length === 0) return;
-    
-    // First, load cached status for immediate display
-    const cachedStatuses: Record<string, ContentStatus> = {};
-    productIds.forEach(id => {
-      const cached = getStatus(id.toString());
-      if (cached) {
-        cachedStatuses[id.toString()] = cached;
-      }
-    });
-    
-    // Update local state with cached data for immediate display
-    if (Object.keys(cachedStatuses).length > 0) {
-      console.log(`📋 Loaded ${Object.keys(cachedStatuses).length} cached statuses for immediate display`);
-      setContentStatus(prev => ({ ...prev, ...cachedStatuses }));
-    }
+  // Manual badge refresh function (call when needed, not automatically)
+  const refreshBadges = useCallback(async () => {
+    if (displayProducts.length === 0) return;
     
     try {
-      // Fetch fresh data in the background
+      const productIds = displayProducts.map((p: ShopifyProduct) => p.id);
+      console.log(`🔄 Manually refreshing badges for ${productIds.length} products`);
+      
       const response = await apiRequest("POST", "/api/products/content-status", {
-        productIds: productIds.map(id => id.toString())
+        productIds: productIds.map((id: number) => id.toString())
       });
       const freshStatusData = await response.json();
       
-      // Update local content status with fresh data
+      // Update badges with fresh data
       setContentStatus(prev => ({ ...prev, ...freshStatusData }));
       
-      // Update cache with fresh data
+      // Update badge cache
       updateCache(freshStatusData);
       
-      console.log(`📋 Updated ${Object.keys(freshStatusData).length} product statuses from backend`);
+      console.log(`📋 Refreshed ${Object.keys(freshStatusData).length} badge statuses`);
     } catch (error) {
-      console.error("Failed to check content status:", error);
-      // Keep showing cached data if API fails
+      console.error("Failed to refresh badge status:", error);
     }
-  }, [getStatus, updateCache]);
+  }, [displayProducts, updateCache]);
 
-  // Check content status for displayed products
+  // Load cached badges immediately when products change
   useEffect(() => {
     if (displayProducts.length > 0) {
-      const productIds = displayProducts.map((p: ShopifyProduct) => p.id);
-      checkContentStatus(productIds);
+      // Load cached badges immediately for instant display
+      const cachedStatuses: Record<string, ContentStatus> = {};
+      displayProducts.forEach((product: ShopifyProduct) => {
+        const cached = getStatus(product.id.toString());
+        if (cached) {
+          cachedStatuses[product.id.toString()] = cached;
+        }
+      });
+      
+      if (Object.keys(cachedStatuses).length > 0) {
+        console.log(`📋 Loaded ${Object.keys(cachedStatuses).length} cached badge statuses immediately`);
+        setContentStatus(prev => ({ ...prev, ...cachedStatuses }));
+      }
     }
-  }, [displayProducts, checkContentStatus]);
+  }, [displayProducts, getStatus]);
 
   // Handle product selection for navigation
   const handleProductSelect = (product: ShopifyProduct, variant?: ShopifyVariant) => {
@@ -280,9 +277,8 @@ export default function AllProductsNew() {
     return <Badge variant="outline" className="text-gray-600">Content: Not Added</Badge>;
   };
 
-  // Get stats for display with caching for immediate display
+  // Get stats for display - prioritize cached badge stats for immediate display
   const calculateStats = () => {
-    // First try to get cached stats for immediate display
     const cacheStats = getStats();
     const currentStats = {
       total: Object.keys(contentStatus).length,
@@ -299,13 +295,8 @@ export default function AllProductsNew() {
       else currentStats.noContent++;
     });
 
-    // Use cached stats if available and current stats are empty/small
-    if (cacheStats.total > currentStats.total) {
-      console.log(`📊 Using cached stats (${cacheStats.total}) over current stats (${currentStats.total})`);
-      return cacheStats;
-    }
-    
-    return currentStats;
+    // Use cached badge stats for immediate display, fallback to current
+    return cacheStats.total > 0 ? cacheStats : currentStats;
   };
 
   const stats = calculateStats();
@@ -340,8 +331,8 @@ export default function AllProductsNew() {
             </div>
           </div>
           
-          {/* Status Summary */}
-          <div className="flex flex-wrap gap-2">
+          {/* Status Summary with manual refresh */}
+          <div className="flex flex-wrap gap-2 items-center">
             <Badge variant="outline" className="bg-blue-50">
               Shopify Content: {stats.shopifyContent}
             </Badge>
@@ -354,6 +345,14 @@ export default function AllProductsNew() {
             <Badge variant="outline" className="bg-gray-50">
               No Content: {stats.noContent}
             </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshBadges}
+              className="h-6 px-2 text-xs"
+            >
+              Refresh Badges
+            </Button>
           </div>
         </div>
 
