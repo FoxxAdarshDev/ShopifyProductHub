@@ -64,11 +64,28 @@ export default function AllProducts() {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Query to fetch ALL products at once - no more pagination
+  // New state for batch loading
+  const [totalInStore, setTotalInStore] = useState(0);
+  const [loadedProducts, setLoadedProducts] = useState<ShopifyProduct[]>([]);
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
+  const [isLoadingBatches, setIsLoadingBatches] = useState(false);
+
+  // First get total product count from store
+  const { data: countData } = useQuery({
+    queryKey: ["/api/products/count"],
+    queryFn: async () => {
+      console.log("📊 Getting total product count from store");
+      const response = await apiRequest("GET", `/api/products/count`);
+      return response.json();
+    },
+    staleTime: 10 * 60 * 1000, // Cache count for 10 minutes
+  });
+
+  // Legacy query for cached products (instant display)
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/products/all"],
     queryFn: async () => {
-      console.log("🚀 Fetching ALL products from store at once");
+      console.log("💾 Getting cached products for instant display");
       const response = await apiRequest("GET", `/api/products/all`);
       return response.json();
     },
@@ -105,20 +122,99 @@ export default function AllProducts() {
     setContentStatus(cachedStatus);
   }, [cache]);
 
-  // Update products when data loads (ALL products at once)
+  // Update total count from API
+  useEffect(() => {
+    if (countData) {
+      setTotalInStore(countData.totalInStore);
+      console.log(`📊 Store has ${countData.totalInStore} total products`);
+    }
+  }, [countData]);
+
+  // Show cached products immediately
   useEffect(() => {
     if (data && data.products) {
-      console.log(`✅ Loaded ${data.products.length} total products from store`);
+      console.log(`💾 Loaded ${data.products.length} cached products`);
       setAllProducts(data.products);
+      setLoadedProducts(data.products);
 
-      // Check content status for ALL products
+      // Check content status for cached products
       const productIds = data.products.map((p: ShopifyProduct) => p.id);
       if (productIds.length > 0) {
-        console.log(`🔍 Checking content status for ${productIds.length} products`);
+        console.log(`🔍 Checking content status for ${productIds.length} cached products`);
         checkContentStatus(productIds);
       }
+
+      // Start batch loading fresh products if we don't have all products
+      if (totalInStore > 0 && data.products.length < totalInStore) {
+        startBatchLoading();
+      }
     }
-  }, [data]);
+  }, [data, totalInStore]);
+
+  // Function to start batch loading fresh products
+  const startBatchLoading = async () => {
+    if (isLoadingBatches) return;
+    
+    setIsLoadingBatches(true);
+    console.log(`🔄 Starting batch loading: need ${totalInStore} total products`);
+    
+    const batchSize = 5;
+    const totalPages = Math.ceil(totalInStore / batchSize);
+    let currentPage = 1;
+    let allFreshProducts: ShopifyProduct[] = [...loadedProducts];
+    
+    setLoadingProgress({ current: loadedProducts.length, total: totalInStore });
+    
+    while (currentPage <= totalPages && currentPage <= 60) { // Limit to 60 pages (300 products) to avoid overwhelming
+      try {
+        console.log(`📦 Fetching batch ${currentPage}/${totalPages}`);
+        const response = await apiRequest("GET", `/api/products/batch?page=${currentPage}&limit=${batchSize}`);
+        const batchData = await response.json();
+        
+        if (batchData.products && batchData.products.length > 0) {
+          // Merge new products, avoiding duplicates
+          const newProducts = batchData.products.filter((newProduct: ShopifyProduct) => 
+            !allFreshProducts.some(existing => existing.id === newProduct.id)
+          );
+          
+          allFreshProducts = [...allFreshProducts, ...newProducts];
+          setLoadedProducts([...allFreshProducts]);
+          setAllProducts([...allFreshProducts]);
+          
+          // Update progress
+          setLoadingProgress({ current: allFreshProducts.length, total: totalInStore });
+          
+          console.log(`✅ Batch ${currentPage}: +${newProducts.length} new products (${allFreshProducts.length}/${totalInStore})`);
+          
+          // Check content status for new products
+          if (newProducts.length > 0) {
+            checkContentStatus(newProducts.map((p: ShopifyProduct) => p.id));
+          }
+          
+          // If we got fewer products than requested, we've reached the end
+          if (batchData.products.length < batchSize) {
+            console.log(`🏁 Reached end of products at page ${currentPage}`);
+            break;
+          }
+        } else {
+          console.log(`🏁 No more products at page ${currentPage}`);
+          break;
+        }
+        
+        currentPage++;
+        
+        // Small delay to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error) {
+        console.error(`❌ Failed to fetch batch ${currentPage}:`, error);
+        break;
+      }
+    }
+    
+    setIsLoadingBatches(false);
+    console.log(`🎉 Batch loading complete: ${allFreshProducts.length}/${totalInStore} products loaded`);
+  };
 
   // Update filtered products when server filtering completes
   useEffect(() => {
@@ -327,7 +423,19 @@ export default function AllProducts() {
                 </>
               ) : (
                 <>
-                  Showing <span className="font-semibold" data-testid="text-filtered-count">{displayProducts.length}</span> of <span className="font-semibold" data-testid="text-total-count">{totalProducts}</span> products
+                  Showing <span className="font-semibold" data-testid="text-filtered-count">{displayProducts.length}</span> of 
+                  {totalInStore > 0 ? (
+                    <>
+                      <span className="font-semibold" data-testid="text-total-count"> {totalInStore}</span> products in store
+                      {isLoadingBatches && (
+                        <span className="ml-2 text-blue-600">
+                          (Loading {loadingProgress.current}/{loadingProgress.total}...)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-semibold" data-testid="text-total-count"> {totalProducts}</span>
+                  )}
                 </>
               )}
             </p>

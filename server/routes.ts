@@ -77,7 +77,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get ALL products at once - no more pagination/batching
+  // Get store product count
+  app.get("/api/products/count", async (req, res) => {
+    try {
+      console.log(`📊 Getting total product count from store...`);
+      
+      // Get total count from Shopify API
+      const totalCount = await shopifyService.getProductCount();
+      
+      // Also get count from our status table for comparison
+      const allStatuses = await storage.getAllProductStatuses();
+      const uniqueProductIds = Array.from(new Set(allStatuses.map(s => s.shopifyProductId).filter(id => id && id !== 'null')));
+      
+      console.log(`🎯 Shopify store has ${totalCount} total products`);
+      console.log(`💾 Database has ${uniqueProductIds.length} tracked products`);
+      
+      res.json({
+        totalInStore: totalCount,
+        trackedInDatabase: uniqueProductIds.length,
+        message: `Store contains ${totalCount} total products`
+      });
+    } catch (error) {
+      console.error("Error getting product count:", error);
+      res.status(500).json({ message: "Failed to get product count" });
+    }
+  });
+
+  // Get products in efficient batches
+  app.get("/api/products/batch", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const filter = req.query.filter as string;
+      
+      console.log(`📦 Fetching product batch: page ${page}, limit ${limit}`);
+      
+      // Get products from Shopify in batches using their pagination API
+      const batchProducts = await shopifyService.getProductsBatch(limit, page);
+      
+      console.log(`✅ Fetched batch: ${batchProducts.length} products`);
+      
+      // Cache successful fetches
+      for (const product of batchProducts) {
+        try {
+          await storage.createProduct({
+            id: `cached-${product.id}`,
+            shopifyId: product.id.toString(),
+            sku: product.variants?.[0]?.sku || '',
+            title: product.title,
+            description: product.body_html
+          });
+        } catch (cacheError) {
+          // Ignore cache errors - product might already exist
+        }
+      }
+      
+      // Filter products if needed
+      const filteredProducts = filter ? 
+        await filterProductsByStatus(batchProducts, filter, storage) : 
+        batchProducts;
+      
+      res.json({
+        products: filteredProducts,
+        page,
+        limit,
+        hasMore: batchProducts.length === limit,
+        message: `Fetched ${filteredProducts.length} products in batch`
+      });
+    } catch (error) {
+      console.error("Error fetching product batch:", error);
+      res.status(500).json({ message: "Failed to fetch product batch" });
+    }
+  });
+
+  // Get ALL products using caching (legacy endpoint)
   app.get("/api/products/all", async (req, res) => {
     try {
       const filter = req.query.filter as string; // 'all', 'shopify', 'new-layout', 'draft-mode', 'none'

@@ -70,6 +70,30 @@ class ShopifyService {
     return response.json();
   }
 
+  // Get total product count from store
+  async getProductCount(): Promise<number> {
+    try {
+      const response = await this.makeRequest('/products/count.json');
+      return response.count || 0;
+    } catch (error) {
+      console.warn('Failed to get product count:', error);
+      return 0;
+    }
+  }
+
+  // Get products in efficient batches using Shopify pagination
+  async getProductsBatch(limit: number = 5, page: number = 1): Promise<any[]> {
+    try {
+      console.log(`📦 Fetching ${limit} products from Shopify (page ${page})`);
+      const response = await this.makeRequest(`/products.json?limit=${limit}&page=${page}`);
+      console.log(`✅ Fetched ${response.products?.length || 0} products from batch`);
+      return response.products || [];
+    } catch (error) {
+      console.warn(`Failed to fetch products batch (page ${page}):`, error);
+      return [];
+    }
+  }
+
   async getProductById(productId: string): Promise<any> {
     try {
       const response = await fetch(`https://${this.store}/admin/api/2024-10/products/${productId}.json`, {
