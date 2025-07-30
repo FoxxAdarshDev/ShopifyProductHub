@@ -97,9 +97,35 @@ class ShopifyService {
     try {
       console.log(`Searching Shopify for SKU: ${sku} using comprehensive search`);
       
-      // Use the same comprehensive approach as getAllProductsComprehensive()
-      const allProducts = await this.getAllProductsComprehensive();
-      console.log(`Comprehensive SKU search: Got ${allProducts.length} total products to search through`);
+      // Use direct pagination to get all products - same as working search method
+      console.log(`📋 Starting comprehensive SKU fetch for: "${sku}"`);
+      let allProducts: ShopifyProduct[] = [];
+      let hasNextPage = true;
+      let since_id = '';
+      let pageCount = 0;
+      const maxPages = 20;
+      
+      while (hasNextPage && pageCount < maxPages) {
+        const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+        const response = await this.makeRequest(url);
+        const products = response.products as ShopifyProduct[];
+        
+        if (products.length === 0) {
+          hasNextPage = false;
+        } else {
+          allProducts.push(...products);
+          since_id = products[products.length - 1].id.toString();
+          hasNextPage = products.length === 250;
+          pageCount++;
+        }
+      }
+      
+      console.log(`Fetched ${allProducts.length} products across ${pageCount} pages for SKU search: "${sku}"`);
+
+      if (allProducts.length === 0) {
+        console.log('❌ No products fetched from store');
+        return null;
+      }
       // Normalize search term for better matching
       const skuLower = sku.toLowerCase().trim();
       
@@ -211,7 +237,7 @@ class ShopifyService {
       
       while (hasNextPage && pageCount < maxPages) {
         try {
-          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+          const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250&status=any${since_id ? `&since_id=${since_id}` : ''}`;
           const response = await this.makeRequest(url);
           const products = response.products as ShopifyProduct[];
           
@@ -307,39 +333,78 @@ class ShopifyService {
       
       const queryLower = query.toLowerCase().trim();
       
-      // SPECIAL CASE: Handle known issue with SKU "12013-00" (Product ID: 7846012256472)
-      // Try direct product lookup first if this is the problematic SKU
-      if (queryLower === '12013-00') {
-        console.log(`Special case: Trying direct lookup for known product ID 7846012256472 with SKU "12013-00"`);
+      // Use the same direct pagination approach as getProductBySku for consistency
+      console.log(`🔍 Using direct pagination approach for SKU search to ensure all products are included`);
+      
+      let allProducts: ShopifyProduct[] = [];
+      let hasNextPage = true;
+      let since_id = '';
+      let pageCount = 0;
+      const maxPages = 20; // Increase limit to catch more products
+      
+      console.log(`🚀 Starting pagination loop with hasNextPage=${hasNextPage}, pageCount=${pageCount}, maxPages=${maxPages}`);
+      
+      // Alternative approach: try different pagination parameters to catch all products
+      // First, try with different ordering and increased page limits
+      while (hasNextPage && pageCount < maxPages) {
+        const url = `/products.json?fields=id,title,body_html,handle,variants&limit=250${since_id ? `&since_id=${since_id}` : ''}`;
+        console.log(`🔍 Making API request: ${url}`);
+        
         try {
-          const directProduct = await this.getProductById('7846012256472');
-          if (directProduct) {
-            console.log(`Success: Found product via direct lookup - ${directProduct.title} with SKU: ${directProduct.variants[0]?.sku}`);
-            if (directProduct.variants.some((v: any) => v.sku && v.sku.toLowerCase().trim() === queryLower)) {
-              console.log(`SKU matches! Returning direct product result.`);
-              return [directProduct];
-            }
+          const response = await this.makeRequest(url);
+          const products = response.products as ShopifyProduct[];
+          console.log(`📦 API returned ${products.length} products for page ${pageCount + 1}`);
+          
+          // Check if target product is in this batch
+          const targetInBatch = products.find(p => p.id === 7846012223704);
+          if (targetInBatch) {
+            console.log(`🎯 FOUND target product in batch ${pageCount + 1}: ${targetInBatch.title} (ID: ${targetInBatch.id})`);
+            console.log(`   Status: ${targetInBatch.status}, SKUs: ${targetInBatch.variants.map(v => `"${v.sku}"`).join(', ')}`);
           }
-        } catch (directError) {
-          console.log(`Direct lookup failed for product 7846012256472:`, directError);
+          
+          if (products.length === 0) {
+            hasNextPage = false;
+          } else {
+            allProducts.push(...products);
+            since_id = products[products.length - 1].id.toString();
+            hasNextPage = products.length === 250;
+            pageCount++;
+            console.log(`📊 Page ${pageCount} processed. Total products so far: ${allProducts.length}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error fetching products page ${pageCount + 1}:`, error);
+          hasNextPage = false;
         }
       }
       
-      // GENERAL CASE: Use comprehensive product fetching to get ALL products
-      console.log(`Using comprehensive product fetch to get all products for SKU search`);
-      const allProducts = await this.getAllProductsComprehensive();
-      console.log(`Fetched ${allProducts.length} total products for SKU search`);
+      console.log(`Direct SKU search fetched ${allProducts.length} products across ${pageCount} pages`);
       
+      // Debug: Check if the specific product is in our direct fetch
+      const targetProduct = allProducts.find(p => p.id === 7846012223704);
+      if (targetProduct) {
+        console.log(`✅ Target product found in direct fetch: ${targetProduct.title} (ID: ${targetProduct.id})`);
+        console.log(`   Variants: ${targetProduct.variants.map(v => `"${v.sku}"`).join(', ')}`);
+      } else {
+        console.log(`❌ Target product 7846012223704 NOT found in direct fetch of ${allProducts.length} products`);
+        console.log(`   Sample product IDs: ${allProducts.slice(0, 5).map(p => p.id).join(', ')}`);
+        console.log(`   Last few product IDs: ${allProducts.slice(-5).map(p => p.id).join(', ')}`);
+      }
+
       const matchingProducts = allProducts.filter((product: ShopifyProduct) => {
         return product.variants.some(variant => {
           if (!variant.sku) return false;
           const variantSkuLower = variant.sku.toLowerCase().trim();
           
+          // Debug logging for the specific SKU we're looking for
+          if (variantSkuLower.includes('12013') || product.id === 7846012223704) {
+            console.log(`🔍 Checking product ${product.id} "${product.title}" with SKU "${variant.sku}" against "${query}"`);
+          }
+          
           // Check both exact match and contains for flexibility with whitespace
           if (variantSkuLower === queryLower || 
               variantSkuLower.includes(queryLower) || 
               queryLower.includes(variantSkuLower)) {
-            console.log(`Found SKU match: "${variant.sku}" matches query "${query}" in product ${product.title} (ID: ${product.id})`);
+            console.log(`✅ Found SKU match: "${variant.sku}" matches query "${query}" in product ${product.title} (ID: ${product.id})`);
             return true;
           }
           return false;
