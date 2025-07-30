@@ -401,7 +401,16 @@ export default function AllProducts() {
               type="text"
               placeholder="Search by product title, SKU, or product ID..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setSearchTerm(newValue);
+                
+                // When starting a new search, reset filter to 'all' to ensure we find all matching products
+                if (newValue.trim().length >= 2 && contentFilter !== 'all') {
+                  console.log('Resetting filter to "all" for search to show all matching products');
+                  setContentFilter('all');
+                }
+              }}
               className="pl-10 pr-10"
               data-testid="input-product-search"
             />
