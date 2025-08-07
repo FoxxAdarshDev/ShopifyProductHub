@@ -653,7 +653,7 @@ export default function ProductManager() {
                         </pre>
                       </div>
                     ) : (
-                      <div className="border rounded-lg p-6 bg-white shadow-sm max-h-96 overflow-y-auto">
+                      <div className="border rounded-lg p-6 bg-white shadow-sm min-h-80 max-h-[32rem] overflow-y-auto">
                         <div 
                           className="shopify-content clear-both"
                           dangerouslySetInnerHTML={{ __html: convertRelativeUrlsInHtml(selectedProduct.description) || '<p class="text-slate-500 italic">No description available</p>' }}
