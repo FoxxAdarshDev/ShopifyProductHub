@@ -6,7 +6,6 @@
 .shopify-content {
   @apply text-gray-800 leading-relaxed;
   clear: both;
-  overflow: hidden;
   display: block;
   position: relative;
 }
