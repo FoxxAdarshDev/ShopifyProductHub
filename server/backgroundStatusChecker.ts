@@ -154,7 +154,8 @@ class BackgroundStatusChecker {
           
           // Fetch 250 products per batch for efficiency (max allowed by Shopify)
           const batchSize = 250;
-          const products = await this.shopifyService.getProductsBatch(batchSize, since_id);
+          const response = await this.shopifyService.getProductsBatch(batchSize, since_id);
+          const products = response.products;
           
           if (!products || products.length === 0) {
             console.log(`⏹️ No more products found at batch ${batchCount}, stopping comprehensive fetch`);
