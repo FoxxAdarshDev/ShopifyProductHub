@@ -5,6 +5,10 @@
 /* Shopify Content Styling - matches Shopify's default product description styling */
 .shopify-content {
   @apply text-gray-800 leading-relaxed;
+  clear: both;
+  overflow: hidden;
+  display: block;
+  position: relative;
 }
 
 .shopify-content h1 {
@@ -25,6 +29,7 @@
 
 .shopify-content p {
   @apply mb-4 text-gray-700 leading-relaxed;
+  clear: both;
 }
 
 .shopify-content p:last-child {
