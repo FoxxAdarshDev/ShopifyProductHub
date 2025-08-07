@@ -2,37 +2,22 @@
 
 ## Overview
 
-This is a fully functional, production-ready web application for managing Shopify product content. The system automates the tedious process of manually adding HTML content to each product SKU by providing a user-friendly interface to create structured product tabs. Users can lookup products by SKU, select content tabs, fill out forms, and automatically generate and update HTML content in Shopify products.
+This is a production-ready web application for managing Shopify product content. It automates the process of adding HTML content to product SKUs by providing a user-friendly interface to create structured product tabs. Users can lookup products by SKU, select content tabs, fill out forms, and automatically generate and update HTML content in Shopify products.
 
-**Current Status:** Live and operational - successfully migrated from Replit Agent to Replit environment with enhanced Compatible Container functionality. Features include editable fields (title, image), reusable CSS styling, dynamic SKU data attributes for SEO optimization, and improved HTML generation. PostgreSQL database and Shopify API integration configured.
+The system is live and operational, successfully migrated to a Replit environment with enhanced functionality. Key capabilities include:
+- Editable product fields (title, image) and reusable CSS styling.
+- Dynamic SKU data attributes for SEO optimization.
+- Improved HTML generation.
+- PostgreSQL database and Shopify API integration.
+- Enhanced product display with infinite scroll.
+- Robust SKU search functionality.
+- Automated HTML template detection and content status tracking.
+- Database-first architecture for efficient content status detection and rate limiting.
+- Background processing for Shopify API calls.
+- Comprehensive content extraction from existing Shopify HTML.
+- Dynamic Shopify Liquid template integration for tabbed content display.
 
-**Migration Status:** Successfully migrated to Replit environment (January 30, 2025) - Complete migration from Replit Agent to Replit environment accomplished with enhanced state persistence. Updated default navigation to show All Products as the main landing page, with simplified sidebar navigation removing redundant "All Products" option since it's now the default view. **Final Migration Verification Complete** (January 30, 2025): System successfully verified as fully operational in Replit environment with all dependencies installed, database connected, Shopify API integration active, and background processing functioning correctly. Background checker processes 334 accessible products out of 1146 total due to normal Shopify API limitations.
-
-**Enhanced Product Display & Infinite Scroll** (January 30, 2025): Fixed Shopify API pagination errors by migrating from deprecated page-based pagination to modern cursor-based pagination using `since_id` parameter. Created new AllProductsNew component with infinite scroll functionality that properly displays all product variants with SKUs and prices. Enhanced product cards show all variants in a scrollable list with quick variant selector badges. Implemented proper intersection observer for automatic loading and manual "Load More" button as fallback. Fixed backend caching issues and removed filtering dependencies. System now supports viewing all 1146+ products in store with proper variant information display, addressing the issue where only 81 products were visible previously.
-
-**Pagination Removal & Database-First Product Loading** (January 30, 2025): Successfully removed all pagination and batch loading systems that were causing duplicate products in the interface. Implemented database-first approach that uses the product_status table (320 products) as source of truth for product IDs, then fetches individual products from Shopify API in small batches to avoid rate limiting. System now loads 80+ products consistently (up from 34) by bypassing the broken comprehensive product listing API and using targeted individual product fetches. Eliminated "Load More" pagination UI and "hasMore" logic - all products now load at once without duplicates. Rate limiting is handled gracefully with very conservative delays (2 seconds between requests) to avoid HTTP 429 errors. Fixed React key warnings by ensuring all products have valid IDs. Background processing continues to fetch more products while users see instant results from cached data.
-
-**Critical SKU Search Fix - RESOLVED** (January 30, 2025): Successfully resolved major issue where SKU search was inconsistent and only worked for a limited subset of products. Root cause identified: certain products exist in Shopify (confirmed via Product ID search) but don't appear in standard product pagination listings due to various factors like inventory status or API limitations. **Solution implemented**: Created hybrid search approach that checks for known SKU-to-Product-ID mappings first, then falls back to comprehensive pagination search. This ensures reliable access to products like "12013-01" (Product ID: 7846012223704) that were previously unreachable via SKU search. Updated both `getProductBySku` and `searchBySKU` functions with enhanced pagination and fallback mechanisms. **Result**: SKU search now works consistently for all products, matching the reliability of Product ID search. Test confirmed: SKU "12013-01" now successfully returns complete product data. **Migration Task Completed**: SKU search infrastructure fully operational across entire product catalog.
-
-**Enhanced HTML Template Detection Algorithm & Badge Display Fix** (January 30, 2025): Fixed critical issue with new layout detection not properly identifying products with published template structure. Enhanced `detectNewLayoutFromHTML` function to prioritize `data-sku` attribute as the primary indicator of our template structure, with improved secondary checks for container classes, tab content, and data sections. Updated detection logic increased New Layout count from 2 to 11 products, accurately reflecting products with published template structure in Shopify. Algorithm now properly detects all variations of our generated HTML templates and updates database status accordingly. Added admin endpoint `/api/admin/status-counts-now` for immediate database status verification. Fixed database update issues to ensure immediate status persistence after detection. **Resolved Badge Display Issue**: Fixed critical bug where product cards in filtered views weren't showing badges - added content status checking for server-filtered products. Now all 11 New Layout products correctly display green "New Layout" badges when filtered.
-
-**Enhanced Frontend Caching & State Persistence** (January 29, 2025): Implemented comprehensive frontend caching system to preserve product status counts and badge states across page reloads. Updated both AllProducts and ProductManager pages to use useProductStatusCache hook for immediate data display on page load. System now shows cached statistics (Shopify Content: 313, New Layout: 3, Draft Mode: 3, No Content: 21) instantly while backend processing continues in background. Resolved issue where users had to wait for backend processing to complete before seeing data on page reload. Cache persists for 10 minutes in localStorage and automatically refreshes with fresh backend data. Fixed critical content extraction bugs including H2 heading extraction patterns and documentation content extraction regex patterns. All core functionality preserved, database connected, and system fully operational. Enhanced Shopify Liquid template created with improved styling, responsive design, and fixed UI issues including video full-width display, subscriber button visibility, logo grid styling, and tab text readability. **Updated UI Badge Display** - Fixed badge display consistency across all product cards to show only labels (New Layout, Draft Mode) without counts, while preserving count displays in top-level summaries and filter dropdowns for better user experience. System now correctly displays individual product badges without count numbers while maintaining accurate aggregate counts in headers and filter dropdowns.
-
-**Database-First Architecture & Rate Limiting Solution** (January 29, 2025): Implemented comprehensive solution to fix Shopify API rate limiting issues (HTTP 429 errors) by creating database-first architecture with intelligent caching. Added new `product_status` schema to persistently track product content status (New Layout, Draft Mode, Shopify Content) with automatic detection based on `data-sku` attributes in HTML. Created ProductStatusService that prioritizes database queries over API calls, uses intelligent batching (3 products per batch with delays), and caches results for 30 minutes. System now detects "New Layout" products by analyzing HTML for our template structure markers (`class="container"`, `data-sku=` attributes, tab IDs). Fixed Draft Mode labeling - now only shows when content exists locally but hasn't been published to Shopify, automatically cleared when content is published. All navigation pages (/all-products) now load efficiently without overwhelming Shopify API.
-
-**Critical Content Detection Bug Fixed** (January 29, 2025): Resolved major issue where products with published template structure in Shopify were incorrectly showing as "Content: Not Added" instead of "New Layout" with proper count display. Root cause was in the needsShopifyCheck logic that skipped API calls when draft content existed, preventing detection of published Shopify content. Fixed by updating the check logic to always verify Shopify content for products without local content, regardless of draft status. Enhanced HTML detection patterns now correctly identify data-sku attributes, container classes, and tab structures in published HTML content. System now accurately detects and displays the correct status and content count for all products, ensuring proper "New Layout: X" and "Shopify Content" badge display.
-
-**Database-First Status Detection & Admin Refresh Tool** (January 29, 2025): Created comprehensive solution to fix content status detection issues by implementing database-first architecture with intelligent caching. Added admin refresh functionality (`/api/admin/refresh-suspect-products`) that systematically updates product status for items with potential new layout content. Updated `needsShopifyCheck` logic to properly verify Shopify content when draft content exists, ensuring accurate detection of published template structures. System now correctly identifies products like 8888646959320 that previously showed as "Draft Mode" but actually have "New Layout" content in Shopify. Database counts updated from New Layout: 1 to New Layout: 2, demonstrating successful detection and status correction.
-
-**Background Processing & Frontend Caching System** (January 29, 2025): Implemented comprehensive background processing system to minimize Shopify API calls during page loads. Added `backgroundProcessor` service that systematically updates product status in small batches (5 products with 1-3 second delays) to avoid rate limiting. Created admin endpoints for background processing control: start (`/api/admin/start-background-processing`), status check (`/api/admin/background-processing-status`), stop, and force refresh all products (`/api/admin/force-refresh-all-products`). Added frontend caching hook (`useProductStatusCache`) that preserves status data in localStorage for 10 minutes, ensuring users see immediate data while background updates run. System now prioritizes database data over API calls, reducing excessive Shopify requests from hundreds per page load to systematic background processing.
-
-**Enhanced Search & Navigation** (January 29, 2025): Implemented comprehensive product search across ALL store products (334 total) with deep SKU and Product ID matching. Added dedicated sidebar navigation with filtered views for Draft Mode and New Layout products. Enhanced All Products page with comprehensive search functionality that searches the entire store inventory rather than just initial 20 products. Created separate pages for Draft Mode Products and New Layout Products with full search capabilities and real-time content status detection.
-
-**Persistent State Management & Caching** (January 29, 2025): Implemented ContentStatusCache service to store content status data and prevent re-fetching during navigation. Reduced batch size from 10 to 5 products with 2-second delays between batches and 500ms delays between individual requests. Cache persists for 5 minutes and automatically invalidates expired entries. Frontend now sends single request for all 334 products while backend handles intelligent batching and state persistence. System prioritizes cached data, then local database, and only hits Shopify API when absolutely necessary.
-
-**Rate Limiting & Performance Optimization** (January 29, 2025): Fixed critical Shopify API rate limiting issues (HTTP 429 errors) by implementing intelligent batching and rate limiting in content status checks. Limited API requests to 20 products per batch with 100ms delays between individual requests and 200ms delays between batches. Optimized content status checking to prioritize local database queries and only check Shopify API when necessary. System now gracefully handles rate limits and continues processing without overwhelming the API.
-
-**Fixed Template Detection Logic & Comprehensive Product Status Updates** (January 29, 2025): Resolved critical bug in `needsShopifyCheck` logic that was preventing proper template detection. Fixed incorrect date checking logic that used `new Date()` instead of actual database timestamps, causing products to never get properly checked for New Layout templates. Updated AllProducts page to load ALL 334 products immediately with comprehensive status checking. Admin endpoints now properly force refresh all products and detect template structures in Shopify content. New Layout count successfully updated from 1 to 2+ products, demonstrating proper template detection across the entire product catalog. System now accurately identifies products with generated template structure and displays correct status counts immediately on page load.
+The business vision is to streamline content management for Shopify stores, enhancing efficiency and reducing manual effort for product content updates.
 
 ## User Preferences
 
@@ -42,141 +27,60 @@ Shopify Store: foxxbioprocess.myshopify.com with custom credentials
 
 ## System Architecture
 
-The application follows a monorepo structure with clear separation between client, server, and shared code:
+The application follows a monorepo structure with clear separation between client, server, and shared code.
 
-- **Frontend**: React with TypeScript, built with Vite
-- **Backend**: Express.js with TypeScript 
-- **Database**: PostgreSQL with Drizzle ORM
-- **Styling**: Tailwind CSS with shadcn/ui components
-- **State Management**: TanStack Query for server state
-- **Authentication**: Session-based (infrastructure present)
+### UI/UX Decisions
+- **Component Library**: Built on shadcn/ui with Radix UI primitives.
+- **Styling**: Tailwind CSS for utility-first styling with a custom design system.
+- **Icons**: Lucide Icons for consistent iconography.
+- **Design Philosophy**: Focus on user-friendly interface for content creation, visual previews, and structured data entry.
+- **Badge System**: Clear visual indicators for content status (New Layout, Draft Mode, Shopify Content).
+- **Tab Ordering**: Fixed tab ordering with distinct groups for content consistency.
+- **Image Support**: Visual previews for images in compatible container items.
+- **Documentation Cards**: Professional, card-based styling for documentation links.
 
-### Directory Structure
+### Technical Implementations
+- **Frontend**: React with TypeScript, built with Vite for fast development and optimized builds.
+  - **Routing**: Wouter for lightweight client-side routing.
+  - **Forms**: React Hook Form with Zod validation for robust form handling.
+  - **HTTP Client**: Custom fetch wrapper with TanStack Query for server state management and caching.
+- **Backend**: Express.js with TypeScript.
+  - **Database Layer**: Drizzle ORM with PostgreSQL.
+  - **Route Organization**: Centralized route registration pattern.
+  - **Error Handling**: Global error middleware for structured responses.
+  - **External Services**: Shopify API integration for product data.
+- **Database Schema**: Four main entities: Products, Product Content, Content Templates, and Logo Library.
+- **Data Flow**:
+    1. User searches for product by SKU, system prioritizes local database then Shopify API.
+    2. Product data is cached locally.
+    3. User creates/edits content tabs structured by type (Description, Features, Applications, Specifications, Videos, Documentation, Safety Guidelines, SKU Nomenclature, Compatible Container, Sterilization Method).
+    4. System generates HTML output and can save locally or push to Shopify.
+- **Content Structure**: Each product supports multiple content tabs with specific data types (e.g., rich text, bulleted lists, tables, embedded videos, file downloads).
+- **Content Extraction**: Comprehensive HTML content extraction system parses existing Shopify product descriptions and populates content tabs. It supports various formats including plain text specifications and handles multi-variant SKU data.
+- **HTML Generation**: Generates Shopify-compatible HTML with dynamic SKU attributes, reusable CSS, and proper URL conversion (relative to absolute).
+- **Shopify Liquid Template Integration**: `halo-product-tab.liquid` template dynamically creates tab navigation from generated HTML, ensuring responsive design and consistent styling.
+- **Queue System**: Shopify API queue system resolves rate limiting issues by managing requests with priority-based queuing and automatic retries.
 
-```
-├── client/          # React frontend application
-├── server/          # Express.js backend API
-├── shared/          # Shared types and schemas
-├── attached_assets/ # Static content files
-└── migrations/      # Database migration files
-```
-
-## Key Components
-
-### Frontend Architecture
-- **Component Library**: Built on shadcn/ui with Radix UI primitives
-- **Routing**: Wouter for lightweight client-side routing
-- **Forms**: React Hook Form with Zod validation
-- **HTTP Client**: Custom fetch wrapper with TanStack Query integration
-- **Build Tool**: Vite with React plugin and development tooling
-
-### Backend Architecture
-- **API Framework**: Express.js with TypeScript
-- **Database Layer**: Drizzle ORM with Neon PostgreSQL serverless
-- **Route Organization**: Centralized route registration pattern
-- **Error Handling**: Global error middleware with structured responses
-- **External Services**: Shopify API integration for product data
-
-### Database Schema
-The system uses four main entities:
-- **Products**: Core product information synced from Shopify
-- **Product Content**: Tab-based content associated with products
-- **Content Templates**: Reusable content templates for different tab types
-- **Logo Library**: Centralized logo management for content
-
-## Data Flow
-
-### Product Management Workflow
-1. User searches for product by SKU
-2. System checks local database first, falls back to Shopify API
-3. Product data is cached locally for future use
-4. User selects content tabs to create/edit
-5. Content is structured by tab type (description, features, applications, etc.)
-6. System generates HTML output for product pages
-7. Content can be saved locally and optionally pushed to Shopify
-
-### Content Structure
-Each product can have multiple content tabs:
-- **Description**: Rich text with title, paragraphs, and logo grid
-- **Features**: Bulleted list of product features
-- **Applications**: Use cases and application scenarios  
-- **Specifications**: Structured table of technical specifications
-- **Videos**: Embedded video content
-- **Documentation**: File downloads and datasheets
-- **Safety Guidelines**: Safety and usage information
+### System Design Choices
+- **Monorepo Structure**: Facilitates shared types and schemas between frontend and backend.
+- **Database-First Architecture**: Prioritizes database queries to minimize Shopify API calls and improve performance, implementing intelligent caching and background processing.
+- **Rate Limiting Solution**: Intelligent batching and delays in API requests to prevent HTTP 429 errors.
+- **Persistent State Management**: Frontend caching with `localStorage` and `useProductStatusCache` hook for immediate data display.
+- **Background Processing**: `backgroundProcessor` service updates product status in small batches to avoid rate limiting.
+- **Enhanced Search**: Comprehensive product search across all store products with deep SKU and Product ID matching.
+- **Automatic Background Status Checker**: Runs on server startup and page load, using batch processing.
 
 ## External Dependencies
 
-### Shopify Integration
-- **Purpose**: Product data synchronization and content publishing
-- **API**: REST API with store-specific access tokens
-- **Data Flow**: Read product information, write generated HTML content
-
-### Neon Database
-- **Purpose**: Serverless PostgreSQL hosting
-- **Connection**: WebSocket-based connection pooling
-- **Features**: Auto-scaling, branching, and built-in connection pooling
-
-### UI Framework
-- **Radix UI**: Accessible component primitives
-- **Tailwind CSS**: Utility-first styling with custom design system
-- **Lucide Icons**: Consistent iconography throughout the application
-
-## Deployment Strategy
-
-### Development Environment
-- **Local Development**: Vite dev server with HMR for frontend
-- **Backend**: tsx for TypeScript execution with auto-reload
-- **Database**: Environment-based connection string configuration
-
-### Production Build
-- **Frontend**: Vite production build with static asset optimization
-- **Backend**: esbuild compilation to ESM format
-- **Database**: Drizzle migrations for schema management
-- **Environment**: Node.js runtime with environment variable configuration
-
-### Recent Changes (January 2025)
-- **Enhanced Compatible Container**: Made fields editable (title, image) rather than auto-populated only
-- **Reusable CSS**: Created separate compatible-container.css file for consistent styling across products
-- **SEO Optimization**: Added dynamic SKU data attributes to all HTML sections for better Google crawling
-- **HTML Generator**: Updated to include productSku parameter and data-sku attributes on all container elements
-- **Image Support**: Added image URL input fields for compatible container items with visual preview
-- **Fixed Tab Ordering System** (January 28, 2025): Implemented fixed tab ordering with two distinct groups:
-  - Group 1: Description, Features, Applications (positions 1-3)
-  - Group 2: Specifications, Documentation, Videos (positions 4-6)
-  - Additional tabs (SKU Nomenclature, Safety Guidelines, Compatible Container, Sterilization Method) are inserted between the two groups
-  - Applied consistent ordering across frontend tab selection, form display, visual preview, and HTML generation
-- **Added Sterilization Method Tab** (January 28, 2025): New additional content tab that works like Features tab with smart import functionality for sterilization methods list
-- **Fixed SKU Search Issue** (January 28, 2025): Resolved issue where product search by SKU failed due to trailing whitespace in Shopify SKU data. Updated search algorithm to handle whitespace normalization and improved matching logic for both exact and partial SKU matches. Enhanced SKU search to be exhaustive like Product ID search, now searches through ALL products in the store (up to 12,500 products across 50 pages) rather than just the first 250 products. SKU search now works properly alongside Product ID search with comprehensive coverage.
-- **Enhanced Multi-Variant SKU Support** (January 28, 2025): Updated HTML generator to include ALL product variant SKUs in data-sku attributes (comma-separated) instead of just the first variant. This improves SEO crawling and ensures all product variants are properly indexed. Added automatic variant SKU detection during HTML generation.
-- **HTML Content Extraction System** (January 28, 2025): Implemented comprehensive content extraction functionality that can parse existing Shopify product HTML descriptions and automatically populate appropriate content tabs. Added intelligent pattern matching for Description, Features, Applications, Specifications, Safety Guidelines, Sterilization Methods, Compatible Container, Videos, and Documentation sections. System can reverse-engineer existing HTML content to save manual data entry time.
-- **Smart Content Detection UI** (January 28, 2025): Added user-friendly extraction interface that automatically detects when existing Shopify content matches our template structure and offers one-click extraction into editable tabs. Includes visual indicators and success feedback for extracted content sections.
-- **Enhanced Content Extraction Patterns** (January 28, 2025): Fixed CSS selector patterns to properly match the actual generated HTML structure. Updated extraction logic to find tab-content divs with correct class and ID combinations. Enhanced Description extraction to properly parse logo grid images, Features extraction to handle styled list items, and Documentation extraction to find custom datasheet links. System now successfully extracts Description (with H2 titles, paragraphs, and logo grids), Features (with proper text cleaning), Specifications table data (7 rows extracted), Documentation (custom datasheet links), and Videos (default content detection). Compatible Container extraction improved but requires products with complete item data structure.
-- **Comprehensive Content Extraction Achievement** (January 28, 2025): Successfully implemented extraction for 5 out of 6 major content sections. System now properly extracts Description (paragraphs + logo grids), Features (list items with text cleaning), Specifications (table rows with item/value pairs), Documentation (custom datasheets), and Videos (default content detection). All extracted content is automatically saved as drafts and appears in form tabs. Template detection working properly - products with generated layouts show correct status indicators.
-- **Enhanced Badge System** (January 28, 2025): Fixed and improved the content status badge display system. "Draft Mode" badge now only shows for unsaved draft content and is hidden when content is published to Shopify. Changed "New Layout (2)" format to "New Layout: 2" format where the number represents the count of content sections/tabs. Added proper badge display in both AllProducts page and ProductManager page with real-time content status detection. System now correctly identifies when products have our template structure saved in Shopify and displays appropriate "New Layout" and "Shopify Content" badges.
-- **Absolute URL Conversion** (January 28, 2025): Implemented automatic conversion of relative URLs to absolute URLs with proper domain formatting in HTML generation. Converts URLs like `/products/...` and `/collections/...` to use the actual store domain (e.g., `foxxbioprocess.com`) instead of the `.myshopify.com` domain, ensuring proper links when content is copied from preview.
-- **Default Content for Videos and Documentation Tabs** (January 28, 2025): Added automatic default content that appears on every product regardless of custom input. Videos tab now includes "Video coming soon" placeholder and YouTube channel link (https://www.youtube.com/channel/UCfTcuV6zESARyzKfG2T6YFg) with branded layout. Documentation tab includes default link to product datasheets page (http://www.foxxlifesciences.com/pages/product-data-sheets) that always appears alongside any custom datasheets. Both tabs provide consistent brand presence across all products.
-- **Enhanced Content Extraction for Additional Tabs** (January 28, 2025): Extended the HTML content extraction system to support all Additional Content Tabs (Optional) including SKU Nomenclature, Safety Usage Guidelines, and Sterilization Method. The system now intelligently extracts titles, table data, list items, and structured content from these additional sections, providing complete coverage of all tab types available in the interface. Extraction patterns match the exact HTML structure generated by the system for seamless round-trip content editing.
-- **Fixed Compatible Container Multi-Item Extraction** (January 28, 2025): Resolved critical bug where Compatible Container extraction was only capturing 1 item instead of all 4 items from HTML content. Root cause was in the initial regex pattern that truncated content too early. Implemented robust div-matching algorithm that properly extracts complete content by counting nested div tags. System now successfully extracts all compatible container items with titles, URLs, and images. Enhanced extraction debugging and implemented direct link-based extraction method for improved reliability.
-- **Critical Bug Fixes for Data Persistence** (January 28, 2025): Fixed multiple critical issues affecting content persistence and extraction after Replit migration. Fixed Description H2 title generation in HTML generator (titles now properly appear inside description tab content, not just in main container). Fixed Compatible Container extraction regex patterns to match actual generated HTML structure (h4 titles, p descriptions, a links). These fixes resolve issues where content appeared to be lost after page reload or Shopify updates, ensuring reliable round-trip content editing between extraction, editing, saving, and re-extraction.
-- **Final HTML Generation Issues Resolved** (January 28, 2025): Fixed remaining critical HTML generation issues affecting H2 headings and video content. Updated HTML generator to properly handle both `title` and `h2Heading` fields in description content, ensuring user-entered H2 titles appear correctly in generated HTML. Fixed video form display issue where URLs extracted from Shopify appeared truncated in form fields - added `getVideoUrl` helper function to handle both direct `videoUrl` and `videos` array formats. All content types (H2 headings, logos, video iframes, features, specifications) now save and generate correctly when updating products to Shopify.
-- **Shopify Liquid Template Integration** (January 29, 2025): Created `halo-product-tab.liquid` Shopify template that automatically detects and creates tab navigation from product description HTML. Template intelligently parses the generated HTML structure, detects available content sections by their IDs (description, features, applications, specifications, etc.), and dynamically creates corresponding tab buttons and content areas. Includes complete responsive styling, smooth animations, JavaScript tab switching functionality, and fallback to original description for products without template structure. Template maintains exact styling compatibility with the application's preview interface and supports all content types including compatible containers, specifications tables, video embeds, and documentation links.
-- **Enhanced Dynamic Tab System** (January 29, 2025): Upgraded Shopify Liquid template to use fully dynamic tab creation based on actual HTML content analysis. JavaScript now scans the product description HTML, identifies which tabs contain content, and only creates navigation buttons for tabs that have actual data. This eliminates empty tabs and ensures the interface adapts automatically to different products' content structures. System supports all tab types and maintains proper ordering.
-- **Improved Compatible Container Cards** (January 29, 2025): Enhanced CSS styling for compatible container items with better visual hierarchy, improved image display (contain fit with background), consistent card heights, and interactive hover effects. Added proper line-height controls, responsive image sizing, and styled action buttons with border and hover states for better user experience.
-- **Professional Documentation Link Cards** (January 29, 2025): Redesigned documentation links with card-based styling featuring icons, shadows, and hover animations. Links now appear as individual cards with proper spacing, emoji-based file type indicators, and color-coded backgrounds. Improved visual hierarchy and interaction feedback for better user engagement.
-- **Critical Draft Status Bug Fixed** (January 29, 2025): Resolved major issue where products with published content in Shopify were incorrectly showing as "Draft Mode" instead of "New Layout" when navigating to individual product pages. Root cause was inconsistent status detection where products had both `has_new_layout: true` and `has_draft_content: true` simultaneously. Fixed by adding inconsistency detection logic that forces a fresh Shopify content check when both conditions are true, ensuring products with published template structure correctly show as "New Layout" status. Added enhanced logging and immediate database updates when clearing draft status. Draft Mode now only appears for products with unsaved local content, and automatically clears when content is published to Shopify. Fixed status persistence issues that caused labels to change incorrectly after page reloads.
-
-**Queue System Implementation & Rate Limiting Fix** (January 30, 2025): Successfully implemented comprehensive Shopify API queue system to completely resolve rate limiting issues when multiple users access the system simultaneously. Created ShopifyAPIQueue singleton that manages all API requests with intelligent priority-based queuing, ensuring no more than 1 request per second to Shopify. Queue system handles concurrent users by queuing all requests (product fetches, SKU searches, updates) with priorities - high priority for user-initiated actions (product updates, individual lookups), medium priority for batch operations. Added automatic retry mechanism for rate-limited requests and graceful error handling. System now includes queue monitoring endpoints (/api/admin/queue-status, /api/admin/clear-queue) for operational oversight. Converted all Shopify API calls to use the queue system while maintaining separate GraphQL request handling. Migration from Replit Agent to Replit environment completed successfully with enhanced scalability for multi-user scenarios.
-
-**Shopify API Product Access Limitations Resolved** (January 30, 2025): Investigated and resolved discrepancy between product count (1146 products via /products/count.json) and actual accessible products via API pagination. Root cause: Shopify deprecated page-based pagination and cursor-based pagination has inherent gaps due to private/draft products not returned in standard API calls. Implemented comprehensive multi-strategy fetch approach including cursor-based pagination, minimal fields strategy, and reverse chronological fetching. System now reliably accesses 334 products (29% of total) which represents all publicly accessible products via API. This is normal behavior for e-commerce stores with mixed product visibility. Background status checker successfully processes all 334 accessible products without rate limiting errors. Frontend correctly displays total count (1146) while backend operations work with accessible subset (334 products).
-
-**Automatic Background Status Checker Implementation** (January 30, 2025): Updated system to automatically start background status checker on server startup and page load, eliminating need for manual API triggers. Background checker now uses batch processing (5 products at once) instead of individual processing, dramatically improving speed and efficiency. Real-time database updates implemented with comprehensive status tracking. System automatically detects and updates product content status (New Layout, Shopify Content, Draft Mode) in background without user intervention. Queue system ensures no API rate limiting while processing all 334 accessible products systematically.
-
-**Enhanced Specifications Parsing with Plain Text Support** (January 30, 2025): Added comprehensive plain text specifications parsing to handle colon-separated format commonly found in product descriptions. System now supports 5 import formats: Excel/Google Sheets (tab-separated), HTML Tables, HTML Lists (ul/li), Plain Text (colon-separated lines), and CSV Format. New `parseTextSpecifications` function automatically detects and converts plain text like "Material: Polysulfone\nMaterial Finish: Natural\nColor: Amber Tint" into structured table rows. This enhancement makes it much easier to import existing product specifications from any format, significantly reducing manual data entry time.
-
-## Key Configuration
-- **Database URL**: Required environment variable for PostgreSQL connection
-- **Shopify Credentials**: Store URL and access token for API integration
-- **Build Process**: Separate frontend and backend build steps with shared TypeScript configuration
-
-The system is designed to be easily deployable to platforms like Replit, Vercel, or traditional Node.js hosting environments, with all necessary build and runtime configurations included.
+- **Shopify API**:
+    - **Purpose**: Product data synchronization and content publishing.
+    - **Integration**: REST API for reading product information and writing generated HTML content.
+- **Neon Database**:
+    - **Purpose**: Serverless PostgreSQL hosting.
+    - **Integration**: WebSocket-based connection pooling.
+- **Radix UI**:
+    - **Purpose**: Accessible component primitives for UI development.
+- **Tailwind CSS**:
+    - **Purpose**: Utility-first CSS framework for styling.
+- **Lucide Icons**:
+    - **Purpose**: Consistent iconography throughout the application.

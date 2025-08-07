@@ -73,7 +73,7 @@ export default function TabSelector({ selectedTabs, onTabsChange }: TabSelectorP
   };
 
   return (
-    <Card className="mb-8">
+    <Card className="mb-8 mt-6">
       <CardHeader>
         <CardTitle>Select Content Tabs</CardTitle>
       </CardHeader>
